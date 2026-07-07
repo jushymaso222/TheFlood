@@ -1,4 +1,6 @@
 package com.jushymaso222.theflood.event;
+import com.jushymaso222.theflood.spawn.SpawnDirector;
+import com.jushymaso222.theflood.horde.HordeDirector;
 
 import com.jushymaso222.theflood.TheFlood;
 import com.jushymaso222.theflood.config.TheFloodConfig;
@@ -47,6 +49,8 @@ public class ServerEvents {
             lastAnnouncedBloodMoonDay = day;
             announceBloodMoon(level);
         }
+        SpawnDirector.tick(level);
+        HordeDirector.tick(level);
     }
 
     private static void announceBloodMoon(ServerLevel level) {
