@@ -25,7 +25,7 @@ public class MobEvents {
     public static void onMobFinalizeSpawn(MobSpawnEvent.FinalizeSpawn event) {
         if (event.getLevel().isClientSide()) return;
         if (!(event.getEntity() instanceof Monster monster)) return;
-        if (!TheFloodConfig.DISABLE_VANILLA_HOSTILE_SPAWNS.get()) return;
+        if (!TheFloodConfig.SPAWNING.disableVanillaHostileSpawns.get()) return;
 
         MobSpawnType spawnType = event.getSpawnType();
 
@@ -63,15 +63,15 @@ public class MobEvents {
 
     private static boolean isMobUnlocked(Monster monster, int day) {
         if (monster instanceof Zombie) {
-            return day >= TheFloodConfig.ZOMBIE_UNLOCK_DAY.get();
+            return day >= TheFloodConfig.MOBS.zombie.unlockDay.get();
         }
 
         if (monster instanceof Skeleton) {
-            return day >= TheFloodConfig.SKELETON_UNLOCK_DAY.get();
+            return day >= TheFloodConfig.MOBS.skeleton.unlockDay.get();
         }
 
         if (monster instanceof Spider) {
-            return day >= TheFloodConfig.SPIDER_UNLOCK_DAY.get();
+            return day >= TheFloodConfig.MOBS.spider.unlockDay.get();
         }
 
         return false;

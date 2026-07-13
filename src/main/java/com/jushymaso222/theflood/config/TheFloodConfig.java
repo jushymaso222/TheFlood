@@ -2,181 +2,368 @@ package com.jushymaso222.theflood.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 
-public class TheFloodConfig {
+public final class TheFloodConfig {
+
     public static final ForgeConfigSpec SERVER_CONFIG;
 
-    public static final ForgeConfigSpec.IntValue DAY_LENGTH_MINUTES;
-    public static final ForgeConfigSpec.IntValue NIGHT_LENGTH_MINUTES;
-    public static final ForgeConfigSpec.IntValue BLOOD_MOON_FREQUENCY_DAYS;
-    public static final ForgeConfigSpec.BooleanValue DISABLE_VANILLA_HOSTILE_SPAWNS;
-
-    public static final ForgeConfigSpec.IntValue HOSTILE_MOB_CAP_PER_PLAYER;
-    public static final ForgeConfigSpec.DoubleValue SPAWN_SCALING_FACTOR;
-
-    public static final ForgeConfigSpec.IntValue MIN_SPAWN_DISTANCE_FROM_PLAYER;
-    public static final ForgeConfigSpec.IntValue MAX_SPAWN_DISTANCE_FROM_PLAYER;
-
-    public static final ForgeConfigSpec.IntValue ZOMBIE_UNLOCK_DAY;
-    public static final ForgeConfigSpec.IntValue SKELETON_UNLOCK_DAY;
-    public static final ForgeConfigSpec.IntValue SPIDER_UNLOCK_DAY;
-    public static final ForgeConfigSpec.IntValue CREEPER_UNLOCK_DAY;
-    public static final ForgeConfigSpec.IntValue ENDERMAN_UNLOCK_DAY;
-    public static final ForgeConfigSpec.IntValue WARDEN_UNLOCK_DAY;
-
-    public static final ForgeConfigSpec.IntValue BASE_SPAWN_ATTEMPTS;
-    public static final ForgeConfigSpec.DoubleValue SPAWN_ATTEMPTS_PER_DAY;
-    public static final ForgeConfigSpec.IntValue SPAWN_ROLL_CHANCE;
-
-    public static final ForgeConfigSpec.IntValue MINI_HORDE_CHANCE;
-    public static final ForgeConfigSpec.IntValue MINI_HORDE_MIN_SIZE;
-    public static final ForgeConfigSpec.IntValue MINI_HORDE_MAX_SIZE;
-
-    public static final ForgeConfigSpec.IntValue BLOOD_MOON_MOB_CAP_PER_PLAYER;
-    public static final ForgeConfigSpec.IntValue BLOOD_MOON_WAVE_INTERVAL_SECONDS;
-    public static final ForgeConfigSpec.IntValue BLOOD_MOON_WAVE_MIN_SIZE;
-    public static final ForgeConfigSpec.IntValue BLOOD_MOON_WAVE_MAX_SIZE;
-    public static final ForgeConfigSpec.DoubleValue HORDE_FOLLOW_RANGE;
-    public static final ForgeConfigSpec.DoubleValue BLOOD_MOON_FOLLOW_RANGE;
-
-    public static final ForgeConfigSpec.DoubleValue FLOOD_WARDEN_HEALTH;
-    public static final ForgeConfigSpec.DoubleValue FLOOD_WARDEN_DAMAGE;
-    public static final ForgeConfigSpec.DoubleValue FLOOD_WARDEN_SPEED;
+    public static final TimeSettings TIME;
+    public static final SpawnSettings SPAWNING;
+    public static final HordeSettings HORDES;
+    public static final MobSettings MOBS;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
-        builder.push("Time Settings");
-
-        DAY_LENGTH_MINUTES = builder
-                .comment("How long daytime lasts in real minutes.")
-                .defineInRange("dayLengthMinutes", 30, 1, 240);
-
-        NIGHT_LENGTH_MINUTES = builder
-                .comment("How long nighttime lasts in real minutes.")
-                .defineInRange("nightLengthMinutes", 10, 1, 240);
-
-        BLOOD_MOON_FREQUENCY_DAYS = builder
-                .comment("How often a blood moon happens, in Minecraft days.")
-                .defineInRange("bloodMoonFrequencyDays", 7, 1, 365);
-
-        builder.pop();
-
-        builder.push("Mob Spawning");
-
-        DISABLE_VANILLA_HOSTILE_SPAWNS = builder
-                .comment("If true, vanilla hostile mob spawning is disabled so The Flood can control hostile spawns.")
-                .define("disableVanillaHostileSpawns", true);
-
-        HOSTILE_MOB_CAP_PER_PLAYER = builder
-        .comment("Maximum hostile mobs allowed near each player.")
-        .defineInRange("hostileMobCapPerPlayer", 50, 0, 500);
-
-        SPAWN_SCALING_FACTOR = builder
-                .comment("How aggressively hostile mob spawns increase as days pass. Higher = more spawns.")
-                .defineInRange("spawnScalingFactor", 3, 0.0, 20.0);
-
-        MIN_SPAWN_DISTANCE_FROM_PLAYER = builder
-                .comment("Minimum distance hostile mobs can spawn from a player.")
-                .defineInRange("minSpawnDistanceFromPlayer", 28, 1, 256);
-
-        MAX_SPAWN_DISTANCE_FROM_PLAYER = builder
-                .comment("Maximum distance hostile mobs can spawn from a player.")
-                .defineInRange("maxSpawnDistanceFromPlayer", 72, 1, 512);
-
-        ZOMBIE_UNLOCK_DAY = builder
-                .comment("The first day zombies are allowed to spawn.")
-                .defineInRange("zombieUnlockDay", 2, 1, 365);
-
-        SKELETON_UNLOCK_DAY = builder
-                .comment("The first day skeletons are allowed to spawn.")
-                .defineInRange("skeletonUnlockDay", 8, 1, 365);
-
-        SPIDER_UNLOCK_DAY = builder
-                .comment("The first day spiders are allowed to spawn.")
-                .defineInRange("spiderUnlockDay", 12, 1, 365);
-
-        CREEPER_UNLOCK_DAY = builder
-                .comment("The first day creepers are allowed to spawn.")
-                .defineInRange("creeperUnlockDay", 16, 1, 365);
-
-        ENDERMAN_UNLOCK_DAY = builder
-                .comment("The first day endermen are allowed to spawn.")
-                .defineInRange("endermanUnlockDay", 20, 1, 365);
-
-        WARDEN_UNLOCK_DAY = builder
-                .comment("The first day wardens are allowed to spawn. Recommended to keep this high.")
-                .defineInRange("wardenUnlockDay", 35, 1, 365);
-        
-        BASE_SPAWN_ATTEMPTS = builder
-        .comment("Base number of spawn attempts per player per tick once hostile mobs unlock.")
-        .defineInRange("baseSpawnAttempts", 4, 0, 100);
-
-        SPAWN_ATTEMPTS_PER_DAY = builder
-                .comment("How many extra spawn attempts are added per day survived.")
-                .defineInRange("spawnAttemptsPerDay", 0.75, 0.0, 20.0);
-
-        SPAWN_ROLL_CHANCE = builder
-                .comment("Chance denominator for each spawn attempt. Lower means more frequent spawns. Example: 120 = 1 in 120.")
-                .defineInRange("spawnRollChance", 40, 1, 10000);
-
-        builder.pop();
-
-        builder.push("Horde Spawns");
-
-        MINI_HORDE_CHANCE = builder
-                .comment("Random chance denominator per player per tick for a mini horde. Higher = rarer.")
-                .defineInRange("miniHordeChance", 2000, 1, 1000000);
-
-        MINI_HORDE_MIN_SIZE = builder
-                .comment("Minimum mobs in a mini horde.")
-                .defineInRange("miniHordeMinSize", 4, 1, 100);
-
-        MINI_HORDE_MAX_SIZE = builder
-                .comment("Maximum mobs in a mini horde.")
-                .defineInRange("miniHordeMaxSize", 12, 1, 100);
-
-        BLOOD_MOON_MOB_CAP_PER_PLAYER = builder
-                .comment("Mob cap near each player during blood moons.")
-                .defineInRange("bloodMoonMobCapPerPlayer", 64, 1, 500);
-
-        BLOOD_MOON_WAVE_INTERVAL_SECONDS = builder
-                .comment("Seconds between blood moon waves.")
-                .defineInRange("bloodMoonWaveIntervalSeconds", 15, 1, 600);
-
-        BLOOD_MOON_WAVE_MIN_SIZE = builder
-                .comment("Minimum mobs per blood moon wave per player.")
-                .defineInRange("bloodMoonWaveMinSize", 8, 1, 200);
-
-        BLOOD_MOON_WAVE_MAX_SIZE = builder
-                .comment("Maximum mobs per blood moon wave per player.")
-                .defineInRange("bloodMoonWaveMaxSize", 18, 1, 200);
-
-        HORDE_FOLLOW_RANGE = builder
-                .comment("Follow range for mini-horde mobs.")
-                .defineInRange("hordeFollowRange", 80.0, 16.0, 256.0);
-
-        BLOOD_MOON_FOLLOW_RANGE = builder
-                .comment("Follow range for blood moon horde mobs.")
-                .defineInRange("bloodMoonFollowRange", 128.0, 16.0, 512.0);
-
-        builder.pop();
-
-        builder.push("Flood Warden");
-
-        FLOOD_WARDEN_HEALTH = builder
-                .comment("Maximum health of Flood Wardens.")
-                .defineInRange("health", 80.0, 1.0, 1000.0);
-
-        FLOOD_WARDEN_DAMAGE = builder
-                .comment("Attack damage of Flood Wardens.")
-                .defineInRange("damage", 8.0, 0.0, 100.0);
-
-        FLOOD_WARDEN_SPEED = builder
-                .comment("Movement speed of Flood Wardens.")
-                .defineInRange("speed", 0.25, 0.05, 2.0);
-
-        builder.pop();
+        TIME = new TimeSettings(builder);
+        SPAWNING = new SpawnSettings(builder);
+        HORDES = new HordeSettings(builder);
+        MOBS = new MobSettings(builder);
 
         SERVER_CONFIG = builder.build();
+    }
+
+    private TheFloodConfig() {
+    }
+
+    public static final class TimeSettings {
+        public final ForgeConfigSpec.IntValue dayLengthMinutes;
+        public final ForgeConfigSpec.IntValue nightLengthMinutes;
+        public final ForgeConfigSpec.IntValue bloodMoonFrequencyDays;
+
+        private TimeSettings(ForgeConfigSpec.Builder builder) {
+            builder.push("time");
+
+            dayLengthMinutes = builder
+                    .comment("How long daytime lasts in real-world minutes.")
+                    .defineInRange("dayLengthMinutes", 30, 1, 240);
+
+            nightLengthMinutes = builder
+                    .comment("How long nighttime lasts in real-world minutes.")
+                    .defineInRange("nightLengthMinutes", 10, 1, 240);
+
+            bloodMoonFrequencyDays = builder
+                    .comment("The number of Minecraft days between blood moons.")
+                    .defineInRange("bloodMoonFrequencyDays", 7, 1, 365);
+
+            builder.pop();
+        }
+    }
+
+    public static final class SpawnSettings {
+        public final ForgeConfigSpec.BooleanValue disableVanillaHostileSpawns;
+
+        public final ForgeConfigSpec.IntValue hostileMobCapPerPlayer;
+        public final ForgeConfigSpec.IntValue minSpawnDistanceFromPlayer;
+        public final ForgeConfigSpec.IntValue maxSpawnDistanceFromPlayer;
+
+        public final ForgeConfigSpec.IntValue baseSpawnAttempts;
+        public final ForgeConfigSpec.DoubleValue spawnAttemptsPerDay;
+        public final ForgeConfigSpec.IntValue spawnRollChance;
+        public final ForgeConfigSpec.DoubleValue spawnWeightScalingFactor;
+
+        private SpawnSettings(ForgeConfigSpec.Builder builder) {
+            builder.push("spawning");
+
+            disableVanillaHostileSpawns = builder
+                    .comment("Disables vanilla hostile spawning so The Flood can control it.")
+                    .define("disableVanillaHostileSpawns", true);
+
+            hostileMobCapPerPlayer = builder
+                    .comment("Maximum hostile mobs allowed near each player outside blood moons.")
+                    .defineInRange("hostileMobCapPerPlayer", 50, 0, 500);
+
+            minSpawnDistanceFromPlayer = builder
+                    .comment("Minimum distance from a player for Flood-controlled spawns.")
+                    .defineInRange("minSpawnDistanceFromPlayer", 28, 1, 256);
+
+            maxSpawnDistanceFromPlayer = builder
+                    .comment("Maximum distance from a player for Flood-controlled spawns.")
+                    .defineInRange("maxSpawnDistanceFromPlayer", 72, 1, 512);
+
+            baseSpawnAttempts = builder
+                    .comment("Base spawn attempts per player per server tick.")
+                    .defineInRange("baseSpawnAttempts", 4, 0, 100);
+
+            spawnAttemptsPerDay = builder
+                    .comment("Additional spawn attempts gained for each day survived.")
+                    .defineInRange("spawnAttemptsPerDay", 0.75, 0.0, 20.0);
+
+            spawnRollChance = builder
+                    .comment(
+                            "Chance denominator for each attempt.",
+                            "Lower values create more frequent spawns.",
+                            "Example: 40 means each attempt has a 1-in-40 chance."
+                    )
+                    .defineInRange("spawnRollChance", 40, 1, 10000);
+
+            spawnWeightScalingFactor = builder
+                    .comment(
+                            "How quickly a mob's selection weight grows after it unlocks.",
+                            "This affects mob distribution, not total spawn frequency."
+                    )
+                    .defineInRange("spawnWeightScalingFactor", 3.0, 0.0, 20.0);
+
+            builder.pop();
+        }
+    }
+
+    public static final class HordeSettings {
+        public final ForgeConfigSpec.IntValue miniHordeChance;
+        public final ForgeConfigSpec.IntValue miniHordeMinSize;
+        public final ForgeConfigSpec.IntValue miniHordeMaxSize;
+
+        public final ForgeConfigSpec.IntValue bloodMoonMobCapPerPlayer;
+        public final ForgeConfigSpec.IntValue bloodMoonWaveIntervalSeconds;
+        public final ForgeConfigSpec.IntValue bloodMoonWaveMinSize;
+        public final ForgeConfigSpec.IntValue bloodMoonWaveMaxSize;
+
+        public final ForgeConfigSpec.DoubleValue miniHordeFollowRange;
+        public final ForgeConfigSpec.DoubleValue bloodMoonFollowRange;
+
+        public final ForgeConfigSpec.IntValue hordeClumpRadius;
+
+        private HordeSettings(ForgeConfigSpec.Builder builder) {
+            builder.push("hordes");
+
+            builder.push("miniHordes");
+
+            miniHordeChance = builder
+                    .comment(
+                            "Chance denominator per player per server tick.",
+                            "Higher values make mini-hordes rarer."
+                    )
+                    .defineInRange("chance", 2000, 1, 1_000_000);
+
+            miniHordeMinSize = builder
+                    .comment("Minimum number of mobs in a mini-horde.")
+                    .defineInRange("minSize", 4, 1, 100);
+
+            miniHordeMaxSize = builder
+                    .comment("Maximum number of mobs in a mini-horde.")
+                    .defineInRange("maxSize", 12, 1, 100);
+
+            miniHordeFollowRange = builder
+                    .comment("Follow range assigned to mini-horde mobs.")
+                    .defineInRange("followRange", 80.0, 16.0, 256.0);
+
+            builder.pop();
+
+            builder.push("bloodMoon");
+
+            bloodMoonMobCapPerPlayer = builder
+                    .comment("Maximum hostile mobs near each player during a blood moon.")
+                    .defineInRange("mobCapPerPlayer", 64, 1, 500);
+
+            bloodMoonWaveIntervalSeconds = builder
+                    .comment("Real-world seconds between blood moon waves.")
+                    .defineInRange("waveIntervalSeconds", 15, 1, 600);
+
+            bloodMoonWaveMinSize = builder
+                    .comment("Minimum mobs spawned per wave for each player.")
+                    .defineInRange("waveMinSize", 8, 1, 200);
+
+            bloodMoonWaveMaxSize = builder
+                    .comment("Maximum mobs spawned per wave for each player.")
+                    .defineInRange("waveMaxSize", 18, 1, 200);
+
+            bloodMoonFollowRange = builder
+                    .comment("Follow range assigned to blood moon mobs.")
+                    .defineInRange("followRange", 128.0, 16.0, 512.0);
+
+            builder.pop();
+
+            hordeClumpRadius = builder
+                    .comment("Radius around a horde anchor in which its mobs can spawn.")
+                    .defineInRange("clumpRadius", 6, 1, 32);
+
+            builder.pop();
+        }
+    }
+
+    public static final class MobSettings {
+        public final StandardMob zombie;
+        public final StandardMob skeleton;
+        public final StandardMob spider;
+        public final StandardMob creeper;
+        public final StandardMob enderman;
+        public final WardenMob warden;
+
+        private MobSettings(ForgeConfigSpec.Builder builder) {
+            builder.push("mobs");
+
+            zombie = new StandardMob(
+                builder,
+                "zombie",
+                2,
+                10,
+                20.0,
+                3.0,
+                1.5,
+                0.20
+        );
+
+        skeleton = new StandardMob(
+                builder,
+                "skeleton",
+                8,
+                8,
+                20.0,
+                2.0,
+                1.25,
+                0.15
+        );
+
+        spider = new StandardMob(
+                builder,
+                "spider",
+                12,
+                8,
+                16.0,
+                2.0,
+                1.25,
+                0.20
+        );
+
+        creeper = new StandardMob(
+                builder,
+                "creeper",
+                16,
+                5,
+                20.0,
+                0.0,
+                1.5,
+                0.0
+        );
+
+        enderman = new StandardMob(
+                builder,
+                "enderman",
+                20,
+                4,
+                40.0,
+                7.0,
+                2.0,
+                0.30
+        );
+
+            warden = new WardenMob(
+                    builder,
+                    35,
+                    1,
+                    80.0,
+                    8.0,
+                    0.25
+            );
+
+            builder.pop();
+        }
+    }
+
+    public static class StandardMob {
+    public final ForgeConfigSpec.IntValue unlockDay;
+    public final ForgeConfigSpec.IntValue baseSpawnWeight;
+
+    public final ForgeConfigSpec.DoubleValue baseHealth;
+    public final ForgeConfigSpec.DoubleValue healthPerDay;
+    public final ForgeConfigSpec.DoubleValue maximumHealth;
+
+    public final ForgeConfigSpec.DoubleValue baseDamage;
+    public final ForgeConfigSpec.DoubleValue damagePerDay;
+    public final ForgeConfigSpec.DoubleValue maximumDamage;
+
+    protected StandardMob(
+            ForgeConfigSpec.Builder builder,
+            String mobName,
+            int defaultUnlockDay,
+            int defaultSpawnWeight,
+            double defaultBaseHealth,
+            double defaultBaseDamage,
+            double defaultHealthPerDay,
+            double defaultDamagePerDay
+        ) {
+                builder.push(mobName);
+
+                unlockDay = builder
+                        .comment("The first day this mob can spawn through The Flood.")
+                        .defineInRange("unlockDay", defaultUnlockDay, 1, 100_000);
+
+                baseSpawnWeight = builder
+                        .comment("The mob's initial selection weight when it unlocks.")
+                        .defineInRange("baseSpawnWeight", defaultSpawnWeight, 0, 10_000);
+
+                baseHealth = builder
+                        .comment("Health this mob has on its unlock day.")
+                        .defineInRange("baseHealth", defaultBaseHealth, 1.0, 10_000.0);
+
+                healthPerDay = builder
+                        .comment("Health added for every day after this mob unlocks.")
+                        .defineInRange("healthPerDay", defaultHealthPerDay, 0.0, 1_000.0);
+
+                maximumHealth = builder
+                        .comment(
+                                "Maximum health this mob can reach.",
+                                "Set very high if you do not want a practical cap."
+                        )
+                        .defineInRange("maximumHealth", 500.0, 1.0, 100_000.0);
+
+                baseDamage = builder
+                        .comment("Attack damage this mob has on its unlock day.")
+                        .defineInRange("baseDamage", defaultBaseDamage, 0.0, 1_000.0);
+
+                damagePerDay = builder
+                        .comment("Attack damage added for every day after this mob unlocks.")
+                        .defineInRange("damagePerDay", defaultDamagePerDay, 0.0, 100.0);
+
+                maximumDamage = builder
+                        .comment(
+                                "Maximum attack damage this mob can reach.",
+                                "Set very high if you do not want a practical cap."
+                        )
+                        .defineInRange("maximumDamage", 50.0, 0.0, 10_000.0);
+
+                builder.pop();
+        }
+        }
+
+    public static final class WardenMob {
+        public final ForgeConfigSpec.IntValue unlockDay;
+        public final ForgeConfigSpec.IntValue baseSpawnWeight;
+
+        public final ForgeConfigSpec.DoubleValue health;
+        public final ForgeConfigSpec.DoubleValue damage;
+        public final ForgeConfigSpec.DoubleValue movementSpeed;
+
+        private WardenMob(
+                ForgeConfigSpec.Builder builder,
+                int defaultUnlockDay,
+                int defaultSpawnWeight,
+                double defaultHealth,
+                double defaultDamage,
+                double defaultMovementSpeed
+        ) {
+            builder.push("warden");
+
+            unlockDay = builder
+                    .comment("The first day Flood Wardens can spawn.")
+                    .defineInRange("unlockDay", defaultUnlockDay, 1, 100_000);
+
+            baseSpawnWeight = builder
+                    .comment("The Flood Warden's initial selection weight.")
+                    .defineInRange("baseSpawnWeight", defaultSpawnWeight, 0, 10_000);
+
+            health = builder
+                    .comment("Maximum health of Flood Wardens.")
+                    .defineInRange("health", defaultHealth, 1.0, 1000.0);
+
+            damage = builder
+                    .comment("Attack damage of Flood Wardens.")
+                    .defineInRange("damage", defaultDamage, 0.0, 100.0);
+
+            movementSpeed = builder
+                    .comment("Movement speed of Flood Wardens.")
+                    .defineInRange("movementSpeed", defaultMovementSpeed, 0.05, 2.0);
+
+            builder.pop();
+        }
     }
 }

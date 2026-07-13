@@ -49,8 +49,8 @@ public class TimeEvents {
     private static double getTimeIncreasePerTick(double worldTime) {
         long timeOfDay = ((long) worldTime) % 24000L;
 
-        int dayMinutes = TheFloodConfig.DAY_LENGTH_MINUTES.get();
-        int nightMinutes = TheFloodConfig.NIGHT_LENGTH_MINUTES.get();
+        int dayMinutes = TheFloodConfig.TIME.dayLengthMinutes.get();
+        int nightMinutes = TheFloodConfig.TIME.nightLengthMinutes.get();
 
         double vanillaDayTicks = 13000.0;
         double vanillaNightTicks = 11000.0;

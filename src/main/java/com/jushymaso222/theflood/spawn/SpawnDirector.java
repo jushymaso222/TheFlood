@@ -26,13 +26,13 @@ public class SpawnDirector {
         if (level.dimension() != Level.OVERWORLD) return;
 
         int day = getDay(level);
-        if (day < TheFloodConfig.ZOMBIE_UNLOCK_DAY.get()) return;
+        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) return;
 
-        int baseAttempts = TheFloodConfig.BASE_SPAWN_ATTEMPTS.get();
-        double attemptsPerDay = TheFloodConfig.SPAWN_ATTEMPTS_PER_DAY.get();
+        int baseAttempts = TheFloodConfig.SPAWNING.baseSpawnAttempts.get();
+        double attemptsPerDay = TheFloodConfig.SPAWNING.spawnAttemptsPerDay.get();
         int attempts = baseAttempts + (int) Math.floor((day - 1) * attemptsPerDay);
 
-        int spawnRoll = TheFloodConfig.SPAWN_ROLL_CHANCE.get();
+        int spawnRoll = TheFloodConfig.SPAWNING.spawnRollChance.get();
 
         for (ServerPlayer player : level.players()) {
             for (int i = 0; i < attempts; i++) {
@@ -51,8 +51,8 @@ public class SpawnDirector {
             boolean isBloodMoonMob
     ) {
         int mobCap = isBloodMoon(level)
-                ? TheFloodConfig.BLOOD_MOON_MOB_CAP_PER_PLAYER.get()
-                : TheFloodConfig.HOSTILE_MOB_CAP_PER_PLAYER.get();
+                ? TheFloodConfig.HORDES.bloodMoonMobCapPerPlayer.get()
+                : TheFloodConfig.SPAWNING.hostileMobCapPerPlayer.get();
 
         if (mobCap <= 0 || countHostileMobsNearPlayer(level, player) >= mobCap) {
             return;
@@ -67,8 +67,8 @@ public class SpawnDirector {
     }
 
     public static BlockPos findSpawnPositionNearPlayer(ServerLevel level, ServerPlayer player) {
-        int minDistance = TheFloodConfig.MIN_SPAWN_DISTANCE_FROM_PLAYER.get();
-        int maxDistance = TheFloodConfig.MAX_SPAWN_DISTANCE_FROM_PLAYER.get();
+        int minDistance = TheFloodConfig.SPAWNING.minSpawnDistanceFromPlayer.get();
+        int maxDistance = TheFloodConfig.SPAWNING.maxSpawnDistanceFromPlayer.get();
 
         if (maxDistance <= minDistance) {
             maxDistance = minDistance + 1;
@@ -123,9 +123,9 @@ public class SpawnDirector {
     }
 
     private static void nerfFloodWarden(Mob mob) {
-        double health = TheFloodConfig.FLOOD_WARDEN_HEALTH.get();
-        double damage = TheFloodConfig.FLOOD_WARDEN_DAMAGE.get();
-        double speed = TheFloodConfig.FLOOD_WARDEN_SPEED.get();
+        double health = TheFloodConfig.MOBS.warden.health.get();
+        double damage = TheFloodConfig.MOBS.warden.damage.get();
+        double speed = TheFloodConfig.MOBS.warden.movementSpeed.get();
 
         if (mob.getAttribute(Attributes.MAX_HEALTH) != null) {
             mob.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
@@ -185,8 +185,8 @@ public class SpawnDirector {
 
     private static void makeHordeMobAggressive(Mob mob, ServerPlayer player, boolean isBloodMoonMob) {
         double followRange = isBloodMoonMob
-                ? TheFloodConfig.BLOOD_MOON_FOLLOW_RANGE.get()
-                : TheFloodConfig.HORDE_FOLLOW_RANGE.get();
+                ? TheFloodConfig.HORDES.bloodMoonFollowRange.get()
+                : TheFloodConfig.HORDES.miniHordeFollowRange.get();
 
         if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
             mob.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(followRange);
@@ -197,7 +197,7 @@ public class SpawnDirector {
     }
 
     private static int countHostileMobsNearPlayer(ServerLevel level, ServerPlayer player) {
-        int radius = TheFloodConfig.MAX_SPAWN_DISTANCE_FROM_PLAYER.get();
+        int radius = TheFloodConfig.SPAWNING.maxSpawnDistanceFromPlayer.get();
         AABB area = player.getBoundingBox().inflate(radius);
 
         return level.getEntitiesOfClass(
@@ -220,7 +220,7 @@ public class SpawnDirector {
         int day = getDay(level);
         long timeOfDay = level.getDayTime() % 24000L;
 
-        return day % TheFloodConfig.BLOOD_MOON_FREQUENCY_DAYS.get() == 0
+        return day % TheFloodConfig.TIME.bloodMoonFrequencyDays.get() == 0
                 && timeOfDay >= 13000L
                 && timeOfDay <= 23000L;
     }
@@ -232,12 +232,12 @@ public class SpawnDirector {
     private static List<SpawnEntry> getSpawnPool(int day) {
         List<SpawnEntry> pool = new ArrayList<>();
 
-        addMobIfUnlocked(pool, EntityType.ZOMBIE, day, TheFloodConfig.ZOMBIE_UNLOCK_DAY.get(), 10);
-        addMobIfUnlocked(pool, EntityType.SKELETON, day, TheFloodConfig.SKELETON_UNLOCK_DAY.get(), 8);
-        addMobIfUnlocked(pool, EntityType.SPIDER, day, TheFloodConfig.SPIDER_UNLOCK_DAY.get(), 8);
-        addMobIfUnlocked(pool, EntityType.CREEPER, day, TheFloodConfig.CREEPER_UNLOCK_DAY.get(), 5);
-        addMobIfUnlocked(pool, EntityType.ENDERMAN, day, TheFloodConfig.ENDERMAN_UNLOCK_DAY.get(), 4);
-        addMobIfUnlocked(pool, EntityType.WARDEN, day, TheFloodConfig.WARDEN_UNLOCK_DAY.get(), 1);
+        addMobIfUnlocked(pool, EntityType.ZOMBIE, day, TheFloodConfig.MOBS.zombie.unlockDay.get(), 10);
+        addMobIfUnlocked(pool, EntityType.SKELETON, day, TheFloodConfig.MOBS.skeleton.unlockDay.get(), 8);
+        addMobIfUnlocked(pool, EntityType.SPIDER, day, TheFloodConfig.MOBS.spider.unlockDay.get(), 8);
+        addMobIfUnlocked(pool, EntityType.CREEPER, day, TheFloodConfig.MOBS.creeper.unlockDay.get(), 5);
+        addMobIfUnlocked(pool, EntityType.ENDERMAN, day, TheFloodConfig.MOBS.enderman.unlockDay.get(), 4);
+        addMobIfUnlocked(pool, EntityType.WARDEN, day, TheFloodConfig.MOBS.warden.unlockDay.get(), 1);
 
         applyNewMobDip(pool);
 
@@ -253,7 +253,7 @@ public class SpawnDirector {
     ) {
         if (currentDay < unlockDay) return;
 
-        double scaling = TheFloodConfig.SPAWN_SCALING_FACTOR.get();
+        double scaling = TheFloodConfig.SPAWNING.spawnWeightScalingFactor.get();
         int daysUnlocked = currentDay - unlockDay;
         int weight = baseWeight + (int) Math.floor(daysUnlocked * scaling);
 

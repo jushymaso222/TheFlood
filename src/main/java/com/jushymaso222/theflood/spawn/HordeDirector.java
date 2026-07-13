@@ -20,7 +20,7 @@ public class HordeDirector {
         int day = getDay(level);
         long timeOfDay = level.getDayTime() % 24000L;
 
-        if (day < TheFloodConfig.ZOMBIE_UNLOCK_DAY.get()) return;
+        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) return;
 
         if (isBloodMoon(level)) {
             tickBloodMoon(level, day);
@@ -32,10 +32,10 @@ public class HordeDirector {
     private static void tickMiniHordes(ServerLevel level, int day, long timeOfDay) {
         // Optional: avoid mini hordes during day 1 and during blood moon.
         for (ServerPlayer player : level.players()) {
-            if (RANDOM.nextInt(TheFloodConfig.MINI_HORDE_CHANCE.get()) == 0) {
+            if (RANDOM.nextInt(TheFloodConfig.HORDES.miniHordeChance.get()) == 0) {
                 int size = randomBetween(
-                        TheFloodConfig.MINI_HORDE_MIN_SIZE.get(),
-                        TheFloodConfig.MINI_HORDE_MAX_SIZE.get()
+                        TheFloodConfig.HORDES.miniHordeMinSize.get(),
+                        TheFloodConfig.HORDES.miniHordeMaxSize.get()
                 );
 
                 spawnHorde(level, player, day, size);
@@ -45,7 +45,7 @@ public class HordeDirector {
 
     private static void tickBloodMoon(ServerLevel level, int day) {
         long gameTime = level.getGameTime();
-        long intervalTicks = TheFloodConfig.BLOOD_MOON_WAVE_INTERVAL_SECONDS.get() * 20L;
+        long intervalTicks = TheFloodConfig.HORDES.bloodMoonWaveIntervalSeconds.get() * 20L;
 
         if (lastBloodMoonWaveTime >= 0 && gameTime - lastBloodMoonWaveTime < intervalTicks) {
             return;
@@ -55,8 +55,8 @@ public class HordeDirector {
 
         for (ServerPlayer player : level.players()) {
             int size = randomBetween(
-                    TheFloodConfig.BLOOD_MOON_WAVE_MIN_SIZE.get(),
-                    TheFloodConfig.BLOOD_MOON_WAVE_MAX_SIZE.get()
+                    TheFloodConfig.HORDES.bloodMoonWaveMinSize.get(),
+                    TheFloodConfig.HORDES.bloodMoonWaveMaxSize.get()
             );
 
             spawnHorde(level, player, day, size);
@@ -85,7 +85,7 @@ public class HordeDirector {
         int day = getDay(level);
         long timeOfDay = level.getDayTime() % 24000L;
 
-        return day % TheFloodConfig.BLOOD_MOON_FREQUENCY_DAYS.get() == 0
+        return day % TheFloodConfig.TIME.bloodMoonFrequencyDays.get() == 0
                 && timeOfDay >= 13000L
                 && timeOfDay <= 23000L;
     }

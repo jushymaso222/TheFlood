@@ -42,7 +42,7 @@ public class ServerEvents {
         long day = (dayTime / 24000L) + 1;
         long timeOfDay = dayTime % 24000L;
 
-        boolean isBloodMoonDay = day % TheFloodConfig.BLOOD_MOON_FREQUENCY_DAYS.get() == 0;
+        boolean isBloodMoonDay = day % TheFloodConfig.TIME.bloodMoonFrequencyDays.get() == 0;
         boolean justBecameNight = timeOfDay >= 13000L && timeOfDay <= 13100L;
 
         if (isBloodMoonDay && justBecameNight && lastAnnouncedBloodMoonDay != day) {
