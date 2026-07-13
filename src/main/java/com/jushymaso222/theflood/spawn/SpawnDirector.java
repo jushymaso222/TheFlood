@@ -141,6 +141,53 @@ public class SpawnDirector {
         }
     }
 
+    private static void applyMobCombatScaling(Mob mob, int currentDay) {
+        TheFloodConfig.StandardMob config;
+        EntityType<?> entityType = mob.getType();
+
+        if (entityType == EntityType.ZOMBIE) {
+            config = TheFloodConfig.MOBS.zombie;
+        } else if (entityType == EntityType.SKELETON) {
+            config = TheFloodConfig.MOBS.skeleton;
+        } else if (entityType == EntityType.SPIDER) {
+            config = TheFloodConfig.MOBS.spider;
+        } else if (entityType == EntityType.CREEPER) {
+            config = TheFloodConfig.MOBS.creeper;
+        } else if (entityType == EntityType.ENDERMAN) {
+            config = TheFloodConfig.MOBS.enderman;
+        } else {
+            return;
+        }
+        
+        double baseHealth = config.baseHealth.get();
+        double baseDamage = config.baseDamage.get();
+        double healthPerDay = config.healthPerDay.get();
+        double damagePerDay = config.damagePerDay.get();
+        double maximumHealth = config.maximumHealth.get();
+        double maximumDamage = config.maximumDamage.get();
+
+        int unlockDay = config.unlockDay.get();
+        int daysSinceUnlock = Math.max(0, currentDay - unlockDay);
+
+        double scaledHealth = Math.min(
+            maximumHealth,
+            baseHealth + (daysSinceUnlock * healthPerDay)
+        );
+        double scaledDamage = Math.min(
+            maximumDamage,
+            baseDamage + (daysSinceUnlock * damagePerDay)
+        );
+
+        if (mob.getAttribute(Attributes.MAX_HEALTH) != null) {
+            mob.getAttribute(Attributes.MAX_HEALTH).setBaseValue(scaledHealth);
+            mob.setHealth((float) scaledHealth);
+        }
+
+        if (mob.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
+            mob.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledDamage);
+        }
+    }
+
     private static void spawnMobAt(
             ServerLevel level,
             ServerPlayer player,
@@ -178,6 +225,8 @@ public class SpawnDirector {
         }
         if (mob.getType() == EntityType.WARDEN) {
             nerfFloodWarden(mob);
+        } else {
+            applyMobCombatScaling(mob, day);
         }
 
         level.addFreshEntityWithPassengers(mob);
@@ -232,12 +281,53 @@ public class SpawnDirector {
     private static List<SpawnEntry> getSpawnPool(int day) {
         List<SpawnEntry> pool = new ArrayList<>();
 
-        addMobIfUnlocked(pool, EntityType.ZOMBIE, day, TheFloodConfig.MOBS.zombie.unlockDay.get(), 10);
-        addMobIfUnlocked(pool, EntityType.SKELETON, day, TheFloodConfig.MOBS.skeleton.unlockDay.get(), 8);
-        addMobIfUnlocked(pool, EntityType.SPIDER, day, TheFloodConfig.MOBS.spider.unlockDay.get(), 8);
-        addMobIfUnlocked(pool, EntityType.CREEPER, day, TheFloodConfig.MOBS.creeper.unlockDay.get(), 5);
-        addMobIfUnlocked(pool, EntityType.ENDERMAN, day, TheFloodConfig.MOBS.enderman.unlockDay.get(), 4);
-        addMobIfUnlocked(pool, EntityType.WARDEN, day, TheFloodConfig.MOBS.warden.unlockDay.get(), 1);
+        addMobIfUnlocked(
+            pool,
+            EntityType.ZOMBIE,
+            day,
+            TheFloodConfig.MOBS.zombie.unlockDay.get(),
+            TheFloodConfig.MOBS.zombie.baseSpawnWeight.get()
+        );
+
+        addMobIfUnlocked(
+            pool,
+            EntityType.SKELETON,
+            day,
+            TheFloodConfig.MOBS.skeleton.unlockDay.get(),
+            TheFloodConfig.MOBS.skeleton.baseSpawnWeight.get()
+        );
+
+        addMobIfUnlocked(
+            pool,
+            EntityType.SPIDER,
+            day,
+            TheFloodConfig.MOBS.spider.unlockDay.get(),
+            TheFloodConfig.MOBS.spider.baseSpawnWeight.get()
+        );
+
+        addMobIfUnlocked(
+            pool,
+            EntityType.CREEPER,
+            day,
+            TheFloodConfig.MOBS.creeper.unlockDay.get(),
+            TheFloodConfig.MOBS.creeper.baseSpawnWeight.get()
+        );
+
+        addMobIfUnlocked(
+            pool,
+            EntityType.ENDERMAN,
+            day,
+            TheFloodConfig.MOBS.enderman.unlockDay.get(),
+            TheFloodConfig.MOBS.enderman.baseSpawnWeight.get()
+        );
+
+        addMobIfUnlocked(
+            pool,
+            EntityType.WARDEN,
+            day,
+            TheFloodConfig.MOBS.warden.unlockDay.get(),
+            TheFloodConfig.MOBS.warden.baseSpawnWeight.get()
+        );
 
         applyNewMobDip(pool);
 

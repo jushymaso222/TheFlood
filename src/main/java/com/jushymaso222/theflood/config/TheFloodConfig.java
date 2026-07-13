@@ -194,12 +194,14 @@ public final class TheFloodConfig {
             zombie = new StandardMob(
                 builder,
                 "zombie",
-                2,
-                10,
-                20.0,
-                3.0,
-                1.5,
-                0.20
+                2, //Unlock day
+                10, //Base spawn weight
+                20.0, //Base health
+                3.0, //Base damage
+                1.5, //Health increase per day
+                0.20, //Damage increase per day
+                60.0, //Maximum health
+                40.0 //Maximum damage
         );
 
         skeleton = new StandardMob(
@@ -210,7 +212,9 @@ public final class TheFloodConfig {
                 20.0,
                 2.0,
                 1.25,
-                0.15
+                0.15,
+                100.0,
+                40.0
         );
 
         spider = new StandardMob(
@@ -221,7 +225,9 @@ public final class TheFloodConfig {
                 16.0,
                 2.0,
                 1.25,
-                0.20
+                0.20,
+                40.0,
+                40.0
         );
 
         creeper = new StandardMob(
@@ -232,6 +238,8 @@ public final class TheFloodConfig {
                 20.0,
                 0.0,
                 1.5,
+                0.0,
+                60.0,
                 0.0
         );
 
@@ -243,16 +251,18 @@ public final class TheFloodConfig {
                 40.0,
                 7.0,
                 2.0,
-                0.30
+                0.30,
+                200.0,
+                50.0
         );
 
             warden = new WardenMob(
                     builder,
-                    35,
-                    1,
-                    80.0,
-                    8.0,
-                    0.25
+                    35, //Unlock day
+                    1, //Default spawn weight
+                    80.0, //Base health
+                    10.0, //Base damage
+                    0.25 //Base movement speed
             );
 
             builder.pop();
@@ -279,7 +289,9 @@ public final class TheFloodConfig {
             double defaultBaseHealth,
             double defaultBaseDamage,
             double defaultHealthPerDay,
-            double defaultDamagePerDay
+            double defaultDamagePerDay,
+            double defaultMaximumHealth,
+            double defaultMaximumDamage
         ) {
                 builder.push(mobName);
 
@@ -304,7 +316,7 @@ public final class TheFloodConfig {
                                 "Maximum health this mob can reach.",
                                 "Set very high if you do not want a practical cap."
                         )
-                        .defineInRange("maximumHealth", 500.0, 1.0, 100_000.0);
+                        .defineInRange("maximumHealth", defaultMaximumHealth, 1.0, 100_000.0);
 
                 baseDamage = builder
                         .comment("Attack damage this mob has on its unlock day.")
@@ -319,7 +331,7 @@ public final class TheFloodConfig {
                                 "Maximum attack damage this mob can reach.",
                                 "Set very high if you do not want a practical cap."
                         )
-                        .defineInRange("maximumDamage", 50.0, 0.0, 10_000.0);
+                        .defineInRange("maximumDamage", defaultMaximumDamage, 0.0, 10_000.0);
 
                 builder.pop();
         }
