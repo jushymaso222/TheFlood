@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.LightLayer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,9 +124,9 @@ public class SpawnDirector {
     }
 
     private static void nerfFloodWarden(Mob mob) {
-        double health = TheFloodConfig.MOBS.warden.health.get();
-        double damage = TheFloodConfig.MOBS.warden.damage.get();
-        double speed = TheFloodConfig.MOBS.warden.movementSpeed.get();
+        double health = TheFloodConfig.MOBS.warden.baseHealth.get();
+        double damage = TheFloodConfig.MOBS.warden.baseDamage.get();
+        // double speed = TheFloodConfig.MOBS.warden.movementSpeed.get();
 
         if (mob.getAttribute(Attributes.MAX_HEALTH) != null) {
             mob.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
@@ -136,9 +137,9 @@ public class SpawnDirector {
             mob.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(damage);
         }
 
-        if (mob.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            mob.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
-        }
+        // if (mob.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
+        //     mob.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+        // }
     }
 
     private static void applyMobCombatScaling(Mob mob, int currentDay) {
@@ -261,6 +262,12 @@ public class SpawnDirector {
         if (!level.getBlockState(pos).isAir()) return false;
         if (!level.getBlockState(pos.above()).isAir()) return false;
         if (level.getBlockState(pos.below()).is(Blocks.BEDROCK)) return false;
+
+        int blockLight = level.getBrightness(LightLayer.BLOCK, pos);
+        int maximumBlockLight = TheFloodConfig.SPAWNING.maximumSpawnBlockLight.get();
+        if (blockLight > maximumBlockLight) {
+            return false;
+        }
 
         return true;
     }

@@ -31,8 +31,11 @@ public class HordeDirector {
 
     private static void tickMiniHordes(ServerLevel level, int day, long timeOfDay) {
         // Optional: avoid mini hordes during day 1 and during blood moon.
+        int defaultMiniHordeChance = TheFloodConfig.HORDES.miniHordeChance.get();
+        double adjustedMiniHordeChance = defaultMiniHordeChance - (day * TheFloodConfig.HORDES.miniHordeIncreaseRate.get());
+
         for (ServerPlayer player : level.players()) {
-            if (RANDOM.nextInt(TheFloodConfig.HORDES.miniHordeChance.get()) == 0) {
+            if (RANDOM.nextInt((int) adjustedMiniHordeChance) == 0) {
                 int size = randomBetween(
                         TheFloodConfig.HORDES.miniHordeMinSize.get(),
                         TheFloodConfig.HORDES.miniHordeMaxSize.get()

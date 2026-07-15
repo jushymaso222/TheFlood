@@ -60,6 +60,7 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.DoubleValue spawnAttemptsPerDay;
         public final ForgeConfigSpec.IntValue spawnRollChance;
         public final ForgeConfigSpec.DoubleValue spawnWeightScalingFactor;
+        public final ForgeConfigSpec.IntValue maximumSpawnBlockLight;
 
         private SpawnSettings(ForgeConfigSpec.Builder builder) {
             builder.push("spawning");
@@ -103,6 +104,14 @@ public final class TheFloodConfig {
                     )
                     .defineInRange("spawnWeightScalingFactor", 3.0, 0.0, 20.0);
 
+            maximumSpawnBlockLight = builder
+                    .comment(
+                            "Highest artificial block-light level where Flood mobs may spawn.",
+                            "This ignores sunlight and skylight.",
+                            "Set to 0 to prevent spawning mobs anywhere reached by artificial light."
+                    )
+                    .defineInRange("maximumSpawnBlockLight", 0, 0, 15);
+
             builder.pop();
         }
     }
@@ -119,6 +128,8 @@ public final class TheFloodConfig {
 
         public final ForgeConfigSpec.DoubleValue miniHordeFollowRange;
         public final ForgeConfigSpec.DoubleValue bloodMoonFollowRange;
+
+        public final ForgeConfigSpec.DoubleValue miniHordeIncreaseRate;
 
         public final ForgeConfigSpec.IntValue hordeClumpRadius;
 
@@ -145,6 +156,13 @@ public final class TheFloodConfig {
             miniHordeFollowRange = builder
                     .comment("Follow range assigned to mini-horde mobs.")
                     .defineInRange("followRange", 80.0, 16.0, 256.0);
+
+            miniHordeIncreaseRate = builder
+                    .comment(
+                            "How much the chance of a mini-horde to spawn increases per day.",
+                            "Higher values makes mini-horde chance increase faster."
+                    )
+                    .defineInRange("miniHordeIncreaseRate", 10.0, 1.0, 400.0);
 
             builder.pop();
 
@@ -186,7 +204,7 @@ public final class TheFloodConfig {
         public final StandardMob spider;
         public final StandardMob creeper;
         public final StandardMob enderman;
-        public final WardenMob warden;
+        public final StandardMob warden;
 
         private MobSettings(ForgeConfigSpec.Builder builder) {
             builder.push("mobs");
@@ -256,14 +274,19 @@ public final class TheFloodConfig {
                 50.0
         );
 
-            warden = new WardenMob(
-                    builder,
-                    35, //Unlock day
-                    1, //Default spawn weight
-                    80.0, //Base health
-                    10.0, //Base damage
-                    0.25 //Base movement speed
-            );
+        warden = new StandardMob(
+                builder,
+                "warden",
+                35, //Unlock day
+                1, //Default spawn weight
+                80.0, //Base health
+                10.0, //Base damage
+                0.0,
+                0.0,
+                80.0,
+                10.0
+
+        );
 
             builder.pop();
         }
@@ -341,16 +364,16 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.IntValue unlockDay;
         public final ForgeConfigSpec.IntValue baseSpawnWeight;
 
-        public final ForgeConfigSpec.DoubleValue health;
-        public final ForgeConfigSpec.DoubleValue damage;
+        public final ForgeConfigSpec.DoubleValue baseHealth;
+        public final ForgeConfigSpec.DoubleValue baseDamage;
         public final ForgeConfigSpec.DoubleValue movementSpeed;
 
         private WardenMob(
                 ForgeConfigSpec.Builder builder,
                 int defaultUnlockDay,
                 int defaultSpawnWeight,
-                double defaultHealth,
-                double defaultDamage,
+                double defaultBaseHealth,
+                double defaultBaseDamage,
                 double defaultMovementSpeed
         ) {
             builder.push("warden");
@@ -363,13 +386,13 @@ public final class TheFloodConfig {
                     .comment("The Flood Warden's initial selection weight.")
                     .defineInRange("baseSpawnWeight", defaultSpawnWeight, 0, 10_000);
 
-            health = builder
+            baseHealth = builder
                     .comment("Maximum health of Flood Wardens.")
-                    .defineInRange("health", defaultHealth, 1.0, 1000.0);
+                    .defineInRange("health", defaultBaseHealth, 1.0, 1000.0);
 
-            damage = builder
+            baseDamage = builder
                     .comment("Attack damage of Flood Wardens.")
-                    .defineInRange("damage", defaultDamage, 0.0, 100.0);
+                    .defineInRange("damage", defaultBaseDamage, 0.0, 100.0);
 
             movementSpeed = builder
                     .comment("Movement speed of Flood Wardens.")
