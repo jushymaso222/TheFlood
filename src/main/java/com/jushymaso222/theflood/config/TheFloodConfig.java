@@ -83,7 +83,7 @@ public final class TheFloodConfig {
 
             baseSpawnAttempts = builder
                     .comment("Base spawn attempts per player per server tick.")
-                    .defineInRange("baseSpawnAttempts", 4, 0, 100);
+                    .defineInRange("baseSpawnAttempts", 2, 0, 100);
 
             spawnAttemptsPerDay = builder
                     .comment("Additional spawn attempts gained for each day survived.")
@@ -95,7 +95,7 @@ public final class TheFloodConfig {
                             "Lower values create more frequent spawns.",
                             "Example: 40 means each attempt has a 1-in-40 chance."
                     )
-                    .defineInRange("spawnRollChance", 40, 1, 10000);
+                    .defineInRange("spawnRollChance", 100, 1, 10000);
 
             spawnWeightScalingFactor = builder
                     .comment(
@@ -143,7 +143,7 @@ public final class TheFloodConfig {
                             "Chance denominator per player per server tick.",
                             "Higher values make mini-hordes rarer."
                     )
-                    .defineInRange("chance", 2000, 1, 1_000_000);
+                    .defineInRange("chance", 4000, 1, 1_000_000);
 
             miniHordeMinSize = builder
                     .comment("Minimum number of mobs in a mini-horde.")
