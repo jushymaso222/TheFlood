@@ -143,7 +143,7 @@ public final class TheFloodConfig {
                             "Chance denominator per player per server tick.",
                             "Higher values make mini-hordes rarer."
                     )
-                    .defineInRange("chance", 4000, 1, 1_000_000);
+                    .defineInRange("chance", 10000, 1, 1_000_000);
 
             miniHordeMinSize = builder
                     .comment("Minimum number of mobs in a mini-horde.")
