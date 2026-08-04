@@ -56,11 +56,30 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.IntValue minSpawnDistanceFromPlayer;
         public final ForgeConfigSpec.IntValue maxSpawnDistanceFromPlayer;
 
-        public final ForgeConfigSpec.IntValue baseSpawnAttempts;
-        public final ForgeConfigSpec.DoubleValue spawnAttemptsPerDay;
-        public final ForgeConfigSpec.IntValue spawnRollChance;
+        // public final ForgeConfigSpec.IntValue baseSpawnAttempts;
+        // public final ForgeConfigSpec.DoubleValue spawnAttemptsPerDay;
+        // public final ForgeConfigSpec.IntValue spawnRollChance;
         public final ForgeConfigSpec.DoubleValue spawnWeightScalingFactor;
         public final ForgeConfigSpec.IntValue maximumSpawnBlockLight;
+
+        public final ForgeConfigSpec.IntValue earlyGameSpawnCooldownMinSeconds;
+        public final ForgeConfigSpec.IntValue earlyGameSpawnCooldownMaxSeconds;
+
+        public final ForgeConfigSpec.IntValue lateGameSpawnCooldownMinSeconds;
+        public final ForgeConfigSpec.IntValue lateGameSpawnCooldownMaxSeconds;
+
+        public final ForgeConfigSpec.IntValue spawnCooldownScalingDays;
+        public final ForgeConfigSpec.DoubleValue undergroundSpawnCooldownMultiplier;
+        public final ForgeConfigSpec.IntValue maximumVerticalSpawnDistance;
+
+        public final ForgeConfigSpec.IntValue startingAmbientPopulation;
+        public final ForgeConfigSpec.DoubleValue ambientPopulationPerDay;
+        public final ForgeConfigSpec.IntValue maximumAmbientPopulation;
+
+        public final ForgeConfigSpec.DoubleValue undergroundPopulationMultiplier;
+
+        public final ForgeConfigSpec.IntValue ambientRefillMinSeconds;
+        public final ForgeConfigSpec.IntValue ambientRefillMaxSeconds;
 
         private SpawnSettings(ForgeConfigSpec.Builder builder) {
             builder.push("spawning");
@@ -71,7 +90,7 @@ public final class TheFloodConfig {
 
             hostileMobCapPerPlayer = builder
                     .comment("Maximum hostile mobs allowed near each player outside blood moons.")
-                    .defineInRange("hostileMobCapPerPlayer", 50, 0, 500);
+                    .defineInRange("hostileMobCapPerPlayer", 24, 0, 500);
 
             minSpawnDistanceFromPlayer = builder
                     .comment("Minimum distance from a player for Flood-controlled spawns.")
@@ -81,21 +100,58 @@ public final class TheFloodConfig {
                     .comment("Maximum distance from a player for Flood-controlled spawns.")
                     .defineInRange("maxSpawnDistanceFromPlayer", 72, 1, 512);
 
-            baseSpawnAttempts = builder
-                    .comment("Base spawn attempts per player per server tick.")
-                    .defineInRange("baseSpawnAttempts", 2, 0, 100);
+            earlyGameSpawnCooldownMinSeconds = builder
+                    .comment("Minimum seconds between normal spawn attempts during early progression.")
+                    .defineInRange("earlyGameSpawnCooldownMinSeconds", 8, 1, 600);
 
-            spawnAttemptsPerDay = builder
-                    .comment("Additional spawn attempts gained for each day survived.")
-                    .defineInRange("spawnAttemptsPerDay", 0.75, 0.0, 20.0);
+            earlyGameSpawnCooldownMaxSeconds = builder
+                    .comment("Maximum seconds between normal spawn attempts during early progression.")
+                    .defineInRange("earlyGameSpawnCooldownMaxSeconds", 14, 1, 600);
 
-            spawnRollChance = builder
+            lateGameSpawnCooldownMinSeconds = builder
+                    .comment("Minimum seconds between normal spawn attempts at maximum spawn scaling.")
+                    .defineInRange("lateGameSpawnCooldownMinSeconds", 2, 1, 600);
+
+            lateGameSpawnCooldownMaxSeconds = builder
+                    .comment("Maximum seconds between normal spawn attempts at maximum spawn scaling.")
+                    .defineInRange("lateGameSpawnCooldownMaxSeconds", 5, 1, 600);
+
+            spawnCooldownScalingDays = builder
                     .comment(
-                            "Chance denominator for each attempt.",
-                            "Lower values create more frequent spawns.",
-                            "Example: 40 means each attempt has a 1-in-40 chance."
+                            "Number of days required for normal spawning to reach its fastest configured cooldown.",
+                            "After this day, spawning remains at the late-game cooldown."
                     )
-                    .defineInRange("spawnRollChance", 100, 1, 10000);
+                    .defineInRange("spawnCooldownScalingDays", 50, 1, 100_000);
+
+            undergroundSpawnCooldownMultiplier = builder
+                    .comment(
+                            "Multiplier applied to normal spawn cooldowns while a player is underground.",
+                            "Higher values make underground spawning less frequent."
+                    )
+                    .defineInRange("undergroundSpawnCooldownMultiplier", 4.0, 1.0, 100.0);
+
+            maximumVerticalSpawnDistance = builder
+                    .comment(
+                            "Maximum vertical distance between a player and a normal Flood spawn.",
+                            "Prevents surface mobs from accumulating far above underground players."
+                    )
+                    .defineInRange("maximumVerticalSpawnDistance", 24, 1, 256);
+
+        //     baseSpawnAttempts = builder
+        //             .comment("Base spawn attempts per player per server tick.")
+        //             .defineInRange("baseSpawnAttempts", 2, 0, 100);
+
+        //     spawnAttemptsPerDay = builder
+        //             .comment("Additional spawn attempts gained for each day survived.")
+        //             .defineInRange("spawnAttemptsPerDay", 0.75, 0.0, 20.0);
+
+        //     spawnRollChance = builder
+        //             .comment(
+        //                     "Chance denominator for each attempt.",
+        //                     "Lower values create more frequent spawns.",
+        //                     "Example: 40 means each attempt has a 1-in-40 chance."
+        //             )
+        //             .defineInRange("spawnRollChance", 100, 1, 10000);
 
             spawnWeightScalingFactor = builder
                     .comment(
@@ -112,6 +168,39 @@ public final class TheFloodConfig {
                     )
                     .defineInRange("maximumSpawnBlockLight", 0, 0, 15);
 
+            startingAmbientPopulation = builder
+                    .comment(
+                        "Target number of normal Flood mobs near each player",
+                        "when zombies first unlock."
+                    )
+                    .defineInRange("startingAmbientPopulation", 2, 0, 100);
+
+            ambientPopulationPerDay = builder
+                    .comment(
+                        "Additional target ambient population per day after zombies unlock.",
+                        "Example: 0.35 adds roughly one additional mob every three days."
+                    )
+                    .defineInRange("ambientPopulationPerDay", 0.35, 0.0, 20.0);
+
+            maximumAmbientPopulation = builder
+                    .comment("Maximum target population for normal, non-horde Flood mobs.")
+                    .defineInRange("maximumAmbientPopulation", 20, 0, 500);
+
+            undergroundPopulationMultiplier = builder
+                    .comment(
+                        "Multiplier applied to the ambient population target underground.",
+                        "0.5 means caves maintain half the normal number of mobs."
+                    )
+                    .defineInRange("undergroundPopulationMultiplier", 0.5, 0.0, 1.0);
+
+            ambientRefillMinSeconds = builder
+                    .comment("Minimum delay before replacing a missing ambient mob.")
+                    .defineInRange("ambientRefillMinSeconds", 12, 1, 600);
+
+            ambientRefillMaxSeconds = builder
+                    .comment("Maximum delay before replacing a missing ambient mob.")
+                    .defineInRange("ambientRefillMaxSeconds", 20, 1, 600);
+
             builder.pop();
         }
     }
@@ -121,7 +210,6 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.IntValue miniHordeMinSize;
         public final ForgeConfigSpec.IntValue miniHordeMaxSize;
 
-        public final ForgeConfigSpec.IntValue bloodMoonMobCapPerPlayer;
         public final ForgeConfigSpec.IntValue bloodMoonWaveIntervalSeconds;
         public final ForgeConfigSpec.IntValue bloodMoonWaveMinSize;
         public final ForgeConfigSpec.IntValue bloodMoonWaveMaxSize;
@@ -130,6 +218,21 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.DoubleValue bloodMoonFollowRange;
 
         public final ForgeConfigSpec.DoubleValue miniHordeIncreaseRate;
+
+        public final ForgeConfigSpec.IntValue miniHordeEarliestDay;
+        public final ForgeConfigSpec.IntValue miniHordeBaseCooldownMinutes;
+        public final ForgeConfigSpec.IntValue miniHordeMinimumCooldownMinutes;
+        public final ForgeConfigSpec.IntValue miniHordeScalingDays;
+
+        public final ForgeConfigSpec.IntValue bloodMoonBaseTotalMobsPerPlayer;
+        public final ForgeConfigSpec.IntValue bloodMoonTotalMobIncreasePerMoon;
+        public final ForgeConfigSpec.IntValue bloodMoonMaximumTotalMobsPerPlayer;
+
+        public final ForgeConfigSpec.IntValue bloodMoonBaseActiveCapPerPlayer;
+        public final ForgeConfigSpec.IntValue bloodMoonActiveCapIncreasePerMoon;
+        public final ForgeConfigSpec.IntValue bloodMoonMaximumActiveCapPerPlayer;
+
+        public final ForgeConfigSpec.DoubleValue bloodMoonRefillThreshold;
 
         public final ForgeConfigSpec.IntValue hordeClumpRadius;
 
@@ -157,6 +260,28 @@ public final class TheFloodConfig {
                     .comment("Follow range assigned to mini-horde mobs.")
                     .defineInRange("followRange", 80.0, 16.0, 256.0);
 
+            miniHordeEarliestDay = builder
+                    .comment("First day on which mini-hordes are allowed.")
+                    .defineInRange("earliestDay", 3, 1, 100_000);
+
+            miniHordeBaseCooldownMinutes = builder
+                    .comment(
+                            "Approximate cooldown between mini-horde opportunities early in progression."
+                    )
+                    .defineInRange("baseCooldownMinutes", 25, 1, 10_000);
+
+            miniHordeMinimumCooldownMinutes = builder
+                    .comment(
+                            "Shortest possible mini-horde cooldown after full scaling."
+                    )
+                    .defineInRange("minimumCooldownMinutes", 6, 1, 10_000);
+
+            miniHordeScalingDays = builder
+                    .comment(
+                            "Days required for mini-hordes to reach their minimum cooldown."
+                    )
+                    .defineInRange("scalingDays", 60, 1, 100_000);
+
             miniHordeIncreaseRate = builder
                     .comment(
                             "How much the chance of a mini-horde to spawn increases per day.",
@@ -168,9 +293,36 @@ public final class TheFloodConfig {
 
             builder.push("bloodMoon");
 
-            bloodMoonMobCapPerPlayer = builder
-                    .comment("Maximum hostile mobs near each player during a blood moon.")
-                    .defineInRange("mobCapPerPlayer", 64, 1, 500);
+            bloodMoonBaseTotalMobsPerPlayer = builder
+                        .comment("Total mobs allowed to spawn for each player during the first Blood Moon.")
+                        .defineInRange("baseTotalMobsPerPlayer", 45, 1, 10_000);
+
+                bloodMoonTotalMobIncreasePerMoon = builder
+                        .comment("Additional total mobs added for each later Blood Moon.")
+                        .defineInRange("totalMobIncreasePerMoon", 15, 0, 1_000);
+
+                bloodMoonMaximumTotalMobsPerPlayer = builder
+                        .comment("Maximum total mobs that can spawn per player during one Blood Moon.")
+                        .defineInRange("maximumTotalMobsPerPlayer", 180, 1, 10_000);
+
+                bloodMoonBaseActiveCapPerPlayer = builder
+                        .comment("Maximum active mobs near each player during the first Blood Moon.")
+                        .defineInRange("baseActiveCapPerPlayer", 14, 1, 500);
+
+                bloodMoonActiveCapIncreasePerMoon = builder
+                        .comment("Active mob-cap increase for each later Blood Moon.")
+                        .defineInRange("activeCapIncreasePerMoon", 3, 0, 100);
+
+                bloodMoonMaximumActiveCapPerPlayer = builder
+                        .comment("Maximum active Blood Moon mob cap per player.")
+                        .defineInRange("maximumActiveCapPerPlayer", 36, 1, 500);
+
+                bloodMoonRefillThreshold = builder
+                        .comment(
+                                "Fraction of the active cap below which another wave may spawn.",
+                                "Example: 0.5 means waves refill after population falls below half the cap."
+                        )
+                        .defineInRange("refillThreshold", 0.5, 0.0, 1.0);
 
             bloodMoonWaveIntervalSeconds = builder
                     .comment("Real-world seconds between blood moon waves.")

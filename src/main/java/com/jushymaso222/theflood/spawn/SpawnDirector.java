@@ -15,6 +15,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.LightLayer;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -22,26 +26,258 @@ import java.util.Random;
 public class SpawnDirector {
 
     private static final Random RANDOM = new Random();
+    private static final Map<UUID, Long> NEXT_AMBIENT_REFILL_TIME =
+        new HashMap<>();
+
+    private static final String FLOOD_CONTROLLED_TAG = "theflood_controlled";
+    private static final String FLOOD_SPAWN_KIND_TAG = "theflood_spawn_kind";
+
+    private static final String SPAWN_KIND_AMBIENT = "ambient";
+    private static final String SPAWN_KIND_MINI_HORDE = "mini_horde";
+    private static final String SPAWN_KIND_BLOOD_MOON = "blood_moon"; 
 
     public static void tick(ServerLevel level) {
-        if (level.dimension() != Level.OVERWORLD) return;
+        if (level.dimension() != Level.OVERWORLD) {
+            return;
+        }
 
         int day = getDay(level);
-        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) return;
 
-        int baseAttempts = TheFloodConfig.SPAWNING.baseSpawnAttempts.get();
-        double attemptsPerDay = TheFloodConfig.SPAWNING.spawnAttemptsPerDay.get();
-        int attempts = baseAttempts + (int) Math.floor((day - 1) * attemptsPerDay);
+        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) {
+            return;
+        }
 
-        int spawnRoll = TheFloodConfig.SPAWNING.spawnRollChance.get();
+        // Blood Moon spawning belongs entirely to HordeDirector.
+        if (isBloodMoon(level)) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
 
         for (ServerPlayer player : level.players()) {
-            for (int i = 0; i < attempts; i++) {
-                if (RANDOM.nextInt(spawnRoll) == 0) {
-                    trySpawnNearPlayer(level, player, day, false, false);
-                }
+            int targetPopulation =
+                    calculateAmbientPopulationTarget(level, player, day);
+
+            int currentPopulation =
+                    countFloodMobsNearPlayer(level, player);
+
+            /*
+            * Existing mini-horde and Blood Moon mobs count toward current
+            * pressure. This prevents the ambient system from replacing enemies
+            * while the player is already dealing with an event.
+            */
+            if (currentPopulation >= targetPopulation) {
+                continue;
             }
+
+            UUID playerId = player.getUUID();
+
+            long nextRefillTime = NEXT_AMBIENT_REFILL_TIME.getOrDefault(
+                    playerId,
+                    gameTime
+            );
+
+            if (gameTime < nextRefillTime) {
+                continue;
+            }
+
+            /*
+            * Spawn only one replacement at a time. Never fill the entire
+            * missing population in one tick.
+            */
+            trySpawnNearPlayer(
+                    level,
+                    player,
+                    day,
+                    false,
+                    false
+            );
+
+            NEXT_AMBIENT_REFILL_TIME.put(
+                    playerId,
+                    gameTime + calculateAmbientRefillDelayTicks()
+            );
         }
+
+        removeOfflinePlayerTimers(level);
+    }
+
+    public static int countFloodMobsNearPlayer(
+            ServerLevel level,
+            ServerPlayer player
+    ) {
+        int radius =
+                TheFloodConfig.SPAWNING.maxSpawnDistanceFromPlayer.get();
+
+        AABB area = player.getBoundingBox().inflate(radius);
+
+        return level.getEntitiesOfClass(
+                Monster.class,
+                area,
+                mob -> mob.isAlive()
+                        && !mob.isRemoved()
+                        && mob.getPersistentData()
+                                .getBoolean(FLOOD_CONTROLLED_TAG)
+        ).size();
+    }
+
+    private static long calculateAmbientRefillDelayTicks() {
+        int minimumSeconds =
+                TheFloodConfig.SPAWNING.ambientRefillMinSeconds.get();
+
+        int maximumSeconds =
+                TheFloodConfig.SPAWNING.ambientRefillMaxSeconds.get();
+
+        if (maximumSeconds < minimumSeconds) {
+            maximumSeconds = minimumSeconds;
+        }
+
+        int selectedSeconds = minimumSeconds;
+
+        if (maximumSeconds > minimumSeconds) {
+            selectedSeconds += RANDOM.nextInt(
+                    maximumSeconds - minimumSeconds + 1
+            );
+        }
+
+        return selectedSeconds * 20L;
+    }
+
+    private static int calculateAmbientPopulationTarget(
+            ServerLevel level,
+            ServerPlayer player,
+            int currentDay
+    ) {
+        int firstHostileDay =
+                TheFloodConfig.MOBS.zombie.unlockDay.get();
+
+        int daysSinceHostilesStarted = Math.max(
+                0,
+                currentDay - firstHostileDay
+        );
+
+        int startingPopulation =
+                TheFloodConfig.SPAWNING.startingAmbientPopulation.get();
+
+        double populationPerDay =
+                TheFloodConfig.SPAWNING.ambientPopulationPerDay.get();
+
+        int maximumPopulation =
+                TheFloodConfig.SPAWNING.maximumAmbientPopulation.get();
+
+        int target = startingPopulation
+                + (int) Math.floor(
+                        daysSinceHostilesStarted * populationPerDay
+                );
+
+        target = Math.min(target, maximumPopulation);
+
+        if (isPlayerUnderground(level, player)) {
+            double undergroundMultiplier =
+                    TheFloodConfig.SPAWNING
+                            .undergroundPopulationMultiplier
+                            .get();
+
+            target = (int) Math.floor(
+                    target * undergroundMultiplier
+            );
+        }
+
+        return Math.max(0, target);
+    }
+
+    private static long calculateNormalSpawnCooldownTicks(
+            ServerLevel level,
+            ServerPlayer player,
+            int currentDay
+    ) {
+        int firstHostileDay =
+                TheFloodConfig.MOBS.zombie.unlockDay.get();
+
+        int scalingDays =
+                TheFloodConfig.SPAWNING.spawnCooldownScalingDays.get();
+
+        int daysSinceHostilesStarted =
+                Math.max(0, currentDay - firstHostileDay);
+
+        double progression = Math.min(
+                1.0,
+                daysSinceHostilesStarted / (double) scalingDays
+        );
+
+        int earlyMin =
+                TheFloodConfig.SPAWNING.earlyGameSpawnCooldownMinSeconds.get();
+
+        int earlyMax =
+                TheFloodConfig.SPAWNING.earlyGameSpawnCooldownMaxSeconds.get();
+
+        int lateMin =
+                TheFloodConfig.SPAWNING.lateGameSpawnCooldownMinSeconds.get();
+
+        int lateMax =
+                TheFloodConfig.SPAWNING.lateGameSpawnCooldownMaxSeconds.get();
+
+        double minimumSeconds = lerp(
+                earlyMin,
+                lateMin,
+                progression
+        );
+
+        double maximumSeconds = lerp(
+                earlyMax,
+                lateMax,
+                progression
+        );
+
+        double selectedSeconds = minimumSeconds
+                + RANDOM.nextDouble()
+                * Math.max(0.0, maximumSeconds - minimumSeconds);
+
+        if (isPlayerUnderground(level, player)) {
+            selectedSeconds *=
+                    TheFloodConfig.SPAWNING
+                            .undergroundSpawnCooldownMultiplier
+                            .get();
+        }
+
+        return Math.max(
+                20L,
+                Math.round(selectedSeconds * 20.0)
+        );
+    }
+
+    private static double lerp(
+                double start,
+                double end,
+                double progress
+        ) {
+            return start + ((end - start) * progress);
+        }
+
+    private static boolean isPlayerUnderground(
+            ServerLevel level,
+            ServerPlayer player
+    ) {
+        BlockPos playerPos = player.blockPosition();
+
+        int surfaceY = level.getHeightmapPos(
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                playerPos
+        ).getY();
+
+        /*
+        * Requiring a meaningful gap avoids treating a player beneath
+        * a small roof or tree as underground.
+        */
+        return surfaceY - playerPos.getY() >= 12;
+    }
+
+    private static void removeOfflinePlayerTimers(ServerLevel level) {
+        NEXT_AMBIENT_REFILL_TIME.keySet().removeIf(
+                uuid -> level.getServer()
+                        .getPlayerList()
+                        .getPlayer(uuid) == null
+        );
     }
 
     public static void trySpawnNearPlayer(
@@ -51,11 +287,9 @@ public class SpawnDirector {
             boolean isHordeMob,
             boolean isBloodMoonMob
     ) {
-        int mobCap = isBloodMoon(level)
-                ? TheFloodConfig.HORDES.bloodMoonMobCapPerPlayer.get()
-                : TheFloodConfig.SPAWNING.hostileMobCapPerPlayer.get();
+        int mobCap = TheFloodConfig.SPAWNING.hostileMobCapPerPlayer.get();
 
-        if (mobCap <= 0 || countHostileMobsNearPlayer(level, player) >= mobCap) {
+        if (mobCap <= 0 || countFloodMobsNearPlayer(level, player) >= mobCap) {
             return;
         }
 
@@ -87,6 +321,17 @@ public class SpawnDirector {
                     new BlockPos(x, player.blockPosition().getY(), z)
             );
 
+            int maximumVerticalDistance =
+                    TheFloodConfig.SPAWNING.maximumVerticalSpawnDistance.get();
+
+            int verticalDistance = Math.abs(
+                    pos.getY() - player.blockPosition().getY()
+            );
+
+            if (verticalDistance > maximumVerticalDistance) {
+                continue;
+            }
+
             if (isValidSpawnPos(level, pos)) {
                 return pos;
             }
@@ -95,15 +340,24 @@ public class SpawnDirector {
         return null;
     }
 
-    public static void trySpawnNearPosition(
+    public static boolean trySpawnNearPosition(
             ServerLevel level,
             ServerPlayer targetPlayer,
             int day,
             BlockPos center,
             int radius,
             boolean isHordeMob,
-            boolean isBloodMoonMob
+            boolean isBloodMoonMob,
+            int activeCap
     ) {
+        if (activeCap <= 0) {
+            return false;
+        }
+
+        if (countFloodMobsNearPlayer(level, targetPlayer) >= activeCap) {
+            return false;
+        }
+
         for (int attempt = 0; attempt < 10; attempt++) {
             BlockPos pos = center.offset(
                     RANDOM.nextInt(radius * 2 + 1) - radius,
@@ -116,11 +370,23 @@ public class SpawnDirector {
                     pos
             );
 
-            if (!isValidSpawnPos(level, pos)) continue;
+            if (!isValidSpawnPos(level, pos)) {
+                continue;
+            }
 
-            spawnMobAt(level, targetPlayer, day, pos, isHordeMob, isBloodMoonMob);
-            return;
+            spawnMobAt(
+                    level,
+                    targetPlayer,
+                    day,
+                    pos,
+                    isHordeMob,
+                    isBloodMoonMob
+            );
+
+            return true;
         }
+
+        return false;
     }
 
     private static void nerfFloodWarden(Mob mob) {
@@ -219,6 +485,26 @@ public class SpawnDirector {
                 MobSpawnType.EVENT,
                 null,
                 null
+        );
+
+        mob.getPersistentData().putBoolean(
+                FLOOD_CONTROLLED_TAG,
+                true
+        );
+
+        String spawnKind;
+
+        if (isBloodMoonMob) {
+            spawnKind = SPAWN_KIND_BLOOD_MOON;
+        } else if (isHordeMob) {
+            spawnKind = SPAWN_KIND_MINI_HORDE;
+        } else {
+            spawnKind = SPAWN_KIND_AMBIENT;
+        }
+
+        mob.getPersistentData().putString(
+                FLOOD_SPAWN_KIND_TAG,
+                spawnKind
         );
 
         if (isHordeMob) {
