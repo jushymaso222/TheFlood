@@ -12,6 +12,8 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.jushymaso222.theflood.scaling.MobScaling;
+
 import java.util.List;
 
 @Mod.EventBusSubscriber(
@@ -476,8 +478,15 @@ public final class FloodProgressOverlay {
             return;
         }
 
-        double health = calculateHealth(mob.config(), currentDay);
-        double damage = calculateDamage(mob.config(), currentDay);
+        double health = MobScaling.getEffectiveHealth(
+                mob.type(),
+                currentDay
+        );
+
+        double damage = MobScaling.getEffectiveDamage(
+                mob.type(),
+                currentDay
+        );
 
         String healthText =
                 "HP " + formatStat(health);
@@ -502,34 +511,6 @@ public final class FloodProgressOverlay {
         );
     }
 
-    private static double calculateHealth(
-            TheFloodConfig.StandardMob config,
-            int currentDay
-    ) {
-        int daysSinceUnlock =
-                Math.max(0, currentDay - config.unlockDay.get());
-
-        return Math.min(
-                config.maximumHealth.get(),
-                config.baseHealth.get()
-                        + daysSinceUnlock * config.healthPerDay.get()
-        );
-    }
-
-    private static double calculateDamage(
-            TheFloodConfig.StandardMob config,
-            int currentDay
-    ) {
-        int daysSinceUnlock =
-                Math.max(0, currentDay - config.unlockDay.get());
-
-        return Math.min(
-                config.maximumDamage.get(),
-                config.baseDamage.get()
-                        + daysSinceUnlock * config.damagePerDay.get()
-        );
-    }
-
     private static String formatStat(double value) {
         if (value == Math.floor(value)) {
             return Integer.toString((int) value);
@@ -543,47 +524,40 @@ public final class FloodProgressOverlay {
                 new MobProgress(
                         EntityType.ZOMBIE,
                         ZOMBIE_ICON,
-                        TheFloodConfig.MOBS.zombie.unlockDay.get(),
-                        TheFloodConfig.MOBS.zombie
+                        TheFloodConfig.MOBS.zombie.unlockDay.get()
                 ),
                 new MobProgress(
                         EntityType.SKELETON,
                         SKELETON_ICON,
-                        TheFloodConfig.MOBS.skeleton.unlockDay.get(),
-                        TheFloodConfig.MOBS.skeleton
+                        TheFloodConfig.MOBS.skeleton.unlockDay.get()
                 ),
                 new MobProgress(
                         EntityType.SPIDER,
                         SPIDER_ICON,
-                        TheFloodConfig.MOBS.spider.unlockDay.get(),
-                        TheFloodConfig.MOBS.spider
+                        TheFloodConfig.MOBS.spider.unlockDay.get()
                 ),
                 new MobProgress(
                         EntityType.CREEPER,
                         CREEPER_ICON,
-                        TheFloodConfig.MOBS.creeper.unlockDay.get(),
-                        TheFloodConfig.MOBS.creeper
+                        TheFloodConfig.MOBS.creeper.unlockDay.get()
                 ),
                 new MobProgress(
                         EntityType.ENDERMAN,
                         ENDERMAN_ICON,
-                        TheFloodConfig.MOBS.enderman.unlockDay.get(),
-                        TheFloodConfig.MOBS.enderman
+                        TheFloodConfig.MOBS.enderman.unlockDay.get()
                 ),
                 new MobProgress(
                         EntityType.WARDEN,
                         WARDEN_ICON,
-                        TheFloodConfig.MOBS.warden.unlockDay.get(),
-                        TheFloodConfig.MOBS.warden
+                        TheFloodConfig.MOBS.warden.unlockDay.get()
                 )
         );
     }
 
     private record MobProgress(
-            EntityType<?> type,
-            ResourceLocation icon,
-            int unlockDay,
-            TheFloodConfig.StandardMob config
+        EntityType<?> type,
+        ResourceLocation icon,
+        int unlockDay
     ) {
     }
 }

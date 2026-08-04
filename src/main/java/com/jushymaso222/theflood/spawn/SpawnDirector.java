@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import com.jushymaso222.theflood.scaling.MobScaling;
 
 public class SpawnDirector {
 
@@ -29,7 +30,7 @@ public class SpawnDirector {
     private static final Map<UUID, Long> NEXT_AMBIENT_REFILL_TIME =
         new HashMap<>();
 
-    private static final String FLOOD_CONTROLLED_TAG = "theflood_controlled";
+    public static final String FLOOD_CONTROLLED_TAG = "theflood_controlled";
     private static final String FLOOD_SPAWN_KIND_TAG = "theflood_spawn_kind";
 
     private static final String SPAWN_KIND_AMBIENT = "ambient";
@@ -389,69 +390,41 @@ public class SpawnDirector {
         return false;
     }
 
-    private static void nerfFloodWarden(Mob mob) {
-        double health = TheFloodConfig.MOBS.warden.baseHealth.get();
-        double damage = TheFloodConfig.MOBS.warden.baseDamage.get();
-        // double speed = TheFloodConfig.MOBS.warden.movementSpeed.get();
+    private static void applyFloodWardenSpeed(Mob mob) {
+        double speed = 0.25D;
 
-        if (mob.getAttribute(Attributes.MAX_HEALTH) != null) {
-            mob.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-            mob.setHealth((float) health);
+        var speedAttribute =
+                mob.getAttribute(Attributes.MOVEMENT_SPEED);
+
+        if (speedAttribute != null) {
+            speedAttribute.setBaseValue(speed);
         }
-
-        if (mob.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            mob.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(damage);
-        }
-
-        // if (mob.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-        //     mob.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
-        // }
     }
 
-    private static void applyMobCombatScaling(Mob mob, int currentDay) {
-        TheFloodConfig.StandardMob config;
-        EntityType<?> entityType = mob.getType();
+    private static void applyFixedMobAttributes(Mob mob) {
+        TheFloodConfig.StandardMob config =
+                MobScaling.getConfig(mob.getType());
 
-        if (entityType == EntityType.ZOMBIE) {
-            config = TheFloodConfig.MOBS.zombie;
-        } else if (entityType == EntityType.SKELETON) {
-            config = TheFloodConfig.MOBS.skeleton;
-        } else if (entityType == EntityType.SPIDER) {
-            config = TheFloodConfig.MOBS.spider;
-        } else if (entityType == EntityType.CREEPER) {
-            config = TheFloodConfig.MOBS.creeper;
-        } else if (entityType == EntityType.ENDERMAN) {
-            config = TheFloodConfig.MOBS.enderman;
-        } else {
+        if (config == null) {
             return;
         }
-        
+
         double baseHealth = config.baseHealth.get();
         double baseDamage = config.baseDamage.get();
-        double healthPerDay = config.healthPerDay.get();
-        double damagePerDay = config.damagePerDay.get();
-        double maximumHealth = config.maximumHealth.get();
-        double maximumDamage = config.maximumDamage.get();
 
-        int unlockDay = config.unlockDay.get();
-        int daysSinceUnlock = Math.max(0, currentDay - unlockDay);
+        var healthAttribute =
+                mob.getAttribute(Attributes.MAX_HEALTH);
 
-        double scaledHealth = Math.min(
-            maximumHealth,
-            baseHealth + (daysSinceUnlock * healthPerDay)
-        );
-        double scaledDamage = Math.min(
-            maximumDamage,
-            baseDamage + (daysSinceUnlock * damagePerDay)
-        );
-
-        if (mob.getAttribute(Attributes.MAX_HEALTH) != null) {
-            mob.getAttribute(Attributes.MAX_HEALTH).setBaseValue(scaledHealth);
-            mob.setHealth((float) scaledHealth);
+        if (healthAttribute != null) {
+            healthAttribute.setBaseValue(baseHealth);
+            mob.setHealth((float) baseHealth);
         }
 
-        if (mob.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            mob.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(scaledDamage);
+        var damageAttribute =
+                mob.getAttribute(Attributes.ATTACK_DAMAGE);
+
+        if (damageAttribute != null) {
+            damageAttribute.setBaseValue(baseDamage);
         }
     }
 
@@ -510,10 +483,10 @@ public class SpawnDirector {
         if (isHordeMob) {
             makeHordeMobAggressive(mob, player, isBloodMoonMob);
         }
+        applyFixedMobAttributes(mob);
+
         if (mob.getType() == EntityType.WARDEN) {
-            nerfFloodWarden(mob);
-        } else {
-            applyMobCombatScaling(mob, day);
+            applyFloodWardenSpeed(mob);
         }
 
         level.addFreshEntityWithPassengers(mob);
