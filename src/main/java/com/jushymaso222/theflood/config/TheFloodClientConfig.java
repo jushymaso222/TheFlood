@@ -11,10 +11,32 @@ public final class TheFloodClientConfig {
     public static final ForgeConfigSpec.IntValue HEAT_HUD_X_OFFSET;
     public static final ForgeConfigSpec.IntValue HEAT_HUD_Y_OFFSET;
 
+    public static final ForgeConfigSpec.DoubleValue HEAT_HUD_X;
+    public static final ForgeConfigSpec.DoubleValue HEAT_HUD_Y;
+
+    public static final ForgeConfigSpec.DoubleValue DAY_HUD_X;
+    public static final ForgeConfigSpec.DoubleValue DAY_HUD_Y;
+
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
         builder.push("heatHud");
+
+        HEAT_HUD_X = builder
+                .comment("Normalized horizontal position of the Heat HUD. 0.0 = left, 1.0 = right.")
+                .defineInRange("heatX", 0.95, 0.0, 1.0);
+
+        HEAT_HUD_Y = builder
+                .comment("Normalized vertical position of the Heat HUD. 0.0 = top, 1.0 = bottom.")
+                .defineInRange("heatY", 0.06, 0.0, 1.0);
+
+        DAY_HUD_X = builder
+                .comment("Normalized horizontal position of the Day HUD.")
+                .defineInRange("dayX", 0.50, 0.0, 1.0);
+
+        DAY_HUD_Y = builder
+                .comment("Normalized vertical position of the Day HUD.")
+                .defineInRange("dayY", 0.08, 0.0, 1.0);
 
         SHOW_HEAT_HUD = builder
                 .comment("Whether the Heat HUD is visible.")

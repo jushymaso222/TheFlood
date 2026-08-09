@@ -94,8 +94,7 @@ public final class FloodProgressOverlay {
             return;
         }
 
-        int currentDay =
-                (int) (minecraft.level.getDayTime() / 24_000L) + 1;
+        int currentHeat = ClientHeatData.getEffectiveHeat();
 
         List<MobProgress> mobs = createMobProgressList();
 
@@ -113,7 +112,7 @@ public final class FloodProgressOverlay {
                 graphics,
                 minecraft,
                 mobs,
-                currentDay,
+                currentHeat,
                 panelX,
                 panelY
         );
@@ -123,7 +122,7 @@ public final class FloodProgressOverlay {
             GuiGraphics graphics,
             Minecraft minecraft,
             List<MobProgress> mobs,
-            int currentDay,
+            int currentHeat,
             int panelX,
             int panelY
     ) {
@@ -172,7 +171,7 @@ public final class FloodProgressOverlay {
                 0xFF8A1C1C
         );
 
-        String title = "THE FLOOD — DAY " + currentDay;
+        String title = "THE FLOOD — HEAT " + currentHeat;
 
         graphics.drawCenteredString(
                 minecraft.font,
@@ -182,8 +181,8 @@ public final class FloodProgressOverlay {
                 0xFFFFFF
         );
 
-        String dangerLabel = getDangerLabel(mobs, currentDay);
-        int dangerColor = getDangerColor(mobs, currentDay);
+        String dangerLabel = getDangerLabel(mobs, currentHeat);
+        int dangerColor = getDangerColor(mobs, currentHeat);
 
         graphics.drawCenteredString(
                 minecraft.font,
@@ -200,7 +199,7 @@ public final class FloodProgressOverlay {
         drawProgressBar(
                 graphics,
                 mobs,
-                currentDay,
+                currentHeat,
                 barX,
                 barY,
                 barWidth
@@ -210,7 +209,7 @@ public final class FloodProgressOverlay {
                 graphics,
                 minecraft,
                 mobs,
-                currentDay,
+                currentHeat,
                 barX,
                 barY,
                 barWidth
@@ -220,7 +219,7 @@ public final class FloodProgressOverlay {
     private static void drawProgressBar(
             GuiGraphics graphics,
             List<MobProgress> mobs,
-            int currentDay,
+            int currentHeat,
             int x,
             int y,
             int width
@@ -245,10 +244,10 @@ public final class FloodProgressOverlay {
                 0xFF353535
         );
 
-        double progress = calculateDangerProgress(mobs, currentDay);
+        double progress = calculateDangerProgress(mobs, currentHeat);
         int filledWidth = (int) Math.round(width * progress);
 
-        int dangerColor = getDangerColor(mobs, currentDay);
+        int dangerColor = getDangerColor(mobs, currentHeat);
 
         if (filledWidth > 0) {
             graphics.fill(
@@ -285,9 +284,9 @@ public final class FloodProgressOverlay {
 
     private static String getDangerLabel(
             List<MobProgress> mobs,
-            int currentDay
+            int currentHeat
     ) {
-        int unlocked = countUnlockedMobs(mobs, currentDay);
+        int unlocked = countUnlockedMobs(mobs, currentHeat);
 
         return switch (unlocked) {
             case 0 -> "DANGER: DORMANT";
@@ -302,12 +301,12 @@ public final class FloodProgressOverlay {
 
     private static int countUnlockedMobs(
             List<MobProgress> mobs,
-            int currentDay
+            int currentHeat
     ) {
         int count = 0;
 
         for (MobProgress mob : mobs) {
-            if (currentDay >= mob.unlockDay()) {
+            if (currentHeat >= mob.unlockHeat()) {
                 count++;
             }
         }
@@ -317,9 +316,9 @@ public final class FloodProgressOverlay {
 
     private static int getDangerColor(
             List<MobProgress> mobs,
-            int currentDay
+            int currentHeat
     ) {
-        int unlocked = countUnlockedMobs(mobs, currentDay);
+        int unlocked = countUnlockedMobs(mobs, currentHeat);
 
         return switch (unlocked) {
             case 0 -> 0xFF6B7770;
@@ -333,81 +332,61 @@ public final class FloodProgressOverlay {
     }
 
     private static double calculateDangerProgress(
-            List<MobProgress> mobs,
-            int currentDay
-    ) {
+                List<MobProgress> mobs,
+                int currentHeat
+        ) {
         if (mobs.isEmpty()) {
-            return 0.0;
+                return 0.0;
         }
 
-        int unlockedCount = 0;
+        int finalUnlockHeat = mobs.stream()
+                .mapToInt(MobProgress::unlockHeat)
+                .max()
+                .orElse(1);
 
-        for (MobProgress mob : mobs) {
-            if (currentDay >= mob.unlockDay()) {
-                unlockedCount++;
-            }
+        if (finalUnlockHeat <= 0) {
+                return 0.0;
         }
 
-        if (unlockedCount >= mobs.size()) {
-            return 1.0;
+        return Math.max(
+                0.0,
+                Math.min(
+                        1.0,
+                        currentHeat / (double) finalUnlockHeat
+                )
+        );
         }
-
-        int previousUnlockDay = unlockedCount == 0
-                ? 1
-                : mobs.get(unlockedCount - 1).unlockDay();
-
-        int nextUnlockDay = mobs.get(unlockedCount).unlockDay();
-
-        double progressToNextUnlock;
-
-        if (nextUnlockDay <= previousUnlockDay) {
-            progressToNextUnlock = 1.0;
-        } else {
-            progressToNextUnlock =
-                    (currentDay - previousUnlockDay)
-                            / (double) (nextUnlockDay - previousUnlockDay);
-
-            progressToNextUnlock = Math.max(
-                    0.0,
-                    Math.min(1.0, progressToNextUnlock)
-            );
-        }
-
-        return (
-                unlockedCount + progressToNextUnlock
-        ) / mobs.size();
-    }
 
     private static void drawMobMarkers(
             GuiGraphics graphics,
             Minecraft minecraft,
             List<MobProgress> mobs,
-            int currentDay,
+            int currentHeat,
             int barX,
             int barY,
             int barWidth
     ) {
         int finalUnlockDay = mobs.stream()
-                .mapToInt(MobProgress::unlockDay)
+                .mapToInt(MobProgress::unlockHeat)
                 .max()
                 .orElse(1);
 
         for (MobProgress mob : mobs) {
             double location =
-                    mob.unlockDay() / (double) finalUnlockDay;
+                    mob.unlockHeat() / (double) finalUnlockDay;
 
             int centerX =
                     barX + (int) Math.round(barWidth * location);
 
             boolean unlocked =
-                    currentDay >= mob.unlockDay();
+                    currentHeat >= mob.unlockHeat();
 
             if (mob.type == EntityType.WARDEN) {
                 drawMobMarker(
                         graphics,
                         minecraft,
                         mob,
-                        currentDay,
+                        currentHeat,
                         centerX - 7,
                         barY,
                         unlocked
@@ -417,7 +396,7 @@ public final class FloodProgressOverlay {
                         graphics,
                         minecraft,
                         mob,
-                        currentDay,
+                        currentHeat,
                         centerX,
                         barY,
                         unlocked
@@ -430,7 +409,7 @@ public final class FloodProgressOverlay {
             GuiGraphics graphics,
             Minecraft minecraft,
             MobProgress mob,
-            int currentDay,
+            int currentHeat,
             int centerX,
             int barY,
             boolean unlocked
@@ -465,7 +444,7 @@ public final class FloodProgressOverlay {
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         if (!unlocked) {
-            String unlockText = "D" + mob.unlockDay();
+            String unlockText = "H" + mob.unlockHeat();
 
             graphics.drawCenteredString(
                     minecraft.font,
@@ -480,12 +459,12 @@ public final class FloodProgressOverlay {
 
         double health = MobScaling.getEffectiveHealth(
                 mob.type(),
-                currentDay
+                currentHeat
         );
 
         double damage = MobScaling.getEffectiveDamage(
                 mob.type(),
-                currentDay
+                currentHeat
         );
 
         String healthText =
@@ -511,6 +490,23 @@ public final class FloodProgressOverlay {
         );
     }
 
+    private static double getHeatBarPosition(
+                int heat,
+                int finalUnlockHeat
+    ) {
+        if (finalUnlockHeat <= 0) {
+                return 0.0;
+        }
+
+        return Math.max(
+                0.0,
+                Math.min(
+                        1.0,
+                        heat / (double) finalUnlockHeat
+                )
+        );
+    }
+
     private static String formatStat(double value) {
         if (value == Math.floor(value)) {
             return Integer.toString((int) value);
@@ -524,32 +520,32 @@ public final class FloodProgressOverlay {
                 new MobProgress(
                         EntityType.ZOMBIE,
                         ZOMBIE_ICON,
-                        TheFloodConfig.MOBS.zombie.unlockDay.get()
+                        TheFloodConfig.MOBS.zombie.unlockHeat.get()
                 ),
                 new MobProgress(
                         EntityType.SKELETON,
                         SKELETON_ICON,
-                        TheFloodConfig.MOBS.skeleton.unlockDay.get()
+                        TheFloodConfig.MOBS.skeleton.unlockHeat.get()
                 ),
                 new MobProgress(
                         EntityType.SPIDER,
                         SPIDER_ICON,
-                        TheFloodConfig.MOBS.spider.unlockDay.get()
+                        TheFloodConfig.MOBS.spider.unlockHeat.get()
                 ),
                 new MobProgress(
                         EntityType.CREEPER,
                         CREEPER_ICON,
-                        TheFloodConfig.MOBS.creeper.unlockDay.get()
+                        TheFloodConfig.MOBS.creeper.unlockHeat.get()
                 ),
                 new MobProgress(
                         EntityType.ENDERMAN,
                         ENDERMAN_ICON,
-                        TheFloodConfig.MOBS.enderman.unlockDay.get()
+                        TheFloodConfig.MOBS.enderman.unlockHeat.get()
                 ),
                 new MobProgress(
                         EntityType.WARDEN,
                         WARDEN_ICON,
-                        TheFloodConfig.MOBS.warden.unlockDay.get()
+                        TheFloodConfig.MOBS.warden.unlockHeat.get()
                 )
         );
     }
@@ -557,7 +553,7 @@ public final class FloodProgressOverlay {
     private record MobProgress(
         EntityType<?> type,
         ResourceLocation icon,
-        int unlockDay
+        int unlockHeat
     ) {
     }
 }

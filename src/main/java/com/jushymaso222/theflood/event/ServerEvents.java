@@ -66,7 +66,7 @@ public class ServerEvents {
     }
 
     private static void announceMobUnlocks(ServerLevel level, int day) {
-        if (day == TheFloodConfig.MOBS.zombie.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.zombie.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "The dead have begun to rise...",
@@ -74,7 +74,7 @@ public class ServerEvents {
             );
         }
 
-        if (day == TheFloodConfig.MOBS.skeleton.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.skeleton.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "You hear bones rattling in the distance...",
@@ -82,7 +82,7 @@ public class ServerEvents {
             );
         }
 
-        if (day == TheFloodConfig.MOBS.spider.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.spider.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "Something crawls through the darkness...",
@@ -90,7 +90,7 @@ public class ServerEvents {
             );
         }
 
-        if (day == TheFloodConfig.MOBS.creeper.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.creeper.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "A faint hissing echoes across the land...",
@@ -98,7 +98,7 @@ public class ServerEvents {
             );
         }
 
-        if (day == TheFloodConfig.MOBS.enderman.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.enderman.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "The space between worlds has begun to weaken...",
@@ -106,7 +106,7 @@ public class ServerEvents {
             );
         }
 
-        if (day == TheFloodConfig.MOBS.warden.unlockDay.get()) {
+        if (day == TheFloodConfig.MOBS.warden.unlockHeat.get()) {
             broadcastUnlockMessage(
                     level,
                     "Something ancient has awakened beneath the earth...",

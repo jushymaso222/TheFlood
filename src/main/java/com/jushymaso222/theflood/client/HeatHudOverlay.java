@@ -104,9 +104,7 @@ public final class HeatHudOverlay {
          * Later this will become:
          * ClientHeatData.getEffectiveHeat()
          */
-        int heat = (int) (
-                minecraft.level.getDayTime() / 24_000L
-        ) + 1;
+        int heat = ClientHeatData.getEffectiveHeat();
 
         String text = Integer.toString(heat);
 
@@ -116,35 +114,18 @@ public final class HeatHudOverlay {
         int yOffset =
                 TheFloodClientConfig.HEAT_HUD_Y_OFFSET.get();
 
-        int iconX;
-        int iconY;
+        int centerX = (int) Math.round(
+                screenWidth
+                        * TheFloodClientConfig.HEAT_HUD_X.get()
+        );
 
-        switch (TheFloodClientConfig.HEAT_HUD_CORNER.get()) {
-            case TOP_LEFT -> {
-                iconX = xOffset;
-                iconY = yOffset;
-            }
+        int centerY = (int) Math.round(
+                screenHeight
+                        * TheFloodClientConfig.HEAT_HUD_Y.get()
+        );
 
-            case TOP_RIGHT -> {
-                iconX = screenWidth - ICON_SIZE - xOffset;
-                iconY = yOffset;
-            }
-
-            case BOTTOM_LEFT -> {
-                iconX = xOffset;
-                iconY = screenHeight - ICON_SIZE - yOffset;
-            }
-
-            case BOTTOM_RIGHT -> {
-                iconX = screenWidth - ICON_SIZE - xOffset;
-                iconY = screenHeight - ICON_SIZE - yOffset;
-            }
-
-            default -> {
-                iconX = screenWidth - ICON_SIZE - xOffset;
-                iconY = yOffset;
-            }
-        }
+        int iconX = centerX - ICON_SIZE / 2;
+        int iconY = centerY - ICON_SIZE / 2;
 
         drawHeatIcon(
             graphics,

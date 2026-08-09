@@ -63,15 +63,15 @@ public class MobEvents {
 
     private static boolean isMobUnlocked(Monster monster, int day) {
         if (monster instanceof Zombie) {
-            return day >= TheFloodConfig.MOBS.zombie.unlockDay.get();
+            return day >= TheFloodConfig.MOBS.zombie.unlockHeat.get();
         }
 
         if (monster instanceof Skeleton) {
-            return day >= TheFloodConfig.MOBS.skeleton.unlockDay.get();
+            return day >= TheFloodConfig.MOBS.skeleton.unlockHeat.get();
         }
 
         if (monster instanceof Spider) {
-            return day >= TheFloodConfig.MOBS.spider.unlockDay.get();
+            return day >= TheFloodConfig.MOBS.spider.unlockHeat.get();
         }
 
         return false;

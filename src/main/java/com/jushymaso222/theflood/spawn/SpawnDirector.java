@@ -14,6 +14,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.entity.monster.warden.Warden;
+import com.jushymaso222.theflood.progression.HeatManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +24,6 @@ import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import com.jushymaso222.theflood.scaling.MobScaling;
 
 public class SpawnDirector {
 
@@ -42,13 +43,7 @@ public class SpawnDirector {
             return;
         }
 
-        int day = getDay(level);
-
-        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) {
-            return;
-        }
-
-        // Blood Moon spawning belongs entirely to HordeDirector.
+        // Blood Moon occurrence is still based on world day.
         if (isBloodMoon(level)) {
             return;
         }
@@ -56,47 +51,104 @@ public class SpawnDirector {
         long gameTime = level.getGameTime();
 
         for (ServerPlayer player : level.players()) {
+            int heat = HeatManager.getEffectiveHeat(player);
+
+            if (heat < TheFloodConfig.MOBS.zombie.unlockHeat.get()) {
+                continue;
+            }
+
             int targetPopulation =
-                    calculateAmbientPopulationTarget(level, player, day);
+                    calculateAmbientPopulationTarget(
+                            level,
+                            player,
+                            heat
+                    );
 
             int currentPopulation =
-                    countFloodMobsNearPlayer(level, player);
+                    countFloodMobsNearPlayer(
+                            level,
+                            player
+                    );
 
             /*
-            * Existing mini-horde and Blood Moon mobs count toward current
-            * pressure. This prevents the ambient system from replacing enemies
-            * while the player is already dealing with an event.
+            * Existing mini-horde and Blood Moon mobs count toward
+            * current pressure. This prevents the ambient system from
+            * replacing enemies while the player is already dealing
+            * with an event.
             */
             if (currentPopulation >= targetPopulation) {
                 continue;
             }
 
-            UUID playerId = player.getUUID();
+            UUID playerId =
+                    player.getUUID();
 
-            long nextRefillTime = NEXT_AMBIENT_REFILL_TIME.getOrDefault(
-                    playerId,
-                    gameTime
-            );
+            long nextRefillTime =
+                    NEXT_AMBIENT_REFILL_TIME.getOrDefault(
+                            playerId,
+                            gameTime
+                    );
 
             if (gameTime < nextRefillTime) {
                 continue;
             }
 
+            int deficit = targetPopulation - currentPopulation;
+
+            if (deficit <= 0) {
+                continue;
+            }
+
             /*
-            * Spawn only one replacement at a time. Never fill the entire
-            * missing population in one tick.
+            * Spawn more than one mob when the local Flood population
+            * is far below its Heat-based target.
             */
-            trySpawnNearPlayer(
-                    level,
-                    player,
-                    day,
-                    false,
-                    false
+            int spawnBatchSize;
+
+            if (deficit >= 40) {
+                spawnBatchSize = 8;
+            } else if (deficit >= 30) {
+                spawnBatchSize = 6;
+            } else if (deficit >= 20) {
+                spawnBatchSize = 5;
+            } else if (deficit >= 12) {
+                spawnBatchSize = 4;
+            } else if (deficit >= 6) {
+                spawnBatchSize = 2;
+            } else {
+                spawnBatchSize = 1;
+            }
+
+            spawnBatchSize =
+                    Math.min(
+                            spawnBatchSize,
+                            deficit
+                    );
+
+            for (int i = 0; i < spawnBatchSize; i++) {
+                trySpawnNearPlayer(
+                        level,
+                        player,
+                        heat,
+                        false,
+                        false
+                );
+            }
+
+            NEXT_AMBIENT_REFILL_TIME.put(
+                    playerId,
+                    gameTime
+                            + calculateNormalSpawnCooldownTicks(
+                                    level,
+                                    player,
+                                    heat
+                            )
             );
 
             NEXT_AMBIENT_REFILL_TIME.put(
                     playerId,
-                    gameTime + calculateAmbientRefillDelayTicks()
+                    gameTime
+                            + calculateAmbientRefillDelayTicks()
             );
         }
 
@@ -147,31 +199,68 @@ public class SpawnDirector {
     private static int calculateAmbientPopulationTarget(
             ServerLevel level,
             ServerPlayer player,
-            int currentDay
+            int heat
     ) {
-        int firstHostileDay =
-                TheFloodConfig.MOBS.zombie.unlockDay.get();
+        int unlockHeat =
+                TheFloodConfig.MOBS
+                        .zombie
+                        .unlockHeat
+                        .get();
 
-        int daysSinceHostilesStarted = Math.max(
-                0,
-                currentDay - firstHostileDay
-        );
+        if (heat < unlockHeat) {
+            return 0;
+        }
 
         int startingPopulation =
-                TheFloodConfig.SPAWNING.startingAmbientPopulation.get();
-
-        double populationPerDay =
-                TheFloodConfig.SPAWNING.ambientPopulationPerDay.get();
+                TheFloodConfig.SPAWNING
+                        .startingAmbientPopulation
+                        .get();
 
         int maximumPopulation =
-                TheFloodConfig.SPAWNING.maximumAmbientPopulation.get();
+                TheFloodConfig.SPAWNING
+                        .maximumAmbientPopulation
+                        .get();
 
-        int target = startingPopulation
-                + (int) Math.floor(
-                        daysSinceHostilesStarted * populationPerDay
+        int hardCap =
+                TheFloodConfig.SPAWNING
+                        .hostileMobCapPerPlayer
+                        .get();
+
+        /*
+        * Heat 100 is considered maximum progression.
+        */
+        int maximumHeat = 100;
+
+        double progress =
+                (heat - unlockHeat)
+                        / (double) (maximumHeat - unlockHeat);
+
+        progress =
+                Math.max(
+                        0.0,
+                        Math.min(1.0, progress)
                 );
 
-        target = Math.min(target, maximumPopulation);
+        /*
+        * A power greater than 1 keeps early progression gentle,
+        * but causes population pressure to accelerate heavily
+        * during late-game Heat levels.
+        */
+        double curvedProgress =
+                Math.pow(progress, 1.7);
+
+        int targetPopulation =
+                startingPopulation
+                        + (int) Math.round(
+                                (maximumPopulation - startingPopulation)
+                                        * curvedProgress
+                        );
+
+        targetPopulation =
+                Math.min(
+                        targetPopulation,
+                        hardCap
+                );
 
         if (isPlayerUnderground(level, player)) {
             double undergroundMultiplier =
@@ -179,60 +268,89 @@ public class SpawnDirector {
                             .undergroundPopulationMultiplier
                             .get();
 
-            target = (int) Math.floor(
-                    target * undergroundMultiplier
-            );
+            targetPopulation =
+                    (int) Math.floor(
+                            targetPopulation
+                                    * undergroundMultiplier
+                    );
         }
 
-        return Math.max(0, target);
+        return Math.max(
+                0,
+                targetPopulation
+        );
     }
 
     private static long calculateNormalSpawnCooldownTicks(
             ServerLevel level,
             ServerPlayer player,
-            int currentDay
+            int heat
     ) {
-        int firstHostileDay =
-                TheFloodConfig.MOBS.zombie.unlockDay.get();
+        int firstHostileHeat =
+                TheFloodConfig.MOBS
+                        .zombie
+                        .unlockHeat
+                        .get();
 
-        int scalingDays =
-                TheFloodConfig.SPAWNING.spawnCooldownScalingDays.get();
+        int scalingHeat =
+                TheFloodConfig.SPAWNING
+                        .spawnCooldownScalingDays
+                        .get();
 
-        int daysSinceHostilesStarted =
-                Math.max(0, currentDay - firstHostileDay);
+        int heatSinceHostilesStarted =
+                Math.max(
+                        0,
+                        heat - firstHostileHeat
+                );
 
-        double progression = Math.min(
-                1.0,
-                daysSinceHostilesStarted / (double) scalingDays
-        );
+        double progression =
+                Math.min(
+                        1.0,
+                        heatSinceHostilesStarted
+                                / (double) scalingHeat
+                );
 
         int earlyMin =
-                TheFloodConfig.SPAWNING.earlyGameSpawnCooldownMinSeconds.get();
+                TheFloodConfig.SPAWNING
+                        .earlyGameSpawnCooldownMinSeconds
+                        .get();
 
         int earlyMax =
-                TheFloodConfig.SPAWNING.earlyGameSpawnCooldownMaxSeconds.get();
+                TheFloodConfig.SPAWNING
+                        .earlyGameSpawnCooldownMaxSeconds
+                        .get();
 
         int lateMin =
-                TheFloodConfig.SPAWNING.lateGameSpawnCooldownMinSeconds.get();
+                TheFloodConfig.SPAWNING
+                        .lateGameSpawnCooldownMinSeconds
+                        .get();
 
         int lateMax =
-                TheFloodConfig.SPAWNING.lateGameSpawnCooldownMaxSeconds.get();
+                TheFloodConfig.SPAWNING
+                        .lateGameSpawnCooldownMaxSeconds
+                        .get();
 
-        double minimumSeconds = lerp(
-                earlyMin,
-                lateMin,
-                progression
-        );
+        double minimumSeconds =
+                lerp(
+                        earlyMin,
+                        lateMin,
+                        progression
+                );
 
-        double maximumSeconds = lerp(
-                earlyMax,
-                lateMax,
-                progression
-        );
+        double maximumSeconds =
+                lerp(
+                        earlyMax,
+                        lateMax,
+                        progression
+                );
 
-        double selectedSeconds = minimumSeconds
-                + RANDOM.nextDouble()
-                * Math.max(0.0, maximumSeconds - minimumSeconds);
+        double selectedSeconds =
+                minimumSeconds
+                        + RANDOM.nextDouble()
+                        * Math.max(
+                                0.0,
+                                maximumSeconds - minimumSeconds
+                        );
 
         if (isPlayerUnderground(level, player)) {
             selectedSeconds *=
@@ -243,7 +361,9 @@ public class SpawnDirector {
 
         return Math.max(
                 20L,
-                Math.round(selectedSeconds * 20.0)
+                Math.round(
+                        selectedSeconds * 20.0
+                )
         );
     }
 
@@ -284,22 +404,54 @@ public class SpawnDirector {
     public static void trySpawnNearPlayer(
             ServerLevel level,
             ServerPlayer player,
-            int day,
+            int heat,
             boolean isHordeMob,
             boolean isBloodMoonMob
     ) {
-        int mobCap = TheFloodConfig.SPAWNING.hostileMobCapPerPlayer.get();
+        int mobCap =
+                TheFloodConfig.SPAWNING
+                        .hostileMobCapPerPlayer
+                        .get();
 
-        if (mobCap <= 0 || countFloodMobsNearPlayer(level, player) >= mobCap) {
+        if (mobCap <= 0) {
             return;
         }
 
-        if (getSpawnPool(day).isEmpty()) return;
+        if (
+                countFloodMobsNearPlayer(
+                        level,
+                        player
+                ) >= mobCap
+        ) {
+            return;
+        }
 
-        BlockPos pos = findSpawnPositionNearPlayer(level, player);
-        if (pos == null) return;
+        /*
+        * Spawn eligibility is now based on the player's
+        * effective Heat, not the world's current day.
+        */
+        if (getSpawnPool(heat).isEmpty()) {
+            return;
+        }
 
-        spawnMobAt(level, player, day, pos, isHordeMob, isBloodMoonMob);
+        BlockPos pos =
+                findSpawnPositionNearPlayer(
+                        level,
+                        player
+                );
+
+        if (pos == null) {
+            return;
+        }
+
+        spawnMobAt(
+                level,
+                player,
+                heat,
+                pos,
+                isHordeMob,
+                isBloodMoonMob
+        );
     }
 
     public static BlockPos findSpawnPositionNearPlayer(ServerLevel level, ServerPlayer player) {
@@ -344,7 +496,7 @@ public class SpawnDirector {
     public static boolean trySpawnNearPosition(
             ServerLevel level,
             ServerPlayer targetPlayer,
-            int day,
+            int heat,
             BlockPos center,
             int radius,
             boolean isHordeMob,
@@ -355,7 +507,12 @@ public class SpawnDirector {
             return false;
         }
 
-        if (countFloodMobsNearPlayer(level, targetPlayer) >= activeCap) {
+        if (
+                countFloodMobsNearPlayer(
+                        level,
+                        targetPlayer
+                ) >= activeCap
+        ) {
             return false;
         }
 
@@ -378,7 +535,7 @@ public class SpawnDirector {
             spawnMobAt(
                     level,
                     targetPlayer,
-                    day,
+                    heat,
                     pos,
                     isHordeMob,
                     isBloodMoonMob
@@ -390,106 +547,69 @@ public class SpawnDirector {
         return false;
     }
 
-    private static void applyFloodWardenSpeed(Mob mob) {
-        double speed = 0.25D;
-
-        var speedAttribute =
-                mob.getAttribute(Attributes.MOVEMENT_SPEED);
-
-        if (speedAttribute != null) {
-            speedAttribute.setBaseValue(speed);
-        }
-    }
-
-    private static void applyFixedMobAttributes(Mob mob) {
-        TheFloodConfig.StandardMob config =
-                MobScaling.getConfig(mob.getType());
-
-        if (config == null) {
-            return;
-        }
-
-        double baseHealth = config.baseHealth.get();
-        double baseDamage = config.baseDamage.get();
-
-        var healthAttribute =
-                mob.getAttribute(Attributes.MAX_HEALTH);
-
-        if (healthAttribute != null) {
-            healthAttribute.setBaseValue(baseHealth);
-            mob.setHealth((float) baseHealth);
-        }
-
-        var damageAttribute =
-                mob.getAttribute(Attributes.ATTACK_DAMAGE);
-
-        if (damageAttribute != null) {
-            damageAttribute.setBaseValue(baseDamage);
-        }
-    }
-
     private static void spawnMobAt(
             ServerLevel level,
-            ServerPlayer player,
-            int day,
+            ServerPlayer targetPlayer,
+            int heat,
             BlockPos pos,
             boolean isHordeMob,
             boolean isBloodMoonMob
     ) {
-        List<SpawnEntry> pool = getSpawnPool(day);
-        if (pool.isEmpty()) return;
+        List<EntityType<? extends Mob>> spawnPool =
+        getSpawnPool(heat);
 
-        SpawnEntry entry = chooseWeighted(pool);
+        if (spawnPool.isEmpty()) {
+            return;
+        }
 
-        Mob mob = entry.type.create(level);
-        if (mob == null) return;
+        EntityType<? extends Mob> selectedType =
+                spawnPool.get(
+                        RANDOM.nextInt(spawnPool.size())
+                );
+
+        Mob mob = selectedType.create(level);
+
+        if (mob == null) {
+            return;
+        }
 
         mob.moveTo(
                 pos.getX() + 0.5,
                 pos.getY(),
                 pos.getZ() + 0.5,
-                RANDOM.nextFloat() * 360F,
-                0
+                RANDOM.nextFloat() * 360.0F,
+                0.0F
         );
 
-        mob.finalizeSpawn(
-                level,
-                level.getCurrentDifficultyAt(pos),
-                MobSpawnType.EVENT,
-                null,
-                null
-        );
+        if (
+                isHordeMob
+                || isBloodMoonMob
+        ) {
+            makeHordeMobAggressive(
+                    mob,
+                    targetPlayer,
+                    isBloodMoonMob
+            );
+        }
+
+        if (mob instanceof Warden warden) {
+            warden.setPersistenceRequired();
+
+            warden.increaseAngerAt(
+                    targetPlayer,
+                    100,
+                    true
+            );
+
+            warden.setTarget(targetPlayer);
+        }
 
         mob.getPersistentData().putBoolean(
                 FLOOD_CONTROLLED_TAG,
                 true
         );
 
-        String spawnKind;
-
-        if (isBloodMoonMob) {
-            spawnKind = SPAWN_KIND_BLOOD_MOON;
-        } else if (isHordeMob) {
-            spawnKind = SPAWN_KIND_MINI_HORDE;
-        } else {
-            spawnKind = SPAWN_KIND_AMBIENT;
-        }
-
-        mob.getPersistentData().putString(
-                FLOOD_SPAWN_KIND_TAG,
-                spawnKind
-        );
-
-        if (isHordeMob) {
-            makeHordeMobAggressive(mob, player, isBloodMoonMob);
-        }
-        applyFixedMobAttributes(mob);
-
-        if (mob.getType() == EntityType.WARDEN) {
-            applyFloodWardenSpeed(mob);
-        }
-
-        level.addFreshEntityWithPassengers(mob);
+        level.addFreshEntity(mob);
     }
 
     private static void makeHordeMobAggressive(Mob mob, ServerPlayer player, boolean isBloodMoonMob) {
@@ -544,123 +664,66 @@ public class SpawnDirector {
         return (int) (level.getDayTime() / 24000L) + 1;
     }
 
-    private static List<SpawnEntry> getSpawnPool(int day) {
-        List<SpawnEntry> pool = new ArrayList<>();
+    private static List<EntityType<? extends Mob>> getSpawnPool(
+            int heat
+    ) {
+        List<EntityType<? extends Mob>> pool =
+                new ArrayList<>();
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.ZOMBIE,
-            day,
-            TheFloodConfig.MOBS.zombie.unlockDay.get(),
-            TheFloodConfig.MOBS.zombie.baseSpawnWeight.get()
-        );
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .zombie
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.ZOMBIE);
+        }
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.SKELETON,
-            day,
-            TheFloodConfig.MOBS.skeleton.unlockDay.get(),
-            TheFloodConfig.MOBS.skeleton.baseSpawnWeight.get()
-        );
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .skeleton
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.SKELETON);
+        }
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.SPIDER,
-            day,
-            TheFloodConfig.MOBS.spider.unlockDay.get(),
-            TheFloodConfig.MOBS.spider.baseSpawnWeight.get()
-        );
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .spider
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.SPIDER);
+        }
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.CREEPER,
-            day,
-            TheFloodConfig.MOBS.creeper.unlockDay.get(),
-            TheFloodConfig.MOBS.creeper.baseSpawnWeight.get()
-        );
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .creeper
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.CREEPER);
+        }
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.ENDERMAN,
-            day,
-            TheFloodConfig.MOBS.enderman.unlockDay.get(),
-            TheFloodConfig.MOBS.enderman.baseSpawnWeight.get()
-        );
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .enderman
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.ENDERMAN);
+        }
 
-        addMobIfUnlocked(
-            pool,
-            EntityType.WARDEN,
-            day,
-            TheFloodConfig.MOBS.warden.unlockDay.get(),
-            TheFloodConfig.MOBS.warden.baseSpawnWeight.get()
-        );
-
-        applyNewMobDip(pool);
+        if (
+                heat >= TheFloodConfig.MOBS
+                        .warden
+                        .unlockHeat
+                        .get()
+        ) {
+            pool.add(EntityType.WARDEN);
+        }
 
         return pool;
-    }
-
-    private static void addMobIfUnlocked(
-            List<SpawnEntry> pool,
-            EntityType<? extends Mob> type,
-            int currentDay,
-            int unlockDay,
-            int baseWeight
-    ) {
-        if (currentDay < unlockDay) return;
-
-        double scaling = TheFloodConfig.SPAWNING.spawnWeightScalingFactor.get();
-        int daysUnlocked = currentDay - unlockDay;
-        int weight = baseWeight + (int) Math.floor(daysUnlocked * scaling);
-
-        pool.add(new SpawnEntry(type, Math.max(1, weight), unlockDay));
-    }
-
-    private static void applyNewMobDip(List<SpawnEntry> pool) {
-        if (pool.size() <= 1) return;
-
-        int newestUnlockDay = 0;
-
-        for (SpawnEntry entry : pool) {
-            newestUnlockDay = Math.max(newestUnlockDay, entry.unlockDay);
-        }
-
-        for (SpawnEntry entry : pool) {
-            if (entry.unlockDay < newestUnlockDay) {
-                entry.weight = Math.max(1, (int) (entry.weight * 0.75));
-            }
-        }
-    }
-
-    private static SpawnEntry chooseWeighted(List<SpawnEntry> pool) {
-        int totalWeight = 0;
-
-        for (SpawnEntry entry : pool) {
-            totalWeight += entry.weight;
-        }
-
-        int roll = RANDOM.nextInt(totalWeight);
-
-        for (SpawnEntry entry : pool) {
-            roll -= entry.weight;
-
-            if (roll < 0) {
-                return entry;
-            }
-        }
-
-        return pool.get(0);
-    }
-
-    private static class SpawnEntry {
-        EntityType<? extends Mob> type;
-        int weight;
-        int unlockDay;
-
-        SpawnEntry(EntityType<? extends Mob> type, int weight, int unlockDay) {
-            this.type = type;
-            this.weight = weight;
-            this.unlockDay = unlockDay;
-        }
     }
 }

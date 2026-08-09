@@ -1,6 +1,7 @@
 package com.jushymaso222.theflood;
 
 import com.jushymaso222.theflood.config.TheFloodClientConfig;
+import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.config.TheFloodConfig;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -26,6 +27,8 @@ public class TheFlood {
                 TheFloodClientConfig.CLIENT_CONFIG,
                 "theflood-client.toml"
         );
+
+        FloodNetwork.register();
 
         LOGGER.info("The Flood has loaded!");
     }

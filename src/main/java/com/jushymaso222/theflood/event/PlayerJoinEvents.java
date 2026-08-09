@@ -8,6 +8,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraft.ChatFormatting;
 
+import com.jushymaso222.theflood.progression.PlayerFloodData;
+import com.jushymaso222.theflood.progression.HeatManager;
+import com.jushymaso222.theflood.team.TeamManager;
+
 @Mod.EventBusSubscriber(
     modid = TheFlood.MOD_ID,
     bus = Mod.EventBusSubscriber.Bus.FORGE
@@ -18,18 +22,32 @@ public final class PlayerJoinEvents {
     private PlayerJoinEvents() {}
 
     @SubscribeEvent
-    public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+    public static void onPlayerLoggedIn(
+            PlayerEvent.PlayerLoggedInEvent event
+    ) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
 
-        if (player.getPersistentData().getBoolean(PROGRESS_HINT_SHOWN)) {
-            return;
+        /*
+        * Always restore/sync persistent player state
+        * whenever they join.
+        */
+        TeamManager.syncPlayerTeamReference(player);
+
+        HeatManager.syncHeatToPlayer(player);
+
+        /*
+        * Only show this message once.
+        */
+        if (!player.getPersistentData().getBoolean(PROGRESS_HINT_SHOWN)) {
+            sendProgressHint(player);
+
+            player.getPersistentData().putBoolean(
+                    PROGRESS_HINT_SHOWN,
+                    true
+            );
         }
-
-        sendProgressHint(player);
-
-        player.getPersistentData().putBoolean(PROGRESS_HINT_SHOWN, true);
     }
 
     private static void sendProgressHint(ServerPlayer player) {
@@ -45,15 +63,51 @@ public final class PlayerJoinEvents {
     }
 
     @SubscribeEvent
-    public static void onPlayerClone(PlayerEvent.Clone event) {
-        boolean hintWasShown = event.getOriginal()
-            .getPersistentData()
-            .getBoolean(PROGRESS_HINT_SHOWN);
-        
+    public static void onPlayerRespawn(
+            PlayerEvent.PlayerRespawnEvent event
+    ) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+
+        TeamManager.syncPlayerTeamReference(player);
+
+        HeatManager.syncHeatToPlayer(player);
+    }
+
+    @SubscribeEvent
+    public static void onPlayerClone(
+            PlayerEvent.Clone event
+    ) {
+        if (
+                !(event.getOriginal() instanceof ServerPlayer original)
+                || !(event.getEntity() instanceof ServerPlayer replacement)
+        ) {
+            return;
+        }
+
+        /*
+        * Preserve Flood progression when Minecraft replaces
+        * the ServerPlayer instance, such as after death.
+        */
+        PlayerFloodData.copy(
+                original,
+                replacement
+        );
+
+        /*
+        * Preserve the one-time progress hint flag.
+        */
+        boolean hintWasShown =
+                original.getPersistentData()
+                        .getBoolean(PROGRESS_HINT_SHOWN);
+
         if (hintWasShown) {
-            event.getEntity()
-                .getPersistentData()
-                .putBoolean(PROGRESS_HINT_SHOWN, true);
+            replacement.getPersistentData()
+                    .putBoolean(
+                            PROGRESS_HINT_SHOWN,
+                            true
+                    );
         }
     }
 }

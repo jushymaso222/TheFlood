@@ -90,7 +90,7 @@ public final class TheFloodConfig {
 
             hostileMobCapPerPlayer = builder
                     .comment("Maximum hostile mobs allowed near each player outside blood moons.")
-                    .defineInRange("hostileMobCapPerPlayer", 24, 0, 500);
+                    .defineInRange("hostileMobCapPerPlayer", 80, 0, 500);
 
             minSpawnDistanceFromPlayer = builder
                     .comment("Minimum distance from a player for Flood-controlled spawns.")
@@ -184,7 +184,7 @@ public final class TheFloodConfig {
 
             maximumAmbientPopulation = builder
                     .comment("Maximum target population for normal, non-horde Flood mobs.")
-                    .defineInRange("maximumAmbientPopulation", 20, 0, 500);
+                    .defineInRange("maximumAmbientPopulation", 70, 0, 500);
 
             undergroundPopulationMultiplier = builder
                     .comment(
@@ -445,7 +445,7 @@ public final class TheFloodConfig {
     }
 
     public static class StandardMob {
-    public final ForgeConfigSpec.IntValue unlockDay;
+    public final ForgeConfigSpec.IntValue unlockHeat;
     public final ForgeConfigSpec.IntValue baseSpawnWeight;
 
     public final ForgeConfigSpec.DoubleValue baseHealth;
@@ -459,7 +459,7 @@ public final class TheFloodConfig {
     protected StandardMob(
             ForgeConfigSpec.Builder builder,
             String mobName,
-            int defaultUnlockDay,
+            int defaultUnlockHeat,
             int defaultSpawnWeight,
             double defaultBaseHealth,
             double defaultBaseDamage,
@@ -470,9 +470,9 @@ public final class TheFloodConfig {
         ) {
                 builder.push(mobName);
 
-                unlockDay = builder
+                unlockHeat = builder
                         .comment("The first day this mob can spawn through The Flood.")
-                        .defineInRange("unlockDay", defaultUnlockDay, 1, 100_000);
+                        .defineInRange("unlockHeat", defaultUnlockHeat, 1, 100_000);
 
                 baseSpawnWeight = builder
                         .comment("The mob's initial selection weight when it unlocks.")
@@ -513,7 +513,7 @@ public final class TheFloodConfig {
         }
 
     public static final class WardenMob {
-        public final ForgeConfigSpec.IntValue unlockDay;
+        public final ForgeConfigSpec.IntValue unlockHeat;
         public final ForgeConfigSpec.IntValue baseSpawnWeight;
 
         public final ForgeConfigSpec.DoubleValue baseHealth;
@@ -522,7 +522,7 @@ public final class TheFloodConfig {
 
         private WardenMob(
                 ForgeConfigSpec.Builder builder,
-                int defaultUnlockDay,
+                int defaultUnlockHeat,
                 int defaultSpawnWeight,
                 double defaultBaseHealth,
                 double defaultBaseDamage,
@@ -530,9 +530,9 @@ public final class TheFloodConfig {
         ) {
             builder.push("warden");
 
-            unlockDay = builder
+            unlockHeat = builder
                     .comment("The first day Flood Wardens can spawn.")
-                    .defineInRange("unlockDay", defaultUnlockDay, 1, 100_000);
+                    .defineInRange("unlockHeat", defaultUnlockHeat, 1, 100_000);
 
             baseSpawnWeight = builder
                     .comment("The Flood Warden's initial selection weight.")

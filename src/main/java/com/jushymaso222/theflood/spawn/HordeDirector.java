@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
+import com.jushymaso222.theflood.progression.HeatManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,46 +17,52 @@ import java.util.Random;
 public class HordeDirector {
 
     private static final Random RANDOM = new Random();
+
     private static long lastBloodMoonWaveTime = -1;
+
     private static final Map<UUID, Long> NEXT_MINI_HORDE_TIME =
-        new HashMap<>();
+            new HashMap<>();
 
     public static void tick(ServerLevel level) {
-        if (level.dimension() != Level.OVERWORLD) return;
+        if (level.dimension() != Level.OVERWORLD) {
+            return;
+        }
 
-        int day = getDay(level);
-        long timeOfDay = level.getDayTime() % 24000L;
-
-        if (day < TheFloodConfig.MOBS.zombie.unlockDay.get()) return;
+        int worldDay = getDay(level);
 
         if (isBloodMoon(level)) {
-            tickBloodMoon(level, day);
+            tickBloodMoon(level, worldDay);
         } else {
-            tickMiniHordes(level, day, timeOfDay);
+            tickMiniHordes(level);
         }
     }
 
     private static void tickMiniHordes(
-            ServerLevel level,
-            int day,
-            long timeOfDay
+            ServerLevel level
     ) {
-        int earliestDay =
-                TheFloodConfig.HORDES.miniHordeEarliestDay.get();
-
-        if (day < earliestDay) {
-            return;
-        }
-
         long gameTime = level.getGameTime();
 
         for (ServerPlayer player : level.players()) {
+            int heat =
+                    HeatManager.getEffectiveHeat(player);
+
+            int earliestHeat =
+                    TheFloodConfig.HORDES
+                            .miniHordeEarliestDay
+                            .get();
+
+            if (heat < earliestHeat) {
+                continue;
+            }
+
             UUID playerId = player.getUUID();
 
-            long nextHordeTime = NEXT_MINI_HORDE_TIME.getOrDefault(
-                    playerId,
-                    gameTime + calculateMiniHordeCooldownTicks(day)
-            );
+            long nextHordeTime =
+                    NEXT_MINI_HORDE_TIME.getOrDefault(
+                            playerId,
+                            gameTime
+                                    + calculateMiniHordeCooldownTicks(heat)
+                    );
 
             if (gameTime < nextHordeTime) {
                 NEXT_MINI_HORDE_TIME.putIfAbsent(
@@ -67,51 +74,74 @@ public class HordeDirector {
             }
 
             int size = randomBetween(
-                    TheFloodConfig.HORDES.miniHordeMinSize.get(),
-                    TheFloodConfig.HORDES.miniHordeMaxSize.get()
+                    TheFloodConfig.HORDES
+                            .miniHordeMinSize
+                            .get(),
+                    TheFloodConfig.HORDES
+                            .miniHordeMaxSize
+                            .get()
             );
 
             spawnHorde(
                     level,
                     player,
-                    day,
+                    heat,
                     size,
-                    TheFloodConfig.SPAWNING.hostileMobCapPerPlayer.get()
+                    TheFloodConfig.SPAWNING
+                            .hostileMobCapPerPlayer
+                            .get()
             );
 
             NEXT_MINI_HORDE_TIME.put(
                     playerId,
-                    gameTime + calculateMiniHordeCooldownTicks(day)
+                    gameTime
+                            + calculateMiniHordeCooldownTicks(heat)
             );
         }
     }
 
-    private static long calculateMiniHordeCooldownTicks(int currentDay) {
-        int earliestDay =
-                TheFloodConfig.HORDES.miniHordeEarliestDay.get();
+    private static long calculateMiniHordeCooldownTicks(
+                int heat
+    ) {
+        int earliestHeat =
+                TheFloodConfig.HORDES
+                        .miniHordeEarliestDay
+                        .get();
 
-        int scalingDays =
-                TheFloodConfig.HORDES.miniHordeScalingDays.get();
+        int scalingHeat =
+                TheFloodConfig.HORDES
+                        .miniHordeScalingDays
+                        .get();
 
-        int daysSinceEnabled =
-                Math.max(0, currentDay - earliestDay);
+        int heatSinceEnabled =
+                Math.max(
+                        0,
+                        heat - earliestHeat
+                );
 
         double progression = Math.min(
                 1.0,
-                daysSinceEnabled / (double) scalingDays
+                heatSinceEnabled / (double) scalingHeat
         );
 
         double earlyMinutes =
-                TheFloodConfig.HORDES.miniHordeBaseCooldownMinutes.get();
+                TheFloodConfig.HORDES
+                        .miniHordeBaseCooldownMinutes
+                        .get();
 
         double lateMinutes =
-                TheFloodConfig.HORDES.miniHordeMinimumCooldownMinutes.get();
+                TheFloodConfig.HORDES
+                        .miniHordeMinimumCooldownMinutes
+                        .get();
 
         double cooldownMinutes =
-                earlyMinutes + ((lateMinutes - earlyMinutes) * progression);
+                earlyMinutes
+                        + ((lateMinutes - earlyMinutes)
+                        * progression);
 
         /*
-        * Add ±20% variation so hordes do not become predictable.
+        * Add ±20% variation so hordes
+        * do not become predictable.
         */
         double variation =
                 0.8 + RANDOM.nextDouble() * 0.4;
@@ -120,138 +150,211 @@ public class HordeDirector {
 
         return Math.max(
                 20L,
-                Math.round(cooldownMinutes * 60.0 * 20.0)
+                Math.round(
+                        cooldownMinutes
+                                * 60.0
+                                * 20.0
+                )
         );
     }
 
-    private static void tickBloodMoon(ServerLevel level, int day) {
+    private static void tickBloodMoon(
+                ServerLevel level,
+                int worldDay
+    ) {
         long gameTime = level.getGameTime();
-        long intervalTicks =
-                TheFloodConfig.HORDES.bloodMoonWaveIntervalSeconds.get() * 20L;
 
-        if (trackedBloodMoonDay != day) {
-            trackedBloodMoonDay = day;
-            BLOOD_MOON_SPAWN_COUNTS.clear();
-            lastBloodMoonWaveTime = -1;
+        long intervalTicks =
+                TheFloodConfig.HORDES
+                        .bloodMoonWaveIntervalSeconds
+                        .get()
+                        * 20L;
+
+        /*
+        * World day is used ONLY to identify when
+        * a new Blood Moon has begun.
+        */
+        if (trackedBloodMoonDay != worldDay) {
+                trackedBloodMoonDay = worldDay;
+                BLOOD_MOON_SPAWN_COUNTS.clear();
+                lastBloodMoonWaveTime = -1;
         }
 
         if (
                 lastBloodMoonWaveTime >= 0
-                && gameTime - lastBloodMoonWaveTime < intervalTicks
+                && gameTime - lastBloodMoonWaveTime
+                < intervalTicks
         ) {
-            return;
+                return;
         }
-
-        int activeCap = getBloodMoonActiveCap(day);
-        int totalBudget = getBloodMoonTotalBudget(day);
-
-        double refillThreshold =
-                TheFloodConfig.HORDES.bloodMoonRefillThreshold.get();
-
-        int refillPopulation =
-                Math.max(1, (int) Math.floor(activeCap * refillThreshold));
 
         boolean spawnedAnyWave = false;
 
         for (ServerPlayer player : level.players()) {
-            UUID playerId = player.getUUID();
+                /*
+                * Everything about how difficult this Blood Moon
+                * is for THIS player comes from effective Heat.
+                */
+                int heat =
+                        HeatManager.getEffectiveHeat(player);
 
-            int alreadySpawned =
-                    BLOOD_MOON_SPAWN_COUNTS.getOrDefault(playerId, 0);
-
-            int remainingBudget = totalBudget - alreadySpawned;
-
-            if (remainingBudget <= 0) {
+                if (
+                        heat
+                        < TheFloodConfig.MOBS
+                                .zombie
+                                .unlockHeat
+                                .get()
+                ) {
                 continue;
-            }
+                }
 
-            int currentPopulation =
-                    SpawnDirector.countFloodMobsNearPlayer(level, player);
+                int activeCap =
+                        getBloodMoonActiveCap(heat);
 
-            /*
-            * Do not send another wave while the player is still handling
-            * most of the previous one.
-            */
-            if (currentPopulation > refillPopulation) {
+                int totalBudget =
+                        getBloodMoonTotalBudget(heat);
+
+                double refillThreshold =
+                        TheFloodConfig.HORDES
+                                .bloodMoonRefillThreshold
+                                .get();
+
+                int refillPopulation =
+                        Math.max(
+                                1,
+                                (int) Math.floor(
+                                        activeCap
+                                                * refillThreshold
+                                )
+                        );
+
+                UUID playerId =
+                        player.getUUID();
+
+                int alreadySpawned =
+                        BLOOD_MOON_SPAWN_COUNTS
+                                .getOrDefault(
+                                        playerId,
+                                        0
+                                );
+
+                int remainingBudget =
+                        totalBudget - alreadySpawned;
+
+                if (remainingBudget <= 0) {
                 continue;
-            }
+                }
 
-            int availableActiveSlots =
-                    activeCap - currentPopulation;
+                int currentPopulation =
+                        SpawnDirector.countFloodMobsNearPlayer(
+                                level,
+                                player
+                        );
 
-            if (availableActiveSlots <= 0) {
+                /*
+                * Do not send another wave while the player
+                * is still handling most of the previous one.
+                */
+                if (currentPopulation > refillPopulation) {
                 continue;
-            }
+                }
 
-            int requestedSize = randomBetween(
-                    TheFloodConfig.HORDES.bloodMoonWaveMinSize.get(),
-                    TheFloodConfig.HORDES.bloodMoonWaveMaxSize.get()
-            );
+                int availableActiveSlots =
+                        activeCap - currentPopulation;
 
-            int actualSize = Math.min(
-                    requestedSize,
-                    Math.min(availableActiveSlots, remainingBudget)
-            );
-
-            if (actualSize <= 0) {
+                if (availableActiveSlots <= 0) {
                 continue;
-            }
+                }
 
-            int successfullySpawned = spawnHorde(
-                    level,
-                    player,
-                    day,
-                    actualSize,
-                    activeCap
-            );
+                int requestedSize =
+                        randomBetween(
+                                TheFloodConfig.HORDES
+                                        .bloodMoonWaveMinSize
+                                        .get(),
+                                TheFloodConfig.HORDES
+                                        .bloodMoonWaveMaxSize
+                                        .get()
+                        );
 
-            if (successfullySpawned > 0) {
+                int actualSize =
+                        Math.min(
+                                requestedSize,
+                                Math.min(
+                                        availableActiveSlots,
+                                        remainingBudget
+                                )
+                        );
+
+                if (actualSize <= 0) {
+                continue;
+                }
+
+                int successfullySpawned =
+                        spawnHorde(
+                                level,
+                                player,
+                                heat,
+                                actualSize,
+                                activeCap
+                        );
+
+                if (successfullySpawned > 0) {
                 BLOOD_MOON_SPAWN_COUNTS.put(
                         playerId,
-                        alreadySpawned + successfullySpawned
+                        alreadySpawned
+                                + successfullySpawned
                 );
 
                 spawnedAnyWave = true;
-            }
+                }
         }
 
         if (spawnedAnyWave) {
-            lastBloodMoonWaveTime = gameTime;
+                lastBloodMoonWaveTime =
+                        gameTime;
         }
     }
 
     private static int spawnHorde(
-            ServerLevel level,
-            ServerPlayer player,
-            int day,
-            int requestedSize,
-            int activeCap
+                ServerLevel level,
+                ServerPlayer player,
+                int heat,
+                int requestedSize,
+                int activeCap
     ) {
         BlockPos center =
-                SpawnDirector.findSpawnPositionNearPlayer(level, player);
+                SpawnDirector.findSpawnPositionNearPlayer(
+                        level,
+                        player
+                );
 
         if (center == null) {
-            return 0;
+                return 0;
         }
 
-        boolean bloodMoon = isBloodMoon(level);
+        boolean bloodMoon =
+                isBloodMoon(level);
+
         int spawned = 0;
 
         for (int i = 0; i < requestedSize; i++) {
-            boolean success = SpawnDirector.trySpawnNearPosition(
-                    level,
-                    player,
-                    day,
-                    center,
-                    TheFloodConfig.HORDES.hordeClumpRadius.get(),
-                    true,
-                    bloodMoon,
-                    activeCap
-            );
+                boolean success =
+                        SpawnDirector.trySpawnNearPosition(
+                                level,
+                                player,
+                                heat,
+                                center,
+                                TheFloodConfig.HORDES
+                                        .hordeClumpRadius
+                                        .get(),
+                                true,
+                                bloodMoon,
+                                activeCap
+                        );
 
-            if (success) {
+                if (success) {
                 spawned++;
-            }
+                }
         }
 
         return spawned;
@@ -262,45 +365,78 @@ public class HordeDirector {
 
     private static int trackedBloodMoonDay = -1;
 
-    private static int getBloodMoonNumber(int day) {
-        int frequency = TheFloodConfig.TIME.bloodMoonFrequencyDays.get();
+    private static int getBloodMoonHeatTier(
+                int heat
+    ) {
+        int frequency =
+                Math.max(
+                        1,
+                        TheFloodConfig.TIME
+                                .bloodMoonFrequencyDays
+                                .get()
+                );
 
-        return Math.max(1, day / frequency);
-    }
-
-    private static int getBloodMoonTotalBudget(int day) {
-        int moonNumber = getBloodMoonNumber(day);
-
-        int base =
-                TheFloodConfig.HORDES.bloodMoonBaseTotalMobsPerPlayer.get();
-
-        int increase =
-                TheFloodConfig.HORDES.bloodMoonTotalMobIncreasePerMoon.get();
-
-        int maximum =
-                TheFloodConfig.HORDES.bloodMoonMaximumTotalMobsPerPlayer.get();
-
-        return Math.min(
-                maximum,
-                base + ((moonNumber - 1) * increase)
+        return Math.max(
+                1,
+                ((heat - 1) / frequency) + 1
         );
     }
 
-    private static int getBloodMoonActiveCap(int day) {
-        int moonNumber = getBloodMoonNumber(day);
+    private static int getBloodMoonTotalBudget(
+                int heat
+    ) {
+        int heatTier =
+                getBloodMoonHeatTier(heat);
 
         int base =
-                TheFloodConfig.HORDES.bloodMoonBaseActiveCapPerPlayer.get();
+                TheFloodConfig.HORDES
+                        .bloodMoonBaseTotalMobsPerPlayer
+                        .get();
 
         int increase =
-                TheFloodConfig.HORDES.bloodMoonActiveCapIncreasePerMoon.get();
+                TheFloodConfig.HORDES
+                        .bloodMoonTotalMobIncreasePerMoon
+                        .get();
 
         int maximum =
-                TheFloodConfig.HORDES.bloodMoonMaximumActiveCapPerPlayer.get();
+                TheFloodConfig.HORDES
+                        .bloodMoonMaximumTotalMobsPerPlayer
+                        .get();
 
         return Math.min(
                 maximum,
-                base + ((moonNumber - 1) * increase)
+                base
+                        + ((heatTier - 1)
+                        * increase)
+        );
+    }
+
+    private static int getBloodMoonActiveCap(
+        int heat
+    ) {
+        int heatTier =
+                getBloodMoonHeatTier(heat);
+
+        int base =
+                TheFloodConfig.HORDES
+                        .bloodMoonBaseActiveCapPerPlayer
+                        .get();
+
+        int increase =
+                TheFloodConfig.HORDES
+                        .bloodMoonActiveCapIncreasePerMoon
+                        .get();
+
+        int maximum =
+                TheFloodConfig.HORDES
+                        .bloodMoonMaximumActiveCapPerPlayer
+                        .get();
+
+        return Math.min(
+                maximum,
+                base
+                        + ((heatTier - 1)
+                        * increase)
         );
     }
 

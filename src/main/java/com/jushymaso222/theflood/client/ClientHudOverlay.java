@@ -1,5 +1,6 @@
 package com.jushymaso222.theflood.client;
 
+import com.jushymaso222.theflood.config.TheFloodClientConfig;
 import com.jushymaso222.theflood.TheFlood;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -42,13 +43,21 @@ public class ClientHudOverlay {
             int line1Width = mc.font.width(line1);
             int line2Width = mc.font.width(line2);
 
-            int centerX = screenWidth / 2;
+            int centerX = (int) Math.round(
+                    screenWidth
+                            * TheFloodClientConfig.DAY_HUD_X.get()
+            );
+
+            int centerY = (int) Math.round(
+                    screenHeight
+                            * TheFloodClientConfig.DAY_HUD_Y.get()
+            );
 
             guiGraphics.drawString(
                     mc.font,
                     line1,
                     centerX - (line1Width / 2),
-                    8,
+                    centerY,
                     color,
                     true
             );
@@ -57,7 +66,7 @@ public class ClientHudOverlay {
                     mc.font,
                     line2,
                     centerX - (line2Width / 2),
-                    20,
+                    centerY + 12,
                     color,
                     true
             );
