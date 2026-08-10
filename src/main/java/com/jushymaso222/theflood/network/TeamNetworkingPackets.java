@@ -1,12 +1,18 @@
 package com.jushymaso222.theflood.network.packet;
 
+import com.jushymaso222.theflood.client.ClientInviteData;
 import com.jushymaso222.theflood.team.TeamManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraft.world.item.DyeColor;
 import com.jushymaso222.theflood.client.ClientTeamData;
+import net.minecraftforge.network.PacketDistributor;
+import com.jushymaso222.theflood.network.FloodNetwork;
+import com.jushymaso222.theflood.debug.DummyPlayerManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -14,6 +20,140 @@ public final class TeamNetworkingPackets {
 
     private TeamNetworkingPackets() {
     }
+
+    public static class SyncInviteCandidatesPacket {
+
+        public record Entry(
+                UUID id,
+                String name
+        ) {
+        }
+
+        private final List<Entry> entries;
+
+        public SyncInviteCandidatesPacket(
+                List<Entry> entries
+        ) {
+                this.entries = entries;
+        }
+
+        public static void encode(
+                SyncInviteCandidatesPacket message,
+                FriendlyByteBuf buffer
+        ) {
+                buffer.writeInt(message.entries.size());
+
+                for (Entry entry : message.entries) {
+                buffer.writeUUID(entry.id());
+                buffer.writeUtf(entry.name());
+                }
+        }
+
+        public static SyncInviteCandidatesPacket decode(
+                FriendlyByteBuf buffer
+        ) {
+                int size =
+                        buffer.readInt();
+
+                List<Entry> entries =
+                        new ArrayList<>();
+
+                for (int i = 0; i < size; i++) {
+                entries.add(
+                        new Entry(
+                                buffer.readUUID(),
+                                buffer.readUtf()
+                        )
+                );
+                }
+
+                return new SyncInviteCandidatesPacket(
+                        entries
+                );
+        }
+
+        public static void handle(
+                SyncInviteCandidatesPacket message,
+                Supplier<NetworkEvent.Context> contextSupplier
+        ) {
+                NetworkEvent.Context context =
+                        contextSupplier.get();
+
+                context.enqueueWork(() -> {
+                List<ClientInviteData.Candidate> candidates =
+                        new ArrayList<>();
+
+                for (Entry entry : message.entries) {
+                        candidates.add(
+                                new ClientInviteData.Candidate(
+                                        entry.id(),
+                                        entry.name()
+                                )
+                        );
+                }
+
+                ClientInviteData.setCandidates(
+                        candidates
+                );
+                });
+
+                context.setPacketHandled(true);
+        }
+        }
+
+    public static class RequestInviteCandidatesPacket {
+
+        public static void encode(
+                RequestInviteCandidatesPacket message,
+                FriendlyByteBuf buffer
+        ) {
+        }
+
+        public static RequestInviteCandidatesPacket decode(
+                FriendlyByteBuf buffer
+        ) {
+                return new RequestInviteCandidatesPacket();
+        }
+
+        public static void handle(
+                RequestInviteCandidatesPacket message,
+                Supplier<NetworkEvent.Context> contextSupplier
+        ) {
+                NetworkEvent.Context context =
+                        contextSupplier.get();
+
+                context.enqueueWork(() -> {
+                ServerPlayer player =
+                        context.getSender();
+
+                if (player == null) {
+                        return;
+                }
+
+                List<ServerPlayer> candidates =
+                        TeamManager.getInvitablePlayers(player);
+
+                List<SyncInviteCandidatesPacket.Entry> entries =
+                        new ArrayList<>();
+
+                for (ServerPlayer candidate : candidates) {
+                        entries.add(
+                                new SyncInviteCandidatesPacket.Entry(
+                                        candidate.getUUID(),
+                                        candidate.getGameProfile().getName()
+                                )
+                        );
+                }
+
+                FloodNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(() -> player),
+                        new SyncInviteCandidatesPacket(entries)
+                );
+                });
+
+                context.setPacketHandled(true);
+        }
+        }
 
     public static class CreateTeamPacket {
 
@@ -246,8 +386,19 @@ public final class TeamNetworkingPackets {
                                 .getPlayerList()
                                 .getPlayer(message.playerId);
 
+                /*
+                * FakePlayers aren't necessarily registered in
+                * Minecraft's normal connected-player list.
+                */
                 if (invited == null) {
-                    return;
+                invited =
+                        DummyPlayerManager.getDummy(
+                                message.playerId
+                        );
+                }
+
+                if (invited == null) {
+                return;
                 }
 
                 TeamManager.invitePlayer(

@@ -25,30 +25,37 @@ public final class PlayerHeatEvents {
     }
 
     private static void syncHeat(ServerPlayer player) {
-        int effectiveHeat =
-                HeatManager.getEffectiveHeat(player);
-
-        FloodNetwork.CHANNEL.send(
-                PacketDistributor.PLAYER.with(() -> player),
-                new SyncHeatPacket(effectiveHeat)
+        HeatManager.syncHeatToPlayer(
+                player
         );
     }
 
     @SubscribeEvent
     public static void onPlayerTick(
-            TickEvent.PlayerTickEvent event
+        TickEvent.PlayerTickEvent event
     ) {
         if (event.phase != TickEvent.Phase.END) {
-            return;
+                return;
         }
 
         if (!(event.player instanceof ServerPlayer player)) {
-            return;
+                return;
         }
 
-        HeatManager.advanceSoloHeat(
-                player
-        );
+        boolean heatIncreased =
+                HeatManager.advanceSoloHeat(player);
+
+        /*
+        * Sync immediately when Solo Heat changes,
+        * and once per second so proximity changes
+        * are reflected on the HUD.
+        */
+        if (
+                heatIncreased
+                || player.tickCount % 20 == 0
+        ) {
+                HeatManager.syncHeatToPlayer(player);
+        }
     }
 
     @SubscribeEvent

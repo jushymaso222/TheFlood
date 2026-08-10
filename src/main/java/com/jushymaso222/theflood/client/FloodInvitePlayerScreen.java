@@ -12,49 +12,47 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class FloodInvitePlayerScreen extends Screen {
 
     private final Screen parent;
 
-    private final List<PlayerInfo> players =
-            new ArrayList<>();
+    private record InviteCandidate(
+                UUID id,
+                String name
+        ) {
+        }
+    private final List<InviteCandidate> players =
+        new ArrayList<>();
 
     public FloodInvitePlayerScreen(Screen parent) {
         super(Component.literal("Invite Player"));
         this.parent = parent;
     }
 
+    public void refreshCandidates() {
+        clearWidgets();
+        init();
+    }
+
     @Override
     protected void init() {
         players.clear();
 
-        Minecraft minecraft =
-                Minecraft.getInstance();
+        FloodNetwork.CHANNEL.sendToServer(
+                new TeamNetworkingPackets.RequestInviteCandidatesPacket()
+        );
 
-        /*
-         * Get every player currently connected
-         * to this server/world.
-         */
-        if (minecraft.getConnection() != null) {
+        for (ClientInviteData.Candidate candidate :
+                ClientInviteData.getCandidates()) {
 
-            for (PlayerInfo playerInfo :
-                    minecraft.getConnection().getOnlinePlayers()) {
-
-                /*
-                 * Don't allow the player to invite themselves.
-                 */
-                if (
-                        minecraft.player != null
-                        && playerInfo.getProfile()
-                                .getId()
-                                .equals(minecraft.player.getUUID())
-                ) {
-                    continue;
-                }
-
-                players.add(playerInfo);
-            }
+                players.add(
+                        new InviteCandidate(
+                                candidate.id(),
+                                candidate.name()
+                        )
+                );
         }
 
         createPlayerButtons();
@@ -83,55 +81,41 @@ public class FloodInvitePlayerScreen extends Screen {
 
         for (int i = 0; i < players.size(); i++) {
 
-            PlayerInfo playerInfo =
-                    players.get(i);
+                InviteCandidate candidate =
+                        players.get(i);
 
-            int y =
-                    startY + (i * spacing);
+                int y =
+                        startY + (i * spacing);
 
-            String playerName =
-                    playerInfo.getProfile().getName();
-
-            /*
-             * Player name
-             */
-            addRenderableWidget(
-                    Button.builder(
-                            Component.literal(
-                                    "Invite " + playerName
-                            ),
-                            button -> invitePlayer(
-                                    playerInfo
-                            )
-                    )
-                    .bounds(
-                            centerX - 90,
-                            y,
-                            180,
-                            20
-                    )
-                    .build()
-            );
+                addRenderableWidget(
+                        Button.builder(
+                                Component.literal(
+                                        "Invite "
+                                                + candidate.name()
+                                ),
+                                button ->
+                                        invitePlayer(candidate)
+                        )
+                        .bounds(
+                                centerX - 90,
+                                y,
+                                180,
+                                20
+                        )
+                        .build()
+                );
         }
     }
 
     private void invitePlayer(
-            PlayerInfo playerInfo
+        InviteCandidate candidate
     ) {
-
         FloodNetwork.CHANNEL.sendToServer(
                 new TeamNetworkingPackets.InvitePlayerPacket(
-                        playerInfo.getProfile().getId()
+                        candidate.id()
                 )
         );
 
-        /*
-         * For now, return to the team screen.
-         *
-         * The server still performs all validation,
-         * so clicking this doesn't guarantee the
-         * invite was accepted/sent.
-         */
         onClose();
     }
 

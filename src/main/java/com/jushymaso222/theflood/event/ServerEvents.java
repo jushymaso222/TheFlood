@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import com.jushymaso222.theflood.debug.DummyPlayerManager;
 
 @Mod.EventBusSubscriber(
         modid = TheFlood.MOD_ID,
@@ -63,6 +64,7 @@ public class ServerEvents {
         }
         SpawnDirector.tick(level);
         HordeDirector.tick(level);
+        DummyPlayerManager.tick(level);
     }
 
     private static void announceMobUnlocks(ServerLevel level, int day) {

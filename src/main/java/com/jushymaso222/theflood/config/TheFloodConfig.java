@@ -10,6 +10,7 @@ public final class TheFloodConfig {
     public static final SpawnSettings SPAWNING;
     public static final HordeSettings HORDES;
     public static final MobSettings MOBS;
+    public static final HeatSettings HEAT;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -18,11 +19,60 @@ public final class TheFloodConfig {
         SPAWNING = new SpawnSettings(builder);
         HORDES = new HordeSettings(builder);
         MOBS = new MobSettings(builder);
+        HEAT = new HeatSettings(builder);
 
         SERVER_CONFIG = builder.build();
     }
 
     private TheFloodConfig() {
+    }
+
+    public static final class HeatSettings {
+
+        public final ForgeConfigSpec.IntValue proximityRadius;
+        public final ForgeConfigSpec.IntValue proximityBaseHeatPerPlayer;
+        public final ForgeConfigSpec.IntValue proximitySynergyPerPlayer;
+
+        private HeatSettings(
+                ForgeConfigSpec.Builder builder
+        ) {
+                builder.push("heat");
+
+                proximityRadius = builder
+                        .comment(
+                                "Distance in blocks within which other players increase Effective Heat."
+                        )
+                        .defineInRange(
+                                "proximityRadius",
+                                30,
+                                1,
+                                512
+                        );
+
+                proximityBaseHeatPerPlayer = builder
+                        .comment(
+                                "Base Effective Heat added for each unrelated nearby player."
+                        )
+                        .defineInRange(
+                                "proximityBaseHeatPerPlayer",
+                                3,
+                                0,
+                                25
+                        );
+
+                proximitySynergyPerPlayer = builder
+                        .comment(
+                                "Additional nonlinear Heat scaling as more unrelated players gather together."
+                        )
+                        .defineInRange(
+                                "proximitySynergyPerPlayer",
+                                1,
+                                0,
+                                10
+                        );
+
+                builder.pop();
+        }
     }
 
     public static final class TimeSettings {

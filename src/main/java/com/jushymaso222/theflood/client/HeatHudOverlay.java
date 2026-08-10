@@ -105,6 +105,7 @@ public final class HeatHudOverlay {
          * ClientHeatData.getEffectiveHeat()
          */
         int heat = ClientHeatData.getEffectiveHeat();
+        int proximityBonus = ClientHeatData.getProximityBonus();
 
         String text = Integer.toString(heat);
 
@@ -132,6 +133,7 @@ public final class HeatHudOverlay {
             minecraft,
             text,
             heat,
+            proximityBonus,
             iconX,
             iconY
         );
@@ -142,6 +144,7 @@ public final class HeatHudOverlay {
             Minecraft minecraft,
             String text,
             int heat,
+            int proximityBonus,
             int iconX,
             int iconY
     ) {
@@ -217,6 +220,34 @@ public final class HeatHudOverlay {
                 getHeatNumberColor(heat),
                 true
         );
+
+        if (proximityBonus > 0) {
+            String bonusText =
+                    "+" + proximityBonus;
+
+            int bonusWidth =
+                    minecraft.font.width(
+                            bonusText
+                    );
+
+            int bonusX =
+                    iconX
+                            + ((ICON_SIZE - bonusWidth) / 2);
+
+            int bonusY =
+                    iconY
+                            + ICON_SIZE
+                            - 6;
+
+            graphics.drawString(
+                    minecraft.font,
+                    bonusText,
+                    bonusX,
+                    bonusY,
+                    0xFFFFAA55,
+                    true
+            );
+        }
     }
 
     private static int getHeatNumberColor(int heat) {

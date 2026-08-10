@@ -1,15 +1,22 @@
 package com.jushymaso222.theflood.team;
 
+import com.jushymaso222.theflood.debug.DummyPlayerManager;
+import com.jushymaso222.theflood.network.FloodNetwork;
+import com.jushymaso222.theflood.network.packet.TeamNetworkingPackets;
+import com.jushymaso222.theflood.progression.HeatManager;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.DyeColor;
-
-import com.jushymaso222.theflood.network.FloodNetwork;
-import com.jushymaso222.theflood.network.packet.TeamNetworkingPackets;
+import com.jushymaso222.theflood.progression.PlayerFloodData;
 
 import net.minecraftforge.network.PacketDistributor;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,10 +28,9 @@ import java.util.UUID;
 public final class TeamManager {
 
     /*
-     * Invited player UUID -> Set of Team UUIDs
+     * Invited player UUID -> Team UUIDs that invited them.
      *
-     * For now this is temporary server-memory state.
-     * Later we can persist invites if we decide they should survive restarts.
+     * Invitations are temporary server-memory data.
      */
     private static final Map<UUID, Set<UUID>> PENDING_INVITES =
             new HashMap<>();
@@ -42,27 +48,38 @@ public final class TeamManager {
             DyeColor color
     ) {
         FloodTeamSavedData data =
-                FloodTeamSavedData.get(owner.server);
+                FloodTeamSavedData.get(
+                        owner.server
+                );
 
-        UUID ownerId = owner.getUUID();
+        UUID ownerId =
+                owner.getUUID();
 
-        if (data.getPlayerTeams().containsKey(ownerId)) {
+        if (
+                data.getPlayerTeams()
+                        .containsKey(ownerId)
+        ) {
             owner.sendSystemMessage(
                     Component.literal(
                             "You are already in a team."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return null;
         }
 
-        String cleanName = name.trim();
+        String cleanName =
+                name.trim();
 
         if (cleanName.isEmpty()) {
             owner.sendSystemMessage(
                     Component.literal(
                             "Team name cannot be empty."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return null;
@@ -70,11 +87,15 @@ public final class TeamManager {
 
         if (cleanName.length() > 24) {
             cleanName =
-                    cleanName.substring(0, 24);
+                    cleanName.substring(
+                            0,
+                            24
+                    );
         }
 
         if (color == null) {
-            color = DyeColor.WHITE;
+            color =
+                    DyeColor.WHITE;
         }
 
         UUID teamId =
@@ -98,66 +119,92 @@ public final class TeamManager {
                 teamId
         );
 
-        /*
-         * Convenience reference stored on the online player.
-         */
         PlayerTeamData.setTeam(
                 owner,
                 teamId
         );
 
+        /*
+        * Initialize the team's Heat immediately.
+        *
+        * A one-player team's Heat should equal
+        * the owner's Solo Heat.
+        */
+        recalculateTeamHeat(
+                owner.server,
+                team
+        );
+
         data.setDirty();
 
         owner.sendSystemMessage(
-                Component.literal("Created team ")
-                        .append(
-                                Component.literal(cleanName)
-                                        .withStyle(ChatFormatting.GREEN)
+                Component.literal(
+                        "Created team "
+                ).append(
+                        Component.literal(
+                                cleanName
+                        ).withStyle(
+                                ChatFormatting.GREEN
                         )
+                )
         );
 
-        syncTeamStateToPlayer(owner);
+        syncTeamStateToPlayer(
+                owner
+        );
+
+        HeatManager.syncHeatToPlayer(
+                owner
+        );
+
         return team;
     }
 
     // ------------------------------------------------------------
-    // TEAM LOOKUPS
+    // LOOKUPS
     // ------------------------------------------------------------
 
     public static boolean isInTeam(
             ServerPlayer player
     ) {
-        return getTeamForPlayer(player) != null;
+        return getTeamForPlayer(
+                player
+        ) != null;
     }
 
     public static FloodTeam getTeamForPlayer(
             ServerPlayer player
     ) {
         FloodTeamSavedData data =
-                FloodTeamSavedData.get(player.server);
+                FloodTeamSavedData.get(
+                        player.server
+                );
+
+        UUID playerId =
+                player.getUUID();
 
         UUID teamId =
-                data.getPlayerTeams().get(
-                        player.getUUID()
-                );
+                data.getPlayerTeams()
+                        .get(playerId);
 
         if (teamId == null) {
             return null;
         }
 
         FloodTeam team =
-                data.getTeams().get(teamId);
+                data.getTeams()
+                        .get(teamId);
 
         /*
-         * Repair stale membership if the player map points
-         * to a team that no longer exists.
+         * Repair stale SavedData references.
          */
         if (team == null) {
-            data.getPlayerTeams().remove(
-                    player.getUUID()
-            );
+            data.getPlayerTeams()
+                    .remove(playerId);
 
-            PlayerTeamData.clearTeam(player);
+            PlayerTeamData.clearTeam(
+                    player
+            );
 
             data.setDirty();
 
@@ -180,16 +227,14 @@ public final class TeamManager {
     public static UUID getTeamIdForPlayer(
             ServerPlayer player
     ) {
-        FloodTeamSavedData data =
-                FloodTeamSavedData.get(player.server);
-
-        return data.getPlayerTeams().get(
-                player.getUUID()
-        );
+        return FloodTeamSavedData
+                .get(player.server)
+                .getPlayerTeams()
+                .get(player.getUUID());
     }
 
     // ------------------------------------------------------------
-    // INVITES
+    // INVITING
     // ------------------------------------------------------------
 
     public static boolean invitePlayer(
@@ -197,54 +242,61 @@ public final class TeamManager {
             ServerPlayer invited
     ) {
         FloodTeam team =
-                getTeamForPlayer(inviter);
+                getTeamForPlayer(
+                        inviter
+                );
 
         if (team == null) {
             inviter.sendSystemMessage(
                     Component.literal(
                             "You must be in a team to invite players."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return false;
         }
 
         /*
-         * For now only the owner may invite.
-         *
-         * We can loosen this later if you want normal members
-         * to be allowed to invite too.
+         * Currently only owners can invite.
          */
-        if (!team.isOwner(inviter.getUUID())) {
+        if (
+                !team.isOwner(
+                        inviter.getUUID()
+                )
+        ) {
             inviter.sendSystemMessage(
                     Component.literal(
                             "Only the team owner can invite players."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return false;
         }
 
-        /*
-         * Cannot invite yourself.
-         */
         if (
                 inviter.getUUID()
-                        .equals(invited.getUUID())
+                        .equals(
+                                invited.getUUID()
+                        )
         ) {
             inviter.sendSystemMessage(
                     Component.literal(
                             "You cannot invite yourself."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return false;
         }
 
         /*
-         * Critical rule:
-         * a player already belonging to any team cannot
-         * receive another team invite.
+         * Players already belonging to another team
+         * cannot receive invitations.
          */
         if (isInTeam(invited)) {
             inviter.sendSystemMessage(
@@ -252,7 +304,9 @@ public final class TeamManager {
                             invited.getGameProfile()
                                     .getName()
                                     + " is already in a team."
-                    ).withStyle(ChatFormatting.RED)
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
             );
 
             return false;
@@ -261,60 +315,109 @@ public final class TeamManager {
         Set<UUID> invites =
                 PENDING_INVITES.computeIfAbsent(
                         invited.getUUID(),
-                        ignored -> new HashSet<>()
+                        ignored ->
+                                new HashSet<>()
                 );
 
-        /*
-         * Avoid duplicate invitations from the same team.
-         */
-        if (!invites.add(team.getTeamId())) {
+        if (
+                !invites.add(
+                        team.getTeamId()
+                )
+        ) {
             inviter.sendSystemMessage(
                     Component.literal(
                             invited.getGameProfile()
                                     .getName()
                                     + " already has an invite from your team."
-                    ).withStyle(ChatFormatting.YELLOW)
+                    ).withStyle(
+                            ChatFormatting.YELLOW
+                    )
             );
 
             return false;
         }
 
+        /*
+         * Development dummies immediately accept invitations.
+         */
+        if (
+                DummyPlayerManager.isDummy(
+                        invited
+                )
+        ) {
+            boolean joined =
+                    acceptInvite(
+                            invited,
+                            team.getTeamId()
+                    );
+
+            if (joined) {
+                inviter.sendSystemMessage(
+                        Component.literal(
+                                invited.getGameProfile()
+                                        .getName()
+                                        + " automatically joined "
+                                        + team.getName()
+                                        + "."
+                        ).withStyle(
+                                ChatFormatting.GREEN
+                        )
+                );
+            }
+
+            return joined;
+        }
+
         inviter.sendSystemMessage(
                 Component.literal(
                         "Invited "
-                                + invited.getGameProfile().getName()
+                                + invited.getGameProfile()
+                                        .getName()
                                 + " to "
                                 + team.getName()
                                 + "."
-                ).withStyle(ChatFormatting.GREEN)
+                ).withStyle(
+                        ChatFormatting.GREEN
+                )
         );
 
         invited.sendSystemMessage(
                 Component.literal(
-                        inviter.getGameProfile().getName()
+                        inviter.getGameProfile()
+                                .getName()
                                 + " invited you to join "
                                 + team.getName()
                                 + "."
-                ).withStyle(ChatFormatting.YELLOW)
+                ).withStyle(
+                        ChatFormatting.YELLOW
+                )
         );
 
         return true;
     }
 
+    // ------------------------------------------------------------
+    // ACCEPT / DECLINE
+    // ------------------------------------------------------------
+
     public static boolean acceptInvite(
             ServerPlayer player,
             UUID teamId
     ) {
-        /*
-         * If they joined another team after receiving the invite,
-         * they can no longer accept it.
-         */
         if (isInTeam(player)) {
-            player.sendSystemMessage(
-                    Component.literal(
-                            "You are already in a team."
-                    ).withStyle(ChatFormatting.RED)
-            );
+            if (
+                    !DummyPlayerManager.isDummy(
+                            player
+                    )
+            ) {
+                player.sendSystemMessage(
+                        Component.literal(
+                                "You are already in a team."
+                        ).withStyle(
+                                ChatFormatting.RED
+                        )
+                );
+            }
 
             return false;
         }
@@ -323,17 +426,29 @@ public final class TeamManager {
                 player.getUUID();
 
         Set<UUID> invites =
-                PENDING_INVITES.get(playerId);
+                PENDING_INVITES.get(
+                        playerId
+                );
 
         if (
                 invites == null
-                || !invites.contains(teamId)
+                || !invites.contains(
+                        teamId
+                )
         ) {
-            player.sendSystemMessage(
-                    Component.literal(
-                            "That team invitation is no longer valid."
-                    ).withStyle(ChatFormatting.RED)
-            );
+            if (
+                    !DummyPlayerManager.isDummy(
+                            player
+                    )
+            ) {
+                player.sendSystemMessage(
+                        Component.literal(
+                                "That team invitation is no longer valid."
+                        ).withStyle(
+                                ChatFormatting.RED
+                        )
+                );
+            }
 
             return false;
         }
@@ -344,28 +459,26 @@ public final class TeamManager {
                 );
 
         FloodTeam team =
-                data.getTeams().get(teamId);
+                data.getTeams()
+                        .get(teamId);
 
-        /*
-         * Team may have been disbanded after the invite was sent.
-         */
         if (team == null) {
-            invites.remove(teamId);
+            invites.remove(
+                    teamId
+            );
 
             if (invites.isEmpty()) {
-                PENDING_INVITES.remove(playerId);
+                PENDING_INVITES.remove(
+                        playerId
+                );
             }
-
-            player.sendSystemMessage(
-                    Component.literal(
-                            "That team no longer exists."
-                    ).withStyle(ChatFormatting.RED)
-            );
 
             return false;
         }
 
-        team.addMember(playerId);
+        team.addMember(
+                playerId
+        );
 
         data.getPlayerTeams().put(
                 playerId,
@@ -377,24 +490,62 @@ public final class TeamManager {
                 teamId
         );
 
-        data.setDirty();
+        clearInvites(
+                playerId
+        );
 
         /*
-         * Once a player joins one team, every other pending
-         * invite becomes invalid.
+         * Team membership affects Team Heat,
+         * so recalculate it now.
+         *
+         * This assumes you've already added the
+         * recalculateTeamHeat helper we discussed.
          */
-        clearInvites(playerId);
+        recalculateTeamHeat(
+                player.server,
+                team
+        );
+
+        data.setDirty();
 
         broadcastToTeam(
                 player.server,
                 team,
                 Component.literal(
-                        player.getGameProfile().getName()
+                        player.getGameProfile()
+                                .getName()
                                 + " joined the team."
-                ).withStyle(ChatFormatting.GREEN)
+                ).withStyle(
+                        ChatFormatting.GREEN
+                )
         );
 
-        syncTeamStateToPlayer(player);
+        /*
+         * FakePlayers don't have a real connected client,
+         * so don't try to send them GUI packets.
+         */
+        if (
+                !DummyPlayerManager.isDummy(
+                        player
+                )
+        ) {
+            syncTeamStateToPlayer(
+                    player
+            );
+
+            HeatManager.syncHeatToPlayer(
+                    player
+            );
+        }
+
+        /*
+         * Every real team member may now have a new Team Heat.
+         */
+        syncTeamStateToAllMembers(
+                player.server,
+                team
+        );
+
         return true;
     }
 
@@ -411,7 +562,9 @@ public final class TeamManager {
             return;
         }
 
-        invites.remove(teamId);
+        invites.remove(
+                teamId
+        );
 
         if (invites.isEmpty()) {
             PENDING_INVITES.remove(
@@ -444,31 +597,35 @@ public final class TeamManager {
                 );
 
         FloodTeam team =
-                getTeamForPlayer(player);
+                getTeamForPlayer(
+                        player
+                );
 
         if (team == null) {
-            player.sendSystemMessage(
-                    Component.literal(
-                            "You are not in a team."
-                    ).withStyle(ChatFormatting.RED)
-            );
-
             return false;
         }
 
         /*
-         * Temporary behavior.
-         *
-         * Later we will change this so an owner may leave,
-         * automatically transferring ownership to another
-         * team member.
+         * Owner-leave transfer behavior still comes later.
          */
-        if (team.isOwner(player.getUUID())) {
-            player.sendSystemMessage(
-                    Component.literal(
-                            "You are the team owner. Transfer ownership or disband the team before leaving."
-                    ).withStyle(ChatFormatting.RED)
-            );
+        if (
+                team.isOwner(
+                        player.getUUID()
+                )
+        ) {
+            if (
+                    !DummyPlayerManager.isDummy(
+                            player
+                    )
+            ) {
+                player.sendSystemMessage(
+                        Component.literal(
+                                "You are the team owner. Transfer ownership or disband the team before leaving."
+                        ).withStyle(
+                                ChatFormatting.RED
+                        )
+                );
+            }
 
             return false;
         }
@@ -476,34 +633,65 @@ public final class TeamManager {
         UUID playerId =
                 player.getUUID();
 
-        team.removeMember(playerId);
-
-        data.getPlayerTeams().remove(
+        team.removeMember(
                 playerId
         );
 
-        PlayerTeamData.clearTeam(player);
+        data.getPlayerTeams()
+                .remove(playerId);
+
+        PlayerTeamData.clearTeam(
+                player
+        );
 
         data.setDirty();
 
-        player.sendSystemMessage(
-                Component.literal(
-                        "You left "
-                                + team.getName()
-                                + "."
-                ).withStyle(ChatFormatting.YELLOW)
+        recalculateTeamHeat(
+                player.server,
+                team
         );
+
+        if (
+                !DummyPlayerManager.isDummy(
+                        player
+                )
+        ) {
+            player.sendSystemMessage(
+                    Component.literal(
+                            "You left "
+                                    + team.getName()
+                                    + "."
+                    ).withStyle(
+                            ChatFormatting.YELLOW
+                    )
+            );
+
+            syncTeamStateToPlayer(
+                    player
+            );
+
+            HeatManager.syncHeatToPlayer(
+                    player
+            );
+        }
 
         broadcastToTeam(
                 player.server,
                 team,
                 Component.literal(
-                        player.getGameProfile().getName()
+                        player.getGameProfile()
+                                .getName()
                                 + " left the team."
-                ).withStyle(ChatFormatting.YELLOW)
+                ).withStyle(
+                        ChatFormatting.YELLOW
+                )
         );
 
-        syncTeamStateToPlayer(player);
+        syncTeamStateToAllMembers(
+                player.server,
+                team
+        );
+
         return true;
     }
 
@@ -520,33 +708,29 @@ public final class TeamManager {
                 );
 
         FloodTeam team =
-                getTeamForPlayer(owner);
+                getTeamForPlayer(
+                        owner
+                );
 
         if (
                 team == null
-                || !team.isOwner(owner.getUUID())
+                || !team.isOwner(
+                        owner.getUUID()
+                )
         ) {
-            owner.sendSystemMessage(
-                    Component.literal(
-                            "Only the team owner can disband the team."
-                    ).withStyle(ChatFormatting.RED)
-            );
-
             return false;
         }
 
-        /*
-         * Copy first so modifications do not affect iteration.
-         */
         Set<UUID> members =
                 new HashSet<>(
                         team.getMembers()
                 );
 
-        for (UUID memberId : members) {
-            data.getPlayerTeams().remove(
-                    memberId
-            );
+        for (UUID memberId :
+                members) {
+
+            data.getPlayerTeams()
+                    .remove(memberId);
 
             ServerPlayer member =
                     owner.server
@@ -554,22 +738,44 @@ public final class TeamManager {
                             .getPlayer(memberId);
 
             /*
-             * Offline players cannot have their entity data
-             * modified right now. Their stale tag will be
-             * repaired when they next join.
+             * FakePlayers may not exist in PlayerList,
+             * so check our dummy registry too.
              */
+            if (member == null) {
+                member =
+                        DummyPlayerManager.getDummy(
+                                memberId
+                        );
+            }
+
             if (member != null) {
-                PlayerTeamData.clearTeam(member);
-
-                syncTeamStateToPlayer(member);
-
-                member.sendSystemMessage(
-                        Component.literal(
-                                "Team "
-                                        + team.getName()
-                                        + " was disbanded."
-                        ).withStyle(ChatFormatting.RED)
+                PlayerTeamData.clearTeam(
+                        member
                 );
+
+                if (
+                        !DummyPlayerManager.isDummy(
+                                member
+                        )
+                ) {
+                    member.sendSystemMessage(
+                            Component.literal(
+                                    "Team "
+                                            + team.getName()
+                                            + " was disbanded."
+                            ).withStyle(
+                                    ChatFormatting.RED
+                            )
+                    );
+
+                    syncTeamStateToPlayer(
+                            member
+                    );
+
+                    HeatManager.syncHeatToPlayer(
+                            member
+                    );
+                }
             }
         }
 
@@ -577,9 +783,10 @@ public final class TeamManager {
                 team.getTeamId()
         );
 
-        data.getTeams().remove(
-                team.getTeamId()
-        );
+        data.getTeams()
+                .remove(
+                        team.getTeamId()
+                );
 
         data.setDirty();
 
@@ -587,44 +794,67 @@ public final class TeamManager {
     }
 
     // ------------------------------------------------------------
-    // PLAYER LOGIN / DATA REPAIR
+    // PLAYER LOGIN / REPAIR
     // ------------------------------------------------------------
 
     public static void syncPlayerTeamReference(
-                ServerPlayer player
+            ServerPlayer player
     ) {
         FloodTeamSavedData data =
-                FloodTeamSavedData.get(player.server);
+                FloodTeamSavedData.get(
+                        player.server
+                );
 
-        UUID playerId = player.getUUID();
+        UUID playerId =
+                player.getUUID();
 
         UUID teamId =
-                data.getPlayerTeams().get(playerId);
+                data.getPlayerTeams()
+                        .get(playerId);
 
         if (teamId == null) {
-                PlayerTeamData.clearTeam(player);
+            PlayerTeamData.clearTeam(
+                    player
+            );
 
-                syncTeamStateToPlayer(player);
-                return;
+            syncTeamStateToPlayer(
+                    player
+            );
+
+            return;
         }
 
         FloodTeam team =
-                data.getTeams().get(teamId);
+                data.getTeams()
+                        .get(teamId);
 
         if (team == null) {
-                data.getPlayerTeams().remove(playerId);
+            data.getPlayerTeams()
+                    .remove(playerId);
 
-                PlayerTeamData.clearTeam(player);
+            PlayerTeamData.clearTeam(
+                    player
+            );
 
-                data.setDirty();
+            data.setDirty();
 
-                syncTeamStateToPlayer(player);
-                return;
+            syncTeamStateToPlayer(
+                    player
+            );
+
+            return;
         }
 
-        if (!team.hasMember(playerId)) {
-                team.addMember(playerId);
-                data.setDirty();
+        if (
+                !team.hasMember(
+                        playerId
+                )
+        ) {
+            team.addMember(
+                    playerId
+            );
+
+            data.setDirty();
         }
 
         PlayerTeamData.setTeam(
@@ -632,7 +862,199 @@ public final class TeamManager {
                 teamId
         );
 
-        syncTeamStateToPlayer(player);
+        syncTeamStateToPlayer(
+                player
+        );
+    }
+
+    // ------------------------------------------------------------
+    // TEAM HEAT
+    // ------------------------------------------------------------
+
+    public static void recalculateTeamHeat(
+        MinecraftServer server,
+        FloodTeam team
+    ) {
+        int highestSoloHeat = 1;
+
+        /*
+        * Team progression is anchored to the most progressed
+        * individual player in the team.
+        */
+        for (UUID memberId :
+                team.getMembers()) {
+
+                ServerPlayer member =
+                        server.getPlayerList()
+                                .getPlayer(memberId);
+
+                /*
+                * Development FakePlayers may not be present
+                * in Minecraft's normal PlayerList.
+                */
+                if (member == null) {
+                member =
+                        DummyPlayerManager.getDummy(
+                                memberId
+                        );
+                }
+
+                if (member == null) {
+                continue;
+                }
+
+                highestSoloHeat =
+                        Math.max(
+                                highestSoloHeat,
+                                HeatManager.getSoloHeat(
+                                        member
+                                )
+                        );
+        }
+
+        /*
+        * Only additional members beyond the first
+        * contribute a team-size bonus.
+        */
+        int additionalMembers =
+                Math.max(
+                        0,
+                        team.getMemberCount() - 1
+                );
+
+        /*
+        * Nonlinear group scaling.
+        *
+        * Team size:
+        *
+        * 1 -> +0
+        * 2 -> +3
+        * 3 -> +7
+        * 4 -> +12
+        * 5 -> +18
+        * 6 -> +25
+        *
+        * Each additional teammate becomes slightly more
+        * valuable than the previous one.
+        */
+        int baseBonus =
+                additionalMembers * 3;
+
+        int synergyBonus =
+                additionalMembers
+                        * (additionalMembers - 1)
+                        / 2;
+
+        int groupBonus =
+                baseBonus + synergyBonus;
+
+        int calculatedHeat =
+                highestSoloHeat
+                        + groupBonus;
+
+        /*
+        * Flood Heat can never exceed 100.
+        */
+        team.setTeamHeat(
+                Math.min(
+                        PlayerFloodData.MAX_HEAT,
+                        Math.max(
+                                1,
+                                calculatedHeat
+                        )
+                )
+        );
+
+        FloodTeamSavedData
+                .get(server)
+                .setDirty();
+    }
+
+    // ------------------------------------------------------------
+    // CLIENT SYNC
+    // ------------------------------------------------------------
+
+    public static void syncTeamStateToPlayer(
+            ServerPlayer player
+    ) {
+        /*
+         * FakePlayer has no real client connection.
+         */
+        if (
+                DummyPlayerManager.isDummy(
+                        player
+                )
+        ) {
+            return;
+        }
+
+        FloodTeam team =
+                getTeamForPlayer(
+                        player
+                );
+
+        if (team == null) {
+            FloodNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(
+                            () -> player
+                    ),
+                    new TeamNetworkingPackets.SyncTeamStatePacket(
+                            false,
+                            false,
+                            null,
+                            "",
+                            DyeColor.WHITE,
+                            1
+                    )
+            );
+
+            return;
+        }
+
+        FloodNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(
+                        () -> player
+                ),
+                new TeamNetworkingPackets.SyncTeamStatePacket(
+                        true,
+                        team.isOwner(
+                                player.getUUID()
+                        ),
+                        team.getTeamId(),
+                        team.getName(),
+                        team.getColor(),
+                        team.getTeamHeat()
+                )
+        );
+    }
+
+    public static void syncTeamStateToAllMembers(
+            MinecraftServer server,
+            FloodTeam team
+    ) {
+        for (UUID memberId :
+                team.getMembers()) {
+
+            ServerPlayer member =
+                    server.getPlayerList()
+                            .getPlayer(memberId);
+
+            /*
+             * No need to sync FakePlayers because there
+             * is no client HUD attached to them.
+             */
+            if (member == null) {
+                continue;
+            }
+
+            syncTeamStateToPlayer(
+                    member
+            );
+
+            HeatManager.syncHeatToPlayer(
+                    member
+            );
+        }
     }
 
     // ------------------------------------------------------------
@@ -653,55 +1075,83 @@ public final class TeamManager {
         PENDING_INVITES.values()
                 .forEach(
                         invites ->
-                                invites.remove(teamId)
+                                invites.remove(
+                                        teamId
+                                )
                 );
 
         PENDING_INVITES.entrySet()
                 .removeIf(
                         entry ->
-                                entry.getValue().isEmpty()
+                                entry.getValue()
+                                        .isEmpty()
                 );
     }
 
-    public static void syncTeamStateToPlayer(
-                ServerPlayer player
+    public static List<ServerPlayer> getInvitablePlayers(
+                ServerPlayer invitingPlayer
     ) {
-        FloodTeam team =
-                getTeamForPlayer(player);
+        Map<UUID, ServerPlayer> candidates =
+                new LinkedHashMap<>();
 
-        if (team == null) {
-                FloodNetwork.CHANNEL.send(
-                        PacketDistributor.PLAYER.with(
-                                () -> player
-                        ),
-                        new TeamNetworkingPackets.SyncTeamStatePacket(
-                                false,
-                                false,
-                                null,
-                                "",
-                                DyeColor.WHITE,
-                                1
-                        )
+        /*
+        * Real connected players.
+        */
+        for (ServerPlayer player :
+                invitingPlayer.server
+                        .getPlayerList()
+                        .getPlayers()) {
+
+                candidates.put(
+                        player.getUUID(),
+                        player
                 );
-
-                return;
         }
 
-        FloodNetwork.CHANNEL.send(
-                PacketDistributor.PLAYER.with(
-                        () -> player
-                ),
-                new TeamNetworkingPackets.SyncTeamStatePacket(
-                        true,
-                        team.isOwner(
-                                player.getUUID()
-                        ),
-                        team.getTeamId(),
-                        team.getName(),
-                        team.getColor(),
-                        team.getTeamHeat()
-                )
-        );
+        /*
+        * Development dummy players.
+        */
+        for (ServerPlayer dummy :
+                DummyPlayerManager.getDummies()) {
+
+                candidates.put(
+                        dummy.getUUID(),
+                        dummy
+                );
+        }
+
+        List<ServerPlayer> result =
+                new ArrayList<>();
+
+        for (ServerPlayer candidate :
+                candidates.values()) {
+
+                /*
+                * Don't include the inviting player.
+                */
+                if (
+                        candidate.getUUID()
+                                .equals(
+                                        invitingPlayer.getUUID()
+                                )
+                ) {
+                continue;
+                }
+
+                /*
+                * Already-teamed players cannot be invited.
+                */
+                if (
+                        getTeamForPlayer(candidate)
+                        != null
+                ) {
+                continue;
+                }
+
+                result.add(candidate);
+        }
+
+        return result;
     }
 
     private static void broadcastToTeam(
@@ -716,6 +1166,10 @@ public final class TeamManager {
                     server.getPlayerList()
                             .getPlayer(memberId);
 
+            /*
+             * Don't attempt chat/network traffic to our
+             * development FakePlayers.
+             */
             if (player != null) {
                 player.sendSystemMessage(
                         message
