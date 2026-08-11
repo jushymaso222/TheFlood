@@ -8,6 +8,8 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.slf4j.Logger;
+import com.jushymaso222.theflood.compat.TurretPlacementEvents;
+import net.minecraftforge.common.MinecraftForge;
 
 @Mod(TheFlood.MOD_ID)
 public class TheFlood {
@@ -26,6 +28,10 @@ public class TheFlood {
                 ModConfig.Type.CLIENT,
                 TheFloodClientConfig.CLIENT_CONFIG,
                 "theflood-client.toml"
+        );
+
+        MinecraftForge.EVENT_BUS.register(
+                new TurretPlacementEvents()
         );
 
         FloodNetwork.register();

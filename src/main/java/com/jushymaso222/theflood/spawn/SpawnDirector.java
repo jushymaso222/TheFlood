@@ -6,7 +6,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
@@ -16,6 +15,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.entity.monster.warden.Warden;
 import com.jushymaso222.theflood.progression.HeatManager;
+
+import net.minecraft.world.entity.monster.Skeleton;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.entity.EquipmentSlot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -580,6 +584,19 @@ public class SpawnDirector {
                 RANDOM.nextFloat() * 360.0F,
                 0.0F
         );
+
+        if (mob instanceof Skeleton skeleton) {
+                skeleton.setItemSlot(
+                        EquipmentSlot.MAINHAND,
+                        new ItemStack(Items.BOW)
+                );
+
+                skeleton.setDropChance(
+                        EquipmentSlot.MAINHAND,
+                        0.085F
+                );
+                skeleton.reassessWeaponGoal();
+        }
 
         if (
                 isHordeMob
