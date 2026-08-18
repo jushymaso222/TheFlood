@@ -7,10 +7,17 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
+import com.jushymaso222.theflood.team.FloodTeam;
+import com.jushymaso222.theflood.team.TeamManager;
+import com.jushymaso222.theflood.team.TeamDisplayManager;
+
+import net.minecraft.ChatFormatting;
+
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -109,26 +116,84 @@ public final class DummyPlayerManager {
     }
 
     private static void updateVisualName(
-            FakePlayer dummy,
-            ArmorStand visual
-    ) {
-        int effectiveHeat =
-                HeatManager.getEffectiveHeat(
-                        dummy
+        FakePlayer dummy,
+        ArmorStand visual
+) {
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    dummy
+            );
+
+    Component nameComponent;
+
+    if (team != null) {
+
+        Component teamPrefix =
+                Component.literal(
+                        "["
+                                + team.getName()
+                                + "] "
+                ).withStyle(
+                        TeamDisplayManager.getChatColor(
+                                team.getColor()
+                        )
                 );
 
-        visual.setCustomName(
+        Component playerName =
                 Component.literal(
                         dummy.getGameProfile()
                                 .getName()
-                                + " [Heat "
-                                + effectiveHeat
-                                + "]"
-                )
-        );
+                ).withStyle(
+                        ChatFormatting.WHITE
+                );
 
-        visual.setCustomNameVisible(true);
+        nameComponent =
+                Component.empty()
+                        .append(teamPrefix)
+                        .append(playerName);
+
+    } else {
+
+        nameComponent =
+                Component.literal(
+                        dummy.getGameProfile()
+                                .getName()
+                ).withStyle(
+                        ChatFormatting.WHITE
+                );
     }
+
+    visual.setCustomName(
+            nameComponent
+    );
+
+    visual.setCustomNameVisible(
+            true
+    );
+}
+
+public static FakePlayer getDummyForVisual(
+        UUID visualId
+) {
+    for (Map.Entry<String, ArmorStand> entry :
+            DUMMY_VISUALS.entrySet()) {
+
+        ArmorStand visual =
+                entry.getValue();
+
+        if (
+                visual != null
+                && visual.getUUID()
+                        .equals(visualId)
+        ) {
+            return DUMMIES.get(
+                    entry.getKey()
+            );
+        }
+    }
+
+    return null;
+}
 
     public static FakePlayer addDummy(
             ServerPlayer creator,
@@ -241,10 +306,26 @@ public final class DummyPlayerManager {
                 dummy
         );
 
+        DummyPlayerSavedData
+        .get(creator.server)
+        .put(
+                new DummyPlayerSavedData.DummyData(
+                        cleanName,
+                        level.dimension(),
+                        dummy.getX(),
+                        dummy.getY(),
+                        dummy.getZ(),
+                        dummy.getYRot(),
+                        dummy.getXRot(),
+                        randomHeat
+                )
+        );
+
         return dummy;
     }
 
     public static boolean removeDummy(
+            MinecraftServer server,
             String name
     ) {
         String key =
@@ -272,6 +353,12 @@ public final class DummyPlayerManager {
         if (!dummy.isRemoved()) {
             dummy.discard();
         }
+
+        DummyPlayerSavedData
+        .get(server)
+        .remove(
+                name
+        );
 
         return true;
     }
@@ -347,14 +434,16 @@ public final class DummyPlayerManager {
         );
     }
 
-    public static void clearAll() {
-
+    public static void unloadRuntime() {
         for (ArmorStand visual :
                 DUMMY_VISUALS.values()) {
 
-            if (!visual.isRemoved()) {
+                if (
+                        visual != null
+                        && !visual.isRemoved()
+                ) {
                 visual.discard();
-            }
+                }
         }
 
         DUMMY_VISUALS.clear();
@@ -362,11 +451,144 @@ public final class DummyPlayerManager {
         for (FakePlayer dummy :
                 DUMMIES.values()) {
 
-            if (!dummy.isRemoved()) {
+                if (
+                        dummy != null
+                        && !dummy.isRemoved()
+                ) {
                 dummy.discard();
-            }
+                }
         }
 
         DUMMIES.clear();
-    }
+
+        lastVisualUpdate =
+                -1;
+        }
+
+    public static int clearAll(
+                MinecraftServer server
+        ) {
+        int count =
+                DUMMIES.size();
+
+        unloadRuntime();
+
+        DummyPlayerSavedData
+                .get(server)
+                .clear();
+
+        return count;
+        }
+
+        public static void restoreAll(
+                MinecraftServer server
+        ) {
+        /*
+        * Make this safe if something somehow calls it twice.
+        */
+        if (!DUMMIES.isEmpty()) {
+                return;
+        }
+
+        DummyPlayerSavedData savedData =
+                DummyPlayerSavedData.get(
+                        server
+                );
+
+        for (
+                DummyPlayerSavedData.DummyData saved :
+                savedData.getDummies()
+        ) {
+                ServerLevel level =
+                        server.getLevel(
+                                saved.dimension()
+                        );
+
+                if (level == null) {
+                continue;
+                }
+
+                String cleanName =
+                        saved.name();
+
+                String key =
+                        cleanName.trim()
+                                .toLowerCase();
+
+                UUID uuid =
+                        UUID.nameUUIDFromBytes(
+                                (
+                                        "theflood_dummy_"
+                                                + key
+                                ).getBytes(
+                                        StandardCharsets.UTF_8
+                                )
+                        );
+
+                GameProfile profile =
+                        new GameProfile(
+                                uuid,
+                                cleanName
+                        );
+
+                FakePlayer dummy =
+                        FakePlayerFactory.get(
+                                level,
+                                profile
+                        );
+
+                dummy.moveTo(
+                        saved.x(),
+                        saved.y(),
+                        saved.z(),
+                        saved.yaw(),
+                        saved.pitch()
+                );
+
+                PlayerFloodData.setSoloHeat(
+                        dummy,
+                        saved.soloHeat()
+                );
+
+                PlayerFloodData.setHeatProgressTicks(
+                        dummy,
+                        0
+                );
+
+                ArmorStand visual =
+                        new ArmorStand(
+                                level,
+                                saved.x(),
+                                saved.y(),
+                                saved.z()
+                        );
+
+                visual.setNoGravity(
+                        true
+                );
+
+                visual.setInvulnerable(
+                        true
+                );
+
+                updateVisualName(
+                        dummy,
+                        visual
+                );
+
+                level.addFreshEntity(
+                        visual
+                );
+
+                DUMMIES.put(
+                        key,
+                        dummy
+                );
+
+                DUMMY_VISUALS.put(
+                        key,
+                        visual
+                );
+        }
+        }
 }

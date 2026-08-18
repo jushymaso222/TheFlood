@@ -63,9 +63,12 @@ public class FloodTeamScreen extends Screen {
 
         invitesButton = Button.builder(
                 Component.literal("Invites"),
-                button -> {
-                        // Invite-management screen shortly.
-                }
+                button ->
+                        minecraft.setScreen(
+                                new FloodTeamInvitesScreen(
+                                        this
+                                )
+                        )
         )
         .bounds(
                 centerX - 75,
@@ -75,7 +78,9 @@ public class FloodTeamScreen extends Screen {
         )
         .build();
 
-        addRenderableWidget(invitesButton);
+        addRenderableWidget(
+                invitesButton
+        );
 
 
         leaveTeamButton = Button.builder(

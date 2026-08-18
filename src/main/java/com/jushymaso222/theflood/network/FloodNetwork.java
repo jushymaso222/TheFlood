@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import com.jushymaso222.theflood.network.packet.SyncHeatPacket;
+import com.jushymaso222.theflood.network.packet.SyncServerSettingsPacket;
 
 public final class FloodNetwork {
 
@@ -28,6 +29,62 @@ public final class FloodNetwork {
     }
 
     public static void register() {
+
+        CHANNEL.registerMessage(
+                id++,
+                SyncServerSettingsPacket.class,
+                SyncServerSettingsPacket::encode,
+                SyncServerSettingsPacket::decode,
+                SyncServerSettingsPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.ToggleTeamChatPacket.class,
+                TeamNetworkingPackets.ToggleTeamChatPacket::encode,
+                TeamNetworkingPackets.ToggleTeamChatPacket::decode,
+                TeamNetworkingPackets.ToggleTeamChatPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.SyncTeamChatModePacket.class,
+                TeamNetworkingPackets.SyncTeamChatModePacket::encode,
+                TeamNetworkingPackets.SyncTeamChatModePacket::decode,
+                TeamNetworkingPackets.SyncTeamChatModePacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.SyncTeamHudPacket.class,
+                TeamNetworkingPackets.SyncTeamHudPacket::encode,
+                TeamNetworkingPackets.SyncTeamHudPacket::decode,
+                TeamNetworkingPackets.SyncTeamHudPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.SyncPlayerHeatPacket.class,
+                TeamNetworkingPackets.SyncPlayerHeatPacket::encode,
+                TeamNetworkingPackets.SyncPlayerHeatPacket::decode,
+                TeamNetworkingPackets.SyncPlayerHeatPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.RequestPendingTeamInvitesPacket.class,
+                TeamNetworkingPackets.RequestPendingTeamInvitesPacket::encode,
+                TeamNetworkingPackets.RequestPendingTeamInvitesPacket::decode,
+                TeamNetworkingPackets.RequestPendingTeamInvitesPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                TeamNetworkingPackets.SyncPendingTeamInvitesPacket.class,
+                TeamNetworkingPackets.SyncPendingTeamInvitesPacket::encode,
+                TeamNetworkingPackets.SyncPendingTeamInvitesPacket::decode,
+                TeamNetworkingPackets.SyncPendingTeamInvitesPacket::handle
+        );
 
         CHANNEL.registerMessage(
                 id++,

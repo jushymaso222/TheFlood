@@ -1,10 +1,10 @@
 package com.jushymaso222.theflood.combat;
 
 import com.jushymaso222.theflood.TheFlood;
+import com.jushymaso222.theflood.compat.MekanismEnergyCompat;
 import com.jushymaso222.theflood.compat.TurretOwnershipManager;
 import com.jushymaso222.theflood.progression.HeatManager;
 import com.jushymaso222.theflood.scaling.MobScaling;
-import com.jushymaso222.theflood.compat.MekanismEnergyCompat;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -15,14 +15,12 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
-
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
 
 @Mod.EventBusSubscriber(
         modid = TheFlood.MOD_ID,
@@ -180,42 +178,39 @@ long fixedDrain =
 
         /*
         * TEMP DEBUG
-        *
-        * CurseForge's console was hiding our messages,
-        * so put this directly in chat while testing.
         */
-        player.sendSystemMessage(
-                Component.literal(
-                        "[Flood Meka Debug] "
-                                + "Heat="
-                                + heat
-                                + " | Damage="
-                                + format(effectiveDamage)
-                                + " | Capacity="
-                                + formatEnergy(totalCapacity)
-                                + " J"
-                                + " | Drain="
-                                + String.format(
-                                        "%.3f%%",
-                                        capacityDrainPercent * 100.0
-                                )
-                                + " | Fixed="
-                                + formatEnergy(fixedDrain)
-                                + " J"
-                                + " | CapacityDrain="
-                                + formatEnergy(capacityDrain)
-                                + " J"
-                                + " | Total="
-                                + formatEnergy(requestedDrain)
-                                + " J"
-                                + " | Drained="
-                                + formatEnergy(actuallyDrained)
-                                + " J"
-                )
-        );
-        debugMekaSuitEnergy(
-                player
-        );
+        // player.sendSystemMessage(
+        //         Component.literal(
+        //                 "[Flood Meka Debug] "
+        //                         + "Heat="
+        //                         + heat
+        //                         + " | Damage="
+        //                         + format(effectiveDamage)
+        //                         + " | Capacity="
+        //                         + formatEnergy(totalCapacity)
+        //                         + " J"
+        //                         + " | Drain="
+        //                         + String.format(
+        //                                 "%.3f%%",
+        //                                 capacityDrainPercent * 100.0
+        //                         )
+        //                         + " | Fixed="
+        //                         + formatEnergy(fixedDrain)
+        //                         + " J"
+        //                         + " | CapacityDrain="
+        //                         + formatEnergy(capacityDrain)
+        //                         + " J"
+        //                         + " | Total="
+        //                         + formatEnergy(requestedDrain)
+        //                         + " J"
+        //                         + " | Drained="
+        //                         + formatEnergy(actuallyDrained)
+        //                         + " J"
+        //         )
+        // );
+        // debugMekaSuitEnergy(
+        //         player
+        // );
         }
 
         private static Mob getAttackingMob(
@@ -604,118 +599,118 @@ long fixedDrain =
      * This only runs when the full MekaSuit detector
      * returns false.
      */
-    private static void debugArmorIds(
-            ServerPlayer player
-    ) {
-        EquipmentSlot[] armorSlots = {
-                EquipmentSlot.HEAD,
-                EquipmentSlot.CHEST,
-                EquipmentSlot.LEGS,
-                EquipmentSlot.FEET
-        };
+//     private static void debugArmorIds(
+//             ServerPlayer player
+//     ) {
+//         EquipmentSlot[] armorSlots = {
+//                 EquipmentSlot.HEAD,
+//                 EquipmentSlot.CHEST,
+//                 EquipmentSlot.LEGS,
+//                 EquipmentSlot.FEET
+//         };
 
-        for (EquipmentSlot slot :
-                armorSlots) {
+//         for (EquipmentSlot slot :
+//                 armorSlots) {
 
-            ItemStack stack =
-                    player.getItemBySlot(
-                            slot
-                    );
+//             ItemStack stack =
+//                     player.getItemBySlot(
+//                             slot
+//                     );
 
-            ResourceLocation id =
-                    stack.isEmpty()
-                            ? null
-                            : ForgeRegistries.ITEMS
-                                    .getKey(
-                                            stack.getItem()
-                                    );
+//             ResourceLocation id =
+//                     stack.isEmpty()
+//                             ? null
+//                             : ForgeRegistries.ITEMS
+//                                     .getKey(
+//                                             stack.getItem()
+//                                     );
 
-            player.sendSystemMessage(
-                    Component.literal(
-                            "[Flood Armor Debug] "
-                                    + slot.getName()
-                                    + "="
-                                    + (
-                                    id == null
-                                            ? "EMPTY/UNKNOWN"
-                                            : id.toString()
-                                    )
-                    )
-            );
-        }
-    }
+//             player.sendSystemMessage(
+//                     Component.literal(
+//                             "[Flood Armor Debug] "
+//                                     + slot.getName()
+//                                     + "="
+//                                     + (
+//                                     id == null
+//                                             ? "EMPTY/UNKNOWN"
+//                                             : id.toString()
+//                                     )
+//                     )
+//             );
+//         }
+//     }
 
-    private static void debugMekaSuitEnergy(
-        ServerPlayer player
-) {
-    EquipmentSlot[] slots = {
-            EquipmentSlot.HEAD,
-            EquipmentSlot.CHEST,
-            EquipmentSlot.LEGS,
-            EquipmentSlot.FEET
-    };
+//     private static void debugMekaSuitEnergy(
+//         ServerPlayer player
+// ) {
+//     EquipmentSlot[] slots = {
+//             EquipmentSlot.HEAD,
+//             EquipmentSlot.CHEST,
+//             EquipmentSlot.LEGS,
+//             EquipmentSlot.FEET
+//     };
 
-    for (EquipmentSlot slot : slots) {
+//     for (EquipmentSlot slot : slots) {
 
-        ItemStack stack =
-                player.getItemBySlot(
-                        slot
-                );
+//         ItemStack stack =
+//                 player.getItemBySlot(
+//                         slot
+//                 );
 
-        if (
-                stack.isEmpty()
-                || !isMekaSuitPiece(stack)
-        ) {
-            continue;
-        }
+//         if (
+//                 stack.isEmpty()
+//                 || !isMekaSuitPiece(stack)
+//         ) {
+//             continue;
+//         }
 
-        MekanismEnergyCompat.EnergyInfo info =
-                MekanismEnergyCompat.getEnergyInfo(
-                        stack
-                );
+//         MekanismEnergyCompat.EnergyInfo info =
+//                 MekanismEnergyCompat.getEnergyInfo(
+//                         stack
+//                 );
 
-        if (info == null) {
-            player.sendSystemMessage(
-                    Component.literal(
-                            "[Flood Meka Energy] "
-                                    + slot.getName()
-                                    + "=UNKNOWN"
-                    )
-            );
+//         if (info == null) {
+//             player.sendSystemMessage(
+//                     Component.literal(
+//                             "[Flood Meka Energy] "
+//                                     + slot.getName()
+//                                     + "=UNKNOWN"
+//                     )
+//             );
 
-            continue;
-        }
+//             continue;
+//         }
 
-        double percentage =
-                info.capacity() <= 0
-                        ? 0.0
-                        : (
-                        info.stored()
-                                / (double) info.capacity()
-                ) * 100.0;
+//         double percentage =
+//                 info.capacity() <= 0
+//                         ? 0.0
+//                         : (
+//                         info.stored()
+//                                 / (double) info.capacity()
+//                 ) * 100.0;
 
-        player.sendSystemMessage(
-                Component.literal(
-                        "[Flood Meka Energy] "
-                                + slot.getName()
-                                + "="
-                                + formatEnergy(
-                                        info.stored()
-                                )
-                                + " / "
-                                + formatEnergy(
-                                        info.capacity()
-                                )
-                                + " J ("
-                                + String.format(
-                                        "%.1f",
-                                        percentage
-                                )
-                                + "%)"
-                )
-        );
-    }
-}
+//         player.sendSystemMessage(
+//                 Component.literal(
+//                         "[Flood Meka Energy] "
+//                                 + slot.getName()
+//                                 + "="
+//                                 + formatEnergy(
+//                                         info.stored()
+//                                 )
+//                                 + " / "
+//                                 + formatEnergy(
+//                                         info.capacity()
+//                                 )
+//                                 + " J ("
+//                                 + String.format(
+//                                         "%.1f",
+//                                         percentage
+//                                 )
+//                                 + "%)"
+//                 )
+//         );
+//     }
+// }
 
 private static String formatEnergy(
         long energy
@@ -992,55 +987,55 @@ private static long getTotalMekaSuitCapacity(
      *
      * Remove before release.
      */
-    @SubscribeEvent
-    public static void debugMobDamageSource(
-            LivingHurtEvent event
-    ) {
-        if (!(event.getEntity() instanceof Mob mob)) {
-            return;
-        }
+//     @SubscribeEvent
+//     public static void debugMobDamageSource(
+//             LivingHurtEvent event
+//     ) {
+//         if (!(event.getEntity() instanceof Mob mob)) {
+//             return;
+//         }
 
-        if (!MobScaling.isFloodMob(mob.getType())) {
-            return;
-        }
+//         if (!MobScaling.isFloodMob(mob.getType())) {
+//             return;
+//         }
 
-        Entity causingEntity =
-                event.getSource()
-                        .getEntity();
+//         Entity causingEntity =
+//                 event.getSource()
+//                         .getEntity();
 
-        Entity directEntity =
-                event.getSource()
-                        .getDirectEntity();
+//         Entity directEntity =
+//                 event.getSource()
+//                         .getDirectEntity();
 
-        String causingClass =
-                causingEntity == null
-                        ? "null"
-                        : causingEntity
-                                .getClass()
-                                .getName();
+//         String causingClass =
+//                 causingEntity == null
+//                         ? "null"
+//                         : causingEntity
+//                                 .getClass()
+//                                 .getName();
 
-        String directClass =
-                directEntity == null
-                        ? "null"
-                        : directEntity
-                                .getClass()
-                                .getName();
+//         String directClass =
+//                 directEntity == null
+//                         ? "null"
+//                         : directEntity
+//                                 .getClass()
+//                                 .getName();
 
-        System.out.println(
-                "[The Flood Damage Debug]"
-                        + " victim="
-                        + mob.getType()
-                        + " source="
-                        + event.getSource()
-                                .getMsgId()
-                        + " causing="
-                        + causingClass
-                        + " direct="
-                        + directClass
-                        + " damage="
-                        + event.getAmount()
-        );
-    }
+//         System.out.println(
+//                 "[The Flood Damage Debug]"
+//                         + " victim="
+//                         + mob.getType()
+//                         + " source="
+//                         + event.getSource()
+//                                 .getMsgId()
+//                         + " causing="
+//                         + causingClass
+//                         + " direct="
+//                         + directClass
+//                         + " damage="
+//                         + event.getAmount()
+//         );
+//     }
 
     /*
      * Keeps debug numbers readable.

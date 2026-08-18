@@ -5,6 +5,9 @@ import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.network.packet.TeamNetworkingPackets;
 import com.jushymaso222.theflood.progression.HeatManager;
 
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -34,6 +37,22 @@ public final class TeamManager {
      */
     private static final Map<UUID, Set<UUID>> PENDING_INVITES =
             new HashMap<>();
+
+    /*
+        * Player UUID -> pending Heat confirmation.
+        *
+        * A player is added here only after accepting an
+        * invitation that would increase their Heat.
+        */
+        private static final Map<UUID, PendingHeatConfirmation>
+                PENDING_HEAT_CONFIRMATIONS =
+                new HashMap<>();
+
+        private record PendingHeatConfirmation(
+                UUID teamId,
+                int warnedHeat
+        ) {
+        }
 
     private TeamManager() {
     }
@@ -400,6 +419,350 @@ public final class TeamManager {
     // ACCEPT / DECLINE
     // ------------------------------------------------------------
 
+    private static void sendHeatJoinWarning(
+        ServerPlayer player,
+        FloodTeam team,
+        int currentHeat,
+        int projectedHeat
+) {
+    player.sendSystemMessage(
+            Component.literal(
+                    "\nJoining "
+            ).withStyle(
+                    ChatFormatting.YELLOW
+            ).append(
+                    Component.literal(
+                            team.getName()
+                    ).withStyle(
+                            ChatFormatting.GOLD
+                    )
+            ).append(
+                    Component.literal(
+                            " will increase your Heat!"
+                    ).withStyle(
+                            ChatFormatting.YELLOW
+                    )
+            )
+    );
+
+    player.sendSystemMessage(
+            Component.literal(
+                    "Current Heat: "
+            ).withStyle(
+                    ChatFormatting.GRAY
+            ).append(
+                    Component.literal(
+                            Integer.toString(
+                                    currentHeat
+                            )
+                    ).withStyle(
+                            ChatFormatting.GREEN
+                    )
+            )
+    );
+
+    player.sendSystemMessage(
+            Component.literal(
+                    "Heat after joining: "
+            ).withStyle(
+                    ChatFormatting.GRAY
+            ).append(
+                    Component.literal(
+                            Integer.toString(
+                                    projectedHeat
+                            )
+                    ).withStyle(
+                            ChatFormatting.RED
+                    )
+            )
+    );
+
+    Component confirm =
+            Component.literal(
+                    "[CONFIRM]"
+            ).withStyle(style ->
+                    style
+                            .withColor(
+                                    ChatFormatting.GREEN
+                            )
+                            .withBold(true)
+                            .withClickEvent(
+                                    new ClickEvent(
+                                            ClickEvent.Action.RUN_COMMAND,
+                                            "/flood team confirm "
+                                                    + team.getTeamId()
+                                    )
+                            )
+                            .withHoverEvent(
+                                    new HoverEvent(
+                                            HoverEvent.Action.SHOW_TEXT,
+                                            Component.literal(
+                                                    "Join "
+                                                            + team.getName()
+                                                            + " at Heat "
+                                                            + projectedHeat
+                                            )
+                                    )
+                            )
+            );
+
+    Component cancel =
+            Component.literal(
+                    "[CANCEL]"
+            ).withStyle(style ->
+                    style
+                            .withColor(
+                                    ChatFormatting.RED
+                            )
+                            .withBold(true)
+                            .withClickEvent(
+                                    new ClickEvent(
+                                            ClickEvent.Action.RUN_COMMAND,
+                                            "/flood team cancel "
+                                                    + team.getTeamId()
+                                    )
+                            )
+                            .withHoverEvent(
+                                    new HoverEvent(
+                                            HoverEvent.Action.SHOW_TEXT,
+                                            Component.literal(
+                                                    "Do not join the team"
+                                            )
+                                    )
+                            )
+            );
+
+    player.sendSystemMessage(
+            Component.literal(" ")
+                    .append(confirm)
+                    .append(
+                            Component.literal(
+                                    "     "
+                            )
+                    )
+                    .append(cancel)
+    );
+}
+
+    public static boolean requestAcceptInvite(
+        ServerPlayer player,
+        UUID teamId
+) {
+    /*
+     * Development dummies should continue
+     * auto-accepting without confirmation.
+     */
+    if (DummyPlayerManager.isDummy(player)) {
+        return acceptInvite(
+                player,
+                teamId
+        );
+    }
+
+    if (isInTeam(player)) {
+        player.sendSystemMessage(
+                Component.literal(
+                        "You are already in a team."
+                ).withStyle(
+                        ChatFormatting.RED
+                )
+        );
+
+        return false;
+    }
+
+    Set<UUID> invites =
+            PENDING_INVITES.get(
+                    player.getUUID()
+            );
+
+    if (
+            invites == null
+            || !invites.contains(teamId)
+    ) {
+        player.sendSystemMessage(
+                Component.literal(
+                        "That team invitation is no longer valid."
+                ).withStyle(
+                        ChatFormatting.RED
+                )
+        );
+
+        return false;
+    }
+
+    FloodTeam team =
+            getTeam(
+                    player.server,
+                    teamId
+            );
+
+    if (team == null) {
+        return false;
+    }
+
+    int currentHeat =
+            HeatManager.getEffectiveHeat(
+                    player
+            );
+
+    int projectedHeat =
+            calculateProjectedTeamHeat(
+                    player.server,
+                    team,
+                    player
+            );
+
+    /*
+     * No warning is necessary if joining
+     * wouldn't increase this player's Heat.
+     */
+    if (projectedHeat <= currentHeat) {
+        return acceptInvite(
+                player,
+                teamId
+        );
+    }
+
+    PENDING_HEAT_CONFIRMATIONS.put(
+        player.getUUID(),
+        new PendingHeatConfirmation(
+                teamId,
+                projectedHeat
+        )
+);
+
+    sendHeatJoinWarning(
+            player,
+            team,
+            currentHeat,
+            projectedHeat
+    );
+
+    return true;
+}
+
+        public static boolean confirmHeatInvite(
+        ServerPlayer player,
+        UUID teamId
+) {
+    PendingHeatConfirmation confirmation =
+            PENDING_HEAT_CONFIRMATIONS.get(
+                    player.getUUID()
+            );
+
+    if (
+            confirmation == null
+            || !confirmation.teamId()
+                    .equals(teamId)
+    ) {
+        player.sendSystemMessage(
+                Component.literal(
+                        "You do not have a pending confirmation for that team."
+                ).withStyle(
+                        ChatFormatting.RED
+                )
+        );
+
+        return false;
+    }
+
+    FloodTeam team =
+            getTeam(
+                    player.server,
+                    teamId
+            );
+
+    if (team == null) {
+        PENDING_HEAT_CONFIRMATIONS.remove(
+                player.getUUID()
+        );
+
+        player.sendSystemMessage(
+                Component.literal(
+                        "That team no longer exists."
+                ).withStyle(
+                        ChatFormatting.RED
+                )
+        );
+
+        return false;
+    }
+
+    /*
+     * Recalculate before joining.
+     *
+     * The team's membership or highest-Heat player may
+     * have changed since the warning was displayed.
+     */
+    int projectedHeat =
+            calculateProjectedTeamHeat(
+                    player.server,
+                    team,
+                    player
+            );
+
+    /*
+     * Never allow confirmation of a Heat level higher
+     * than the one the player was originally warned about.
+     */
+    if (
+            projectedHeat
+            > confirmation.warnedHeat()
+    ) {
+        PENDING_HEAT_CONFIRMATIONS.put(
+                player.getUUID(),
+                new PendingHeatConfirmation(
+                        teamId,
+                        projectedHeat
+                )
+        );
+
+        sendHeatJoinWarning(
+                player,
+                team,
+                HeatManager.getEffectiveHeat(player),
+                projectedHeat
+        );
+
+        return false;
+    }
+
+    PENDING_HEAT_CONFIRMATIONS.remove(
+            player.getUUID()
+    );
+
+    return acceptInvite(
+            player,
+            teamId
+    );
+}
+
+        public static void cancelHeatInvite(
+        ServerPlayer player,
+        UUID teamId
+) {
+    PendingHeatConfirmation confirmation =
+            PENDING_HEAT_CONFIRMATIONS.get(
+                    player.getUUID()
+            );
+
+    if (
+            confirmation != null
+            && confirmation.teamId()
+                    .equals(teamId)
+    ) {
+        PENDING_HEAT_CONFIRMATIONS.remove(
+                player.getUUID()
+        );
+    }
+
+    declineInvite(
+            player,
+            teamId
+    );
+}
+
     public static boolean acceptInvite(
             ServerPlayer player,
             UUID teamId
@@ -692,6 +1055,11 @@ public final class TeamManager {
                 team
         );
 
+        TeamChatManager.setMode(
+                player.getUUID(),
+                TeamChatManager.ChatMode.GLOBAL
+        );
+
         return true;
     }
 
@@ -728,6 +1096,11 @@ public final class TeamManager {
 
         for (UUID memberId :
                 members) {
+
+            TeamChatManager.setMode(
+                memberId,
+                TeamChatManager.ChatMode.GLOBAL
+            );
 
             data.getPlayerTeams()
                     .remove(memberId);
@@ -871,6 +1244,85 @@ public final class TeamManager {
     // TEAM HEAT
     // ------------------------------------------------------------
 
+    public static int calculateProjectedTeamHeat(
+        MinecraftServer server,
+        FloodTeam team,
+        ServerPlayer joiningPlayer
+) {
+    int highestSoloHeat =
+            HeatManager.getSoloHeat(
+                    joiningPlayer
+            );
+
+    /*
+     * Find the highest Solo Heat among the
+     * team's existing members.
+     */
+    for (UUID memberId : team.getMembers()) {
+
+        ServerPlayer member =
+                server.getPlayerList()
+                        .getPlayer(memberId);
+
+        if (member == null) {
+            member =
+                    DummyPlayerManager.getDummy(
+                            memberId
+                    );
+        }
+
+        if (member == null) {
+            continue;
+        }
+
+        highestSoloHeat =
+                Math.max(
+                        highestSoloHeat,
+                        HeatManager.getSoloHeat(
+                                member
+                        )
+                );
+    }
+
+    /*
+     * Project the member count AFTER this
+     * player joins.
+     */
+    int projectedMemberCount =
+            team.hasMember(
+                    joiningPlayer.getUUID()
+            )
+                    ? team.getMemberCount()
+                    : team.getMemberCount() + 1;
+
+    int additionalMembers =
+            Math.max(
+                    0,
+                    projectedMemberCount - 1
+            );
+
+    int baseBonus =
+            additionalMembers * 3;
+
+    int synergyBonus =
+            additionalMembers
+                    * (additionalMembers - 1)
+                    / 2;
+
+    int groupBonus =
+            baseBonus
+                    + synergyBonus;
+
+    return Math.min(
+            PlayerFloodData.MAX_HEAT,
+            Math.max(
+                    1,
+                    highestSoloHeat
+                            + groupBonus
+            )
+    );
+}
+
     public static void recalculateTeamHeat(
         MinecraftServer server,
         FloodTeam team
@@ -955,6 +1407,25 @@ public final class TeamManager {
         /*
         * Flood Heat can never exceed 100.
         */
+
+//        for (UUID memberId : team.getMembers()) {
+//                 ServerPlayer member =
+//                         server.getPlayerList().getPlayer(memberId);
+
+//                 if (member != null) {
+//                         member.sendSystemMessage(
+//                                 Component.literal(
+//                                         "[Team Heat Debug] "
+//                                                 + "members=" + team.getMemberCount()
+//                                                 + " highest=" + highestSoloHeat
+//                                                 + " bonus=" + groupBonus
+//                                                 + " calculated=" + calculatedHeat
+//                                 )
+//                         );
+
+//                         break;
+//                 }
+//         }
         team.setTeamHeat(
                 Math.min(
                         PlayerFloodData.MAX_HEAT,
@@ -973,6 +1444,48 @@ public final class TeamManager {
     // ------------------------------------------------------------
     // CLIENT SYNC
     // ------------------------------------------------------------
+
+    public static void syncTeamMemberHeats(
+        MinecraftServer server,
+        FloodTeam team
+) {
+    List<ServerPlayer> connectedMembers =
+            new ArrayList<>();
+
+    for (UUID memberId :
+            team.getMembers()) {
+
+        ServerPlayer member =
+                server.getPlayerList()
+                        .getPlayer(memberId);
+
+        if (member != null) {
+            connectedMembers.add(
+                    member
+            );
+        }
+    }
+
+    for (ServerPlayer receiver :
+            connectedMembers) {
+
+        for (ServerPlayer member :
+                connectedMembers) {
+
+            FloodNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(
+                            () -> receiver
+                    ),
+                    new TeamNetworkingPackets.SyncPlayerHeatPacket(
+                            member.getUUID(),
+                            HeatManager.getEffectiveHeat(
+                                    member
+                            )
+                    )
+            );
+        }
+    }
+}
 
     public static void syncTeamStateToPlayer(
             ServerPlayer player
@@ -1054,8 +1567,109 @@ public final class TeamManager {
             HeatManager.syncHeatToPlayer(
                     member
             );
+
+            syncTeamMemberHeats(
+                        server,
+                        team
+                );
         }
     }
+
+    public static void syncTeamHudToPlayer(
+        ServerPlayer receiver
+) {
+    if (
+            DummyPlayerManager.isDummy(
+                    receiver
+            )
+    ) {
+        return;
+    }
+
+    FloodTeam team =
+            getTeamForPlayer(
+                    receiver
+            );
+
+    if (team == null) {
+        FloodNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(
+                        () -> receiver
+                ),
+                new TeamNetworkingPackets.SyncTeamHudPacket(
+                        List.of()
+                )
+        );
+
+        return;
+    }
+
+    List<TeamNetworkingPackets.SyncTeamHudPacket.Entry> entries =
+            new ArrayList<>();
+
+    for (UUID memberId :
+            team.getMembers()) {
+
+        /*
+         * Don't put yourself on your own teammate HUD.
+         */
+        if (
+                memberId.equals(
+                        receiver.getUUID()
+                )
+        ) {
+            continue;
+        }
+
+        ServerPlayer member =
+                receiver.server
+                        .getPlayerList()
+                        .getPlayer(
+                                memberId
+                        );
+
+        /*
+         * Development FakePlayers aren't necessarily
+         * in Minecraft's normal player list.
+         */
+        if (member == null) {
+            member =
+                    DummyPlayerManager.getDummy(
+                            memberId
+                    );
+        }
+
+        if (member == null) {
+            continue;
+        }
+
+        entries.add(
+                new TeamNetworkingPackets.SyncTeamHudPacket.Entry(
+                        member.getUUID(),
+                        member.getGameProfile()
+                                .getName(),
+                        member.getHealth(),
+                        member.getMaxHealth(),
+                        member.getX(),
+                        member.getY(),
+                        member.getZ(),
+                        member.level()
+                                .dimension()
+                                .location()
+                                .toString()
+                )
+        );
+    }
+
+    FloodNetwork.CHANNEL.send(
+            PacketDistributor.PLAYER.with(
+                    () -> receiver
+            ),
+            new TeamNetworkingPackets.SyncTeamHudPacket(
+                    entries
+            )
+    );
+}
 
     // ------------------------------------------------------------
     // INTERNAL HELPERS

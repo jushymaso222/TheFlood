@@ -28,6 +28,15 @@ public class FloodHudLayoutScreen extends Screen {
     private double dayX;
     private double dayY;
 
+    private double teamX;
+        private double teamY;
+
+        private static final int TEAM_PREVIEW_WIDTH =
+                110;
+
+        private static final int TEAM_PREVIEW_HEIGHT =
+                60;
+
     public FloodHudLayoutScreen(Screen parent) {
         super(Component.literal("HUD Layout"));
         this.parent = parent;
@@ -40,6 +49,12 @@ public class FloodHudLayoutScreen extends Screen {
 
         dayX = TheFloodClientConfig.DAY_HUD_X.get();
         dayY = TheFloodClientConfig.DAY_HUD_Y.get();
+
+        teamX =
+                TheFloodClientConfig.TEAM_HUD_X.get();
+
+        teamY =
+                TheFloodClientConfig.TEAM_HUD_Y.get();
 
         addRenderableWidget(
                 Button.builder(
@@ -97,6 +112,9 @@ public class FloodHudLayoutScreen extends Screen {
 
         renderHeatPreview(graphics);
         renderDayPreview(graphics);
+        renderTeamPreview(
+                graphics
+        );
 
         super.render(
                 graphics,
@@ -105,6 +123,119 @@ public class FloodHudLayoutScreen extends Screen {
                 partialTick
         );
     }
+
+    private void renderTeamPreview(
+                GuiGraphics graphics
+        ) {
+        int x =
+                normalizedToScreenX(teamX);
+
+        int y =
+                normalizedToScreenY(teamY);
+
+        renderFakeTeammate(
+                graphics,
+                x,
+                y,
+                "Bob",
+                0xFF64B5F6,
+                0.75F,
+                "32m"
+        );
+
+        renderFakeTeammate(
+                graphics,
+                x,
+                y + 32,
+                "Alex",
+                0xFFE57373,
+                0.45F,
+                "57m"
+        );
+        }
+
+        private void renderFakeTeammate(
+                GuiGraphics graphics,
+                int x,
+                int y,
+                String name,
+                int playerColor,
+                float health,
+                String distance
+        ) {
+        int width =
+                110;
+
+        int height =
+                28;
+
+        graphics.fill(
+                x,
+                y,
+                x + width,
+                y + height,
+                0x88000000
+        );
+
+        graphics.fill(
+                x + 5,
+                y + 5,
+                x + 12,
+                y + 12,
+                playerColor
+        );
+
+        graphics.drawString(
+                font,
+                name,
+                x + 16,
+                y + 4,
+                0xFFFFFFFF,
+                true
+        );
+
+        int distanceWidth =
+                font.width(
+                        distance
+                );
+
+        graphics.drawString(
+                font,
+                distance,
+                x + width - distanceWidth - 5,
+                y + 4,
+                0xFFBBBBBB,
+                true
+        );
+
+        int barX =
+                x + 5;
+
+        int barY =
+                y + 17;
+
+        int barWidth =
+                width - 10;
+
+        graphics.fill(
+                barX,
+                barY,
+                barX + barWidth,
+                barY + 6,
+                0xFF252525
+        );
+
+        graphics.fill(
+                barX,
+                barY,
+                barX
+                        + Math.round(
+                                barWidth * health
+                        ),
+                barY + 6,
+                0xFF49C95A
+        );
+        }
 
     private void renderHeatPreview(GuiGraphics graphics) {
         int centerX = normalizedToScreenX(heatX);
@@ -216,6 +347,16 @@ public class FloodHudLayoutScreen extends Screen {
                 dragging = DragTarget.DAY;
                 return true;
             }
+
+            if (isMouseOverTeam(
+                        mouseX,
+                        mouseY
+                )) {
+                dragging =
+                        DragTarget.TEAM;
+
+                return true;
+                }
         }
 
         return super.mouseClicked(
@@ -256,6 +397,21 @@ public class FloodHudLayoutScreen extends Screen {
 
             return true;
         }
+
+        if (dragging == DragTarget.TEAM) {
+
+                teamX =
+                        screenToNormalizedX(
+                                mouseX
+                        );
+
+                teamY =
+                        screenToNormalizedY(
+                                mouseY
+                        );
+
+                return true;
+                }
 
         return super.mouseDragged(
                 mouseX,
@@ -298,6 +454,28 @@ public class FloodHudLayoutScreen extends Screen {
                 && mouseY >= centerY - half
                 && mouseY <= centerY + half;
     }
+
+    private boolean isMouseOverTeam(
+                double mouseX,
+                double mouseY
+        ) {
+        int x =
+                normalizedToScreenX(
+                        teamX
+                );
+
+        int y =
+                normalizedToScreenY(
+                        teamY
+                );
+
+        return mouseX >= x
+                && mouseX <= x
+                        + TEAM_PREVIEW_WIDTH
+                && mouseY >= y
+                && mouseY <= y
+                        + TEAM_PREVIEW_HEIGHT;
+        }
 
     private boolean isMouseOverDay(
             double mouseX,
@@ -359,6 +537,9 @@ public class FloodHudLayoutScreen extends Screen {
 
         dayX = 0.50;
         dayY = 0.08;
+
+        teamX = 0.02;
+        teamY = 0.35;
     }
 
     private void saveAndClose() {
@@ -367,6 +548,13 @@ public class FloodHudLayoutScreen extends Screen {
 
         TheFloodClientConfig.DAY_HUD_X.set(dayX);
         TheFloodClientConfig.DAY_HUD_Y.set(dayY);
+
+        TheFloodClientConfig.TEAM_HUD_X.set(
+                teamX
+        );
+        TheFloodClientConfig.TEAM_HUD_Y.set(
+                teamY
+        );
 
         onClose();
     }
@@ -379,6 +567,7 @@ public class FloodHudLayoutScreen extends Screen {
     private enum DragTarget {
         NONE,
         HEAT,
-        DAY
+        DAY,
+        TEAM
     }
 }

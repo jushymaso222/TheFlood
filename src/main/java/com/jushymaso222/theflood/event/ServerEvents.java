@@ -24,7 +24,6 @@ import com.jushymaso222.theflood.debug.DummyPlayerManager;
 public class ServerEvents {
 
     private static long lastAnnouncedBloodMoonDay = -1;
-    private static int previousDay = -1;
 
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
@@ -44,15 +43,6 @@ public class ServerEvents {
         long day = (dayTime / 24000L) + 1;
         long timeOfDay = dayTime % 24000L;
 
-        int currentDay = (int) day;
-        if (previousDay == -1) {
-            // Initialize without announcing old unlocks when loading an existing world.
-            previousDay = currentDay;
-        } else if (currentDay != previousDay) {
-            announceMobUnlocks(level, currentDay);
-            previousDay = currentDay;
-        }
-
         boolean isBloodMoonDay = day % TheFloodConfig.TIME.bloodMoonFrequencyDays.get() == 0;
         boolean justBecameNight = timeOfDay >= 13000L && timeOfDay <= 13100L;
 
@@ -65,75 +55,6 @@ public class ServerEvents {
         SpawnDirector.tick(level);
         HordeDirector.tick(level);
         DummyPlayerManager.tick(level);
-    }
-
-    private static void announceMobUnlocks(ServerLevel level, int day) {
-        if (day == TheFloodConfig.MOBS.zombie.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "The dead have begun to rise...",
-                    "Zombies can now appear."
-            );
-        }
-
-        if (day == TheFloodConfig.MOBS.skeleton.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "You hear bones rattling in the distance...",
-                    "Skeletons can now appear."
-            );
-        }
-
-        if (day == TheFloodConfig.MOBS.spider.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "Something crawls through the darkness...",
-                    "Spiders can now appear."
-            );
-        }
-
-        if (day == TheFloodConfig.MOBS.creeper.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "A faint hissing echoes across the land...",
-                    "Creepers can now appear."
-            );
-        }
-
-        if (day == TheFloodConfig.MOBS.enderman.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "The space between worlds has begun to weaken...",
-                    "Endermen can now appear."
-            );
-        }
-
-        if (day == TheFloodConfig.MOBS.warden.unlockHeat.get()) {
-            broadcastUnlockMessage(
-                    level,
-                    "Something ancient has awakened beneath the earth...",
-                    "Flood Wardens can now appear."
-            );
-        }
-    }
-
-    private static void broadcastUnlockMessage(
-            ServerLevel level,
-            String warning,
-            String unlock
-    ) {
-        Component warningMessage = Component.literal(warning)
-                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC);
-
-        Component unlockMessage = Component.literal(unlock)
-                .withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
-
-        for (ServerPlayer player : level.players()) {
-            player.sendSystemMessage(Component.empty());
-            player.sendSystemMessage(warningMessage);
-            player.sendSystemMessage(unlockMessage);
-            player.sendSystemMessage(Component.empty());
-        }
     }
 
     private static void announceBloodMoon(ServerLevel level) {

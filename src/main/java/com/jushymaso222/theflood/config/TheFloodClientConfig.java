@@ -1,6 +1,7 @@
 package com.jushymaso222.theflood.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
+import java.util.List;
 
 public final class TheFloodClientConfig {
 
@@ -17,10 +18,30 @@ public final class TheFloodClientConfig {
     public static final ForgeConfigSpec.DoubleValue DAY_HUD_X;
     public static final ForgeConfigSpec.DoubleValue DAY_HUD_Y;
 
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>>
+        TEAM_HUD_FAVORITES;
+
+    public static final ForgeConfigSpec.DoubleValue TEAM_HUD_X;
+        public static final ForgeConfigSpec.DoubleValue TEAM_HUD_Y;
+
+        public static final ForgeConfigSpec.BooleanValue TEAM_HUD_VISIBLE;
+
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
         builder.push("heatHud");
+
+        TEAM_HUD_FAVORITES =
+        builder
+                .comment(
+                        "Favorite teammate UUIDs used by the Team HUD."
+                )
+                .defineList(
+                        "teamHudFavorites",
+                        List.of(),
+                        value ->
+                                value instanceof String
+                );
 
         HEAT_HUD_X = builder
                 .comment("Normalized horizontal position of the Heat HUD. 0.0 = left, 1.0 = right.")
@@ -62,6 +83,40 @@ public final class TheFloodClientConfig {
                         "Increase this to move the HUD farther inward."
                 )
                 .defineInRange("yOffset", 10, 0, 1000);
+
+        TEAM_HUD_X =
+        builder
+                .comment(
+                        "Horizontal position of the teammate HUD."
+                )
+                .defineInRange(
+                        "teamHudX",
+                        0.08,
+                        0.0,
+                        1.0
+                );
+
+        TEAM_HUD_Y =
+                builder
+                        .comment(
+                                "Vertical position of the teammate HUD."
+                        )
+                        .defineInRange(
+                                "teamHudY",
+                                0.35,
+                                0.0,
+                                1.0
+                        );
+
+        TEAM_HUD_VISIBLE =
+                builder
+                        .comment(
+                                "Whether the teammate HUD is visible."
+                        )
+                        .define(
+                                "teamHudVisible",
+                                true
+                        );
 
         builder.pop();
 

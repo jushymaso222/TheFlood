@@ -12,6 +12,12 @@ import com.jushymaso222.theflood.progression.PlayerFloodData;
 import com.jushymaso222.theflood.progression.HeatManager;
 import com.jushymaso222.theflood.team.TeamManager;
 
+import com.jushymaso222.theflood.config.ServerSettingsSnapshot;
+import com.jushymaso222.theflood.network.FloodNetwork;
+import com.jushymaso222.theflood.network.packet.SyncServerSettingsPacket;
+
+import net.minecraftforge.network.PacketDistributor;
+
 @Mod.EventBusSubscriber(
     modid = TheFlood.MOD_ID,
     bus = Mod.EventBusSubscriber.Bus.FORGE
@@ -30,23 +36,50 @@ public final class PlayerJoinEvents {
         }
 
         /*
-        * Always restore/sync persistent player state
-        * whenever they join.
+        * Restore/sync persistent player state.
         */
-        TeamManager.syncPlayerTeamReference(player);
+        TeamManager.syncPlayerTeamReference(
+                player
+        );
 
-        HeatManager.syncHeatToPlayer(player);
+        HeatManager.syncHeatToPlayer(
+                player
+        );
+
+        /*
+        * Send this server's Flood configuration to the
+        * client for the in-game Server Settings guide.
+        *
+        * This only needs to happen when connecting rather
+        * than every time Heat is synchronized.
+        */
+        FloodNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(
+                        () -> player
+                ),
+                new SyncServerSettingsPacket(
+                        ServerSettingsSnapshot.create()
+                )
+        );
 
         /*
         * Only show this message once.
         */
-        if (!player.getPersistentData().getBoolean(PROGRESS_HINT_SHOWN)) {
-            sendProgressHint(player);
-
-            player.getPersistentData().putBoolean(
-                    PROGRESS_HINT_SHOWN,
-                    true
+        if (
+                !player.getPersistentData()
+                        .getBoolean(
+                                PROGRESS_HINT_SHOWN
+                        )
+        ) {
+            sendProgressHint(
+                    player
             );
+
+            player.getPersistentData()
+                    .putBoolean(
+                            PROGRESS_HINT_SHOWN,
+                            true
+                    );
         }
     }
 

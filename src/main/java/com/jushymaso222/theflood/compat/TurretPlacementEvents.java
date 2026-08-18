@@ -10,57 +10,57 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class TurretPlacementEvents {
 
     public TurretPlacementEvents() {
-        System.out.println(
-                "[The Flood Turret Debug] TurretPlacementEvents instance created"
-        );
+        // System.out.println(
+        //         "[The Flood Turret Debug] TurretPlacementEvents instance created"
+        // );
     }
 
     @SubscribeEvent
     public void onBlockPlaced(
             BlockEvent.EntityPlaceEvent event
         ) {
-                if (
-                event.getEntity()
-                instanceof ServerPlayer player
-        ) {
-                player.sendSystemMessage(
-                        net.minecraft.network.chat.Component.literal(
-                                "[The Flood Turret Debug] EntityPlaceEvent fired"
-                                + " pos=" + event.getPos()
-                                + " entity="
-                                + (
-                                        event.getEntity() == null
-                                                ? "null"
-                                                : event.getEntity()
-                                                        .getClass()
-                                                        .getName()
-                                )
-                                + " block="
-                                + ForgeRegistries.BLOCKS.getKey(
-                                        event.getPlacedBlock()
-                                                .getBlock()
-                                )
-                        )
-                );
-        }
+        //         if (
+        //         event.getEntity()
+        //         instanceof ServerPlayer player
+        // ) {
+        //         // player.sendSystemMessage(
+        //         //         net.minecraft.network.chat.Component.literal(
+        //         //                 "[The Flood Turret Debug] EntityPlaceEvent fired"
+        //         //                 + " pos=" + event.getPos()
+        //         //                 + " entity="
+        //         //                 + (
+        //         //                         event.getEntity() == null
+        //         //                                 ? "null"
+        //         //                                 : event.getEntity()
+        //         //                                         .getClass()
+        //         //                                         .getName()
+        //         //                 )
+        //         //                 + " block="
+        //         //                 + ForgeRegistries.BLOCKS.getKey(
+        //         //                         event.getPlacedBlock()
+        //         //                                 .getBlock()
+        //         //                 )
+        //         //         )
+        //         // );
+        // }
 
-        System.out.println(
-                "[The Flood Turret Debug] EntityPlaceEvent fired"
-                        + " pos=" + event.getPos()
-                        + " entity="
-                        + (
-                                event.getEntity() == null
-                                        ? "null"
-                                        : event.getEntity()
-                                                .getClass()
-                                                .getName()
-                        )
-                        + " block="
-                        + ForgeRegistries.BLOCKS.getKey(
-                                event.getPlacedBlock()
-                                        .getBlock()
-                        )
-        );
+        // System.out.println(
+        //         "[The Flood Turret Debug] EntityPlaceEvent fired"
+        //                 + " pos=" + event.getPos()
+        //                 + " entity="
+        //                 + (
+        //                         event.getEntity() == null
+        //                                 ? "null"
+        //                                 : event.getEntity()
+        //                                         .getClass()
+        //                                         .getName()
+        //                 )
+        //                 + " block="
+        //                 + ForgeRegistries.BLOCKS.getKey(
+        //                         event.getPlacedBlock()
+        //                                 .getBlock()
+        //                 )
+        // );
 
         if (!(event.getLevel() instanceof ServerLevel level)) {
             return;
@@ -92,33 +92,33 @@ public final class TurretPlacementEvents {
                 player
         );
 
-        player.sendSystemMessage(
-                net.minecraft.network.chat.Component.literal(
-                        "[The Flood Turret Debug] REGISTERED "
-                                + blockId
-                                + " at "
-                                + event.getPos()
-                                + " owner="
-                                + player.getGameProfile().getName()
-                )
-        );
+        // player.sendSystemMessage(
+        //         net.minecraft.network.chat.Component.literal(
+        //                 "[The Flood Turret Debug] REGISTERED "
+        //                         + blockId
+        //                         + " at "
+        //                         + event.getPos()
+        //                         + " owner="
+        //                         + player.getGameProfile().getName()
+        //         )
+        // );
 
-        System.out.println(
-                "[The Flood Turret Debug] REGISTERED "
-                        + blockId
-                        + " owner="
-                        + player.getUUID()
-        );
+        // System.out.println(
+        //         "[The Flood Turret Debug] REGISTERED "
+        //                 + blockId
+        //                 + " owner="
+        //                 + player.getUUID()
+        // );
     }
 
     @SubscribeEvent
     public void onBlockBroken(
             BlockEvent.BreakEvent event
     ) {
-        System.out.println(
-                "[The Flood Turret Debug] BreakEvent fired at "
-                        + event.getPos()
-        );
+        // System.out.println(
+        //         "[The Flood Turret Debug] BreakEvent fired at "
+        //                 + event.getPos()
+        // );
 
         if (!(event.getLevel() instanceof ServerLevel level)) {
             return;

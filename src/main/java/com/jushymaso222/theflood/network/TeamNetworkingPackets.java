@@ -10,6 +10,16 @@ import com.jushymaso222.theflood.client.ClientTeamData;
 import net.minecraftforge.network.PacketDistributor;
 import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.debug.DummyPlayerManager;
+import com.jushymaso222.theflood.client.ClientTeamInviteData;
+import com.jushymaso222.theflood.client.ClientPlayerHeatData;
+import com.jushymaso222.theflood.client.ClientTeamHudData;
+import com.jushymaso222.theflood.client.ClientTeamChatData;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+
+import com.jushymaso222.theflood.team.FloodTeam;
+import com.jushymaso222.theflood.team.TeamChatManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +30,187 @@ public final class TeamNetworkingPackets {
 
     private TeamNetworkingPackets() {
     }
+
+    public static class SyncTeamChatModePacket {
+
+    private final boolean teamChat;
+
+    public SyncTeamChatModePacket(
+            boolean teamChat
+    ) {
+        this.teamChat = teamChat;
+    }
+
+    public static void encode(
+            SyncTeamChatModePacket message,
+            FriendlyByteBuf buffer
+    ) {
+        buffer.writeBoolean(
+                message.teamChat
+        );
+    }
+
+    public static SyncTeamChatModePacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        return new SyncTeamChatModePacket(
+                buffer.readBoolean()
+        );
+    }
+
+    public static void handle(
+            SyncTeamChatModePacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() ->
+                ClientTeamChatData.setMode(
+                        message.teamChat
+                                ? ClientTeamChatData.ChatMode.TEAM
+                                : ClientTeamChatData.ChatMode.GLOBAL
+                )
+        );
+
+        context.setPacketHandled(true);
+    }
+}
+
+    public static class SyncTeamHudPacket {
+
+    public record Entry(
+            UUID playerId,
+            String name,
+            float health,
+            float maxHealth,
+            double x,
+            double y,
+            double z,
+            String dimension
+    ) {
+    }
+
+    private final List<Entry> entries;
+
+    public SyncTeamHudPacket(
+            List<Entry> entries
+    ) {
+        this.entries = entries;
+    }
+
+    public static void encode(
+            SyncTeamHudPacket message,
+            FriendlyByteBuf buffer
+    ) {
+        buffer.writeInt(
+                message.entries.size()
+        );
+
+        for (Entry entry :
+                message.entries) {
+
+            buffer.writeUUID(
+                    entry.playerId()
+            );
+
+            buffer.writeUtf(
+                    entry.name(),
+                    16
+            );
+
+            buffer.writeFloat(
+                    entry.health()
+            );
+
+            buffer.writeFloat(
+                    entry.maxHealth()
+            );
+
+            buffer.writeDouble(
+                    entry.x()
+            );
+
+            buffer.writeDouble(
+                    entry.y()
+            );
+
+            buffer.writeDouble(
+                    entry.z()
+            );
+
+            buffer.writeUtf(
+                    entry.dimension()
+            );
+        }
+    }
+
+    public static SyncTeamHudPacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        int size =
+                buffer.readInt();
+
+        List<Entry> entries =
+                new ArrayList<>();
+
+        for (int i = 0; i < size; i++) {
+            entries.add(
+                    new Entry(
+                            buffer.readUUID(),
+                            buffer.readUtf(16),
+                            buffer.readFloat(),
+                            buffer.readFloat(),
+                            buffer.readDouble(),
+                            buffer.readDouble(),
+                            buffer.readDouble(),
+                            buffer.readUtf()
+                    )
+            );
+        }
+
+        return new SyncTeamHudPacket(
+                entries
+        );
+    }
+
+    public static void handle(
+            SyncTeamHudPacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() -> {
+
+            List<ClientTeamHudData.Teammate> teammates =
+                    new ArrayList<>();
+
+            for (Entry entry :
+                    message.entries) {
+
+                teammates.add(
+                        new ClientTeamHudData.Teammate(
+                                entry.playerId(),
+                                entry.name(),
+                                entry.health(),
+                                entry.maxHealth(),
+                                entry.x(),
+                                entry.y(),
+                                entry.z(),
+                                entry.dimension()
+                        )
+                );
+            }
+
+            ClientTeamHudData.setTeammates(
+                    teammates
+            );
+        });
+
+        context.setPacketHandled(true);
+    }
+}
 
     public static class SyncInviteCandidatesPacket {
 
@@ -337,11 +528,263 @@ public final class TeamNetworkingPackets {
                         message.teamColor,
                         message.teamHeat
                 );
+
+                if (!message.inTeam) {
+                    ClientTeamHudData.clearAllTeamHudData();
+                }
             });
+
 
             context.setPacketHandled(true);
         }
     }
+
+    public static class ToggleTeamChatPacket {
+
+    public static void encode(
+            ToggleTeamChatPacket message,
+            FriendlyByteBuf buffer
+    ) {
+    }
+
+    public static ToggleTeamChatPacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        return new ToggleTeamChatPacket();
+    }
+
+    public static void handle(
+            ToggleTeamChatPacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() -> {
+
+            ServerPlayer player =
+                    context.getSender();
+
+            if (player == null) {
+                return;
+            }
+
+            TeamChatManager.ChatMode current =
+                    TeamChatManager.getMode(
+                            player.getUUID()
+                    );
+
+            if (
+                    current
+                            == TeamChatManager.ChatMode.GLOBAL
+            ) {
+                FloodTeam team =
+                        TeamManager.getTeamForPlayer(
+                                player
+                        );
+
+                if (team == null) {
+                    player.sendSystemMessage(
+                            Component.literal(
+                                    "You are not in a team."
+                            ).withStyle(
+                                    ChatFormatting.RED
+                            )
+                    );
+
+                    /*
+                     * Explicitly sync GLOBAL back to the
+                     * client so the icon can never become
+                     * desynchronized.
+                     */
+                    FloodNetwork.CHANNEL.send(
+                            PacketDistributor.PLAYER.with(
+                                    () -> player
+                            ),
+                            new SyncTeamChatModePacket(
+                                    false
+                            )
+                    );
+
+                    return;
+                }
+
+                TeamChatManager.setMode(
+                        player.getUUID(),
+                        TeamChatManager.ChatMode.TEAM
+                );
+
+                player.sendSystemMessage(
+                        Component.literal(
+                                "Chat mode set to Team."
+                        ).withStyle(
+                                ChatFormatting.AQUA
+                        )
+                );
+
+                FloodNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(
+                                () -> player
+                        ),
+                        new SyncTeamChatModePacket(
+                                true
+                        )
+                );
+
+                return;
+            }
+
+            TeamChatManager.setMode(
+                    player.getUUID(),
+                    TeamChatManager.ChatMode.GLOBAL
+            );
+
+            player.sendSystemMessage(
+                    Component.literal(
+                            "Chat mode set to Global."
+                    ).withStyle(
+                            ChatFormatting.GREEN
+                    )
+            );
+
+            FloodNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(
+                            () -> player
+                    ),
+                    new SyncTeamChatModePacket(
+                            false
+                    )
+            );
+        });
+
+        context.setPacketHandled(true);
+    }
+}
+
+    public static class RequestPendingTeamInvitesPacket {
+
+    public static void encode(
+            RequestPendingTeamInvitesPacket message,
+            FriendlyByteBuf buffer
+    ) {
+    }
+
+    public static RequestPendingTeamInvitesPacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        return new RequestPendingTeamInvitesPacket();
+    }
+
+    public static void handle(
+            RequestPendingTeamInvitesPacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() -> {
+
+            ServerPlayer player =
+                    context.getSender();
+
+            if (player == null) {
+                return;
+            }
+
+            List<SyncPendingTeamInvitesPacket.Entry> entries =
+                    new ArrayList<>();
+
+            for (UUID teamId :
+                    TeamManager.getPendingInvites(
+                            player.getUUID()
+                    )) {
+
+                com.jushymaso222.theflood.team.FloodTeam team =
+                        TeamManager.getTeam(
+                                player.server,
+                                teamId
+                        );
+
+                if (team == null) {
+                    continue;
+                }
+
+                entries.add(
+                        new SyncPendingTeamInvitesPacket.Entry(
+                                team.getTeamId(),
+                                team.getName()
+                        )
+                );
+            }
+
+            FloodNetwork.CHANNEL.send(
+                    PacketDistributor.PLAYER.with(
+                            () -> player
+                    ),
+                    new SyncPendingTeamInvitesPacket(
+                            entries
+                    )
+            );
+        });
+
+        context.setPacketHandled(true);
+    }
+}
+
+        public static class SyncPlayerHeatPacket {
+
+    private final UUID playerId;
+    private final int heat;
+
+    public SyncPlayerHeatPacket(
+            UUID playerId,
+            int heat
+    ) {
+        this.playerId = playerId;
+        this.heat = heat;
+    }
+
+    public static void encode(
+            SyncPlayerHeatPacket message,
+            FriendlyByteBuf buffer
+    ) {
+        buffer.writeUUID(
+                message.playerId
+        );
+
+        buffer.writeInt(
+                message.heat
+        );
+    }
+
+    public static SyncPlayerHeatPacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        return new SyncPlayerHeatPacket(
+                buffer.readUUID(),
+                buffer.readInt()
+        );
+    }
+
+    public static void handle(
+            SyncPlayerHeatPacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() ->
+                ClientPlayerHeatData.setHeat(
+                        message.playerId,
+                        message.heat
+                )
+        );
+
+        context.setPacketHandled(
+                true
+        );
+    }
+}
 
     public static class InvitePlayerPacket {
 
@@ -448,7 +891,7 @@ public final class TeamNetworkingPackets {
                     return;
                 }
 
-                TeamManager.acceptInvite(
+                TeamManager.requestAcceptInvite(
                         player,
                         message.teamId
                 );
@@ -457,6 +900,101 @@ public final class TeamNetworkingPackets {
             context.setPacketHandled(true);
         }
     }
+
+    public static class SyncPendingTeamInvitesPacket {
+
+    public record Entry(
+            UUID teamId,
+            String teamName
+    ) {
+    }
+
+    private final List<Entry> entries;
+
+    public SyncPendingTeamInvitesPacket(
+            List<Entry> entries
+    ) {
+        this.entries = entries;
+    }
+
+    public static void encode(
+            SyncPendingTeamInvitesPacket message,
+            FriendlyByteBuf buffer
+    ) {
+        buffer.writeInt(
+                message.entries.size()
+        );
+
+        for (Entry entry :
+                message.entries) {
+
+            buffer.writeUUID(
+                    entry.teamId()
+            );
+
+            buffer.writeUtf(
+                    entry.teamName(),
+                    24
+            );
+        }
+    }
+
+    public static SyncPendingTeamInvitesPacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        int size =
+                buffer.readInt();
+
+        List<Entry> entries =
+                new ArrayList<>();
+
+        for (int i = 0; i < size; i++) {
+            entries.add(
+                    new Entry(
+                            buffer.readUUID(),
+                            buffer.readUtf(24)
+                    )
+            );
+        }
+
+        return new SyncPendingTeamInvitesPacket(
+                entries
+        );
+    }
+
+    public static void handle(
+            SyncPendingTeamInvitesPacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() -> {
+
+            List<ClientTeamInviteData.Invite> invites =
+                    new ArrayList<>();
+
+            for (Entry entry :
+                    message.entries) {
+
+                invites.add(
+                        new ClientTeamInviteData.Invite(
+                                entry.teamId(),
+                                entry.teamName()
+                        )
+                );
+            }
+
+            ClientTeamInviteData.setInvites(
+                    invites
+            );
+        });
+
+        context.setPacketHandled(
+                true
+        );
+    }
+}
 
     public static class DeclineTeamInvitePacket {
 

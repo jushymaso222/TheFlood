@@ -5,6 +5,10 @@ import com.jushymaso222.theflood.team.FloodTeam;
 import com.jushymaso222.theflood.team.TeamManager;
 import net.minecraft.server.level.ServerPlayer;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
+
 import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.network.packet.SyncHeatPacket;
 import net.minecraftforge.network.PacketDistributor;
@@ -20,6 +24,9 @@ public final class HeatManager {
     private HeatManager() {
     }
 
+    private static final String MOB_UNLOCK_PREFIX =
+        "theflood_mob_unlock_";
+
     public static int getSoloHeat(
             ServerPlayer player
     ) {
@@ -27,6 +34,137 @@ public final class HeatManager {
                 player
         );
     }
+
+    private static void checkMobUnlockAnnouncements(
+        ServerPlayer player,
+        int effectiveHeat
+) {
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "zombie",
+            TheFloodConfig.MOBS.zombie.unlockHeat.get(),
+            "The dead have begun to rise...",
+            "Zombies can now appear."
+    );
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "skeleton",
+            TheFloodConfig.MOBS.skeleton.unlockHeat.get(),
+            "You hear bones rattling in the distance...",
+            "Skeletons can now appear."
+    );
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "spider",
+            TheFloodConfig.MOBS.spider.unlockHeat.get(),
+            "Something crawls through the darkness...",
+            "Spiders can now appear."
+    );
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "creeper",
+            TheFloodConfig.MOBS.creeper.unlockHeat.get(),
+            "A faint hissing echoes across the land...",
+            "Creepers can now appear."
+    );
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "enderman",
+            TheFloodConfig.MOBS.enderman.unlockHeat.get(),
+            "The space between worlds has begun to weaken...",
+            "Endermen can now appear."
+    );
+
+    checkMobUnlock(
+            player,
+            effectiveHeat,
+            "warden",
+            TheFloodConfig.MOBS.warden.unlockHeat.get(),
+            "Something ancient has awakened beneath the earth...",
+            "Flood Wardens can now appear."
+    );
+}
+
+private static void checkMobUnlock(
+        ServerPlayer player,
+        int effectiveHeat,
+        String id,
+        int unlockHeat,
+        String warning,
+        String unlock
+) {
+
+    if (effectiveHeat < unlockHeat) {
+        return;
+    }
+
+    String key =
+            MOB_UNLOCK_PREFIX
+                    + id;
+
+    /*
+     * This specific player has already seen
+     * this unlock announcement.
+     */
+    if (
+            player.getPersistentData()
+                    .getBoolean(key)
+    ) {
+        return;
+    }
+
+    player.getPersistentData()
+            .putBoolean(
+                    key,
+                    true
+            );
+
+    Component warningMessage =
+            Component.literal(
+                    warning
+            ).withStyle(
+                    ChatFormatting.DARK_RED,
+                    ChatFormatting.ITALIC
+            );
+
+    Component unlockMessage =
+            Component.literal(
+                    unlock
+            ).withStyle(
+                    ChatFormatting.RED,
+                    ChatFormatting.BOLD
+            );
+
+    /*
+     * Match the original ServerEvents layout exactly,
+     * but only send it to this player.
+     */
+    player.sendSystemMessage(
+            Component.empty()
+    );
+
+    player.sendSystemMessage(
+            warningMessage
+    );
+
+    player.sendSystemMessage(
+            unlockMessage
+    );
+
+    player.sendSystemMessage(
+            Component.empty()
+    );
+}
 
     public static int getTeamHeat(
             ServerPlayer player
@@ -320,6 +458,11 @@ public final class HeatManager {
                 PlayerFloodData.clampHeat(
                         baseHeat + proximityBonus
                 );
+
+        checkMobUnlockAnnouncements(
+                player,
+                effectiveHeat
+        );
 
         FloodNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(
