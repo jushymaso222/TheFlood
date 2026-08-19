@@ -1,5 +1,5 @@
 package com.jushymaso222.theflood.event;
-import com.jushymaso222.theflood.spawn.SpawnDirector;
+import com.jushymaso222.theflood.spawning.SpawnDirector;
 import com.jushymaso222.theflood.horde.HordeDirector;
 
 import com.jushymaso222.theflood.TheFlood;

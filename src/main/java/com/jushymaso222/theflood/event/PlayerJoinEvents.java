@@ -14,7 +14,7 @@ import com.jushymaso222.theflood.team.TeamManager;
 
 import com.jushymaso222.theflood.config.ServerSettingsSnapshot;
 import com.jushymaso222.theflood.network.FloodNetwork;
-import com.jushymaso222.theflood.network.packet.SyncServerSettingsPacket;
+import com.jushymaso222.theflood.guide.network.SyncServerSettingsPacket;
 
 import net.minecraftforge.network.PacketDistributor;
 
@@ -124,6 +124,11 @@ public final class PlayerJoinEvents {
         * the ServerPlayer instance, such as after death.
         */
         PlayerFloodData.copy(
+                original,
+                replacement
+        );
+
+        HeatManager.copyMobUnlockAnnouncementState(
                 original,
                 replacement
         );

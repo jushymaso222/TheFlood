@@ -8,7 +8,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.slf4j.Logger;
-import com.jushymaso222.theflood.compat.TurretPlacementEvents;
+import com.jushymaso222.theflood.compat.mekanism.TurretPlacementEvents;
 import net.minecraftforge.common.MinecraftForge;
 
 @Mod(TheFlood.MOD_ID)

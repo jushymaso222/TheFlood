@@ -1,12 +1,13 @@
 package com.jushymaso222.theflood.network;
 
 import com.jushymaso222.theflood.TheFlood;
-import com.jushymaso222.theflood.network.packet.TeamNetworkingPackets;
+import com.jushymaso222.theflood.team.network.TeamNetworkingPackets;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
-import com.jushymaso222.theflood.network.packet.SyncHeatPacket;
-import com.jushymaso222.theflood.network.packet.SyncServerSettingsPacket;
+import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
+import com.jushymaso222.theflood.guide.network.SyncServerSettingsPacket;
+import com.jushymaso222.theflood.elite.network.SyncEliteStatePacket;
 
 public final class FloodNetwork {
 
@@ -29,6 +30,14 @@ public final class FloodNetwork {
     }
 
     public static void register() {
+
+        CHANNEL.registerMessage(
+                id++,
+                SyncEliteStatePacket.class,
+                SyncEliteStatePacket::encode,
+                SyncEliteStatePacket::decode,
+                SyncEliteStatePacket::handle
+        );
 
         CHANNEL.registerMessage(
                 id++,

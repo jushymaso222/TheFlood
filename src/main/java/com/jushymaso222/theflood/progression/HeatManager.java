@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.EntityType;
 
 import com.jushymaso222.theflood.network.FloodNetwork;
-import com.jushymaso222.theflood.network.packet.SyncHeatPacket;
+import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
 import net.minecraftforge.network.PacketDistributor;
 
 import com.jushymaso222.theflood.debug.DummyPlayerManager;
@@ -336,6 +336,39 @@ private static void checkMobUnlock(
 
         return baseBonus + synergyBonus;
     }
+
+    public static void copyMobUnlockAnnouncementState(
+                ServerPlayer original,
+                ServerPlayer replacement
+        ) {
+        String[] mobIds = {
+                "zombie",
+                "skeleton",
+                "spider",
+                "creeper",
+                "enderman",
+                "warden"
+        };
+
+        for (String mobId : mobIds) {
+                String key =
+                        MOB_UNLOCK_PREFIX
+                                + mobId;
+
+                if (
+                        original.getPersistentData()
+                                .getBoolean(
+                                        key
+                                )
+                ) {
+                replacement.getPersistentData()
+                        .putBoolean(
+                                key,
+                                true
+                        );
+                }
+        }
+        }
 
     private static boolean areOnSameTeam(
                 ServerPlayer first,

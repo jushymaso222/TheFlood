@@ -2,7 +2,7 @@ package com.jushymaso222.theflood.team;
 
 import com.jushymaso222.theflood.debug.DummyPlayerManager;
 import com.jushymaso222.theflood.network.FloodNetwork;
-import com.jushymaso222.theflood.network.packet.TeamNetworkingPackets;
+import com.jushymaso222.theflood.team.network.TeamNetworkingPackets;
 import com.jushymaso222.theflood.progression.HeatManager;
 
 import net.minecraft.network.chat.ClickEvent;

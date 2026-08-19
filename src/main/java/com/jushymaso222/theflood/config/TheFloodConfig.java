@@ -11,6 +11,7 @@ public final class TheFloodConfig {
     public static final HordeSettings HORDES;
     public static final MobSettings MOBS;
     public static final HeatSettings HEAT;
+    public static final EliteSettings ELITES;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -20,11 +21,81 @@ public final class TheFloodConfig {
         HORDES = new HordeSettings(builder);
         MOBS = new MobSettings(builder);
         HEAT = new HeatSettings(builder);
+        ELITES = new EliteSettings(builder);
 
         SERVER_CONFIG = builder.build();
     }
 
     private TheFloodConfig() {
+    }
+
+    public static final class EliteSettings {
+
+    public final ForgeConfigSpec.DoubleValue baseEliteChance;
+
+    public final ForgeConfigSpec.DoubleValue eliteChancePerHeat;
+
+    public final ForgeConfigSpec.DoubleValue maximumEliteChance;
+
+    public final ForgeConfigSpec.IntValue eliteHeatBonus;
+
+    private EliteSettings(
+                ForgeConfigSpec.Builder builder
+        ) {
+                builder.push(
+                        "elites"
+                );
+
+                baseEliteChance =
+                        builder
+                                .comment(
+                                        "Base chance that a Flood-spawned mob becomes Elite."
+                                )
+                                .defineInRange(
+                                        "baseEliteChance",
+                                        0.01,
+                                        0.0,
+                                        1.0
+                                );
+
+                eliteChancePerHeat =
+                        builder
+                                .comment(
+                                        "Additional Elite chance gained for each Heat level."
+                                )
+                                .defineInRange(
+                                        "eliteChancePerHeat",
+                                        0.001,
+                                        0.0,
+                                        1.0
+                                );
+
+                maximumEliteChance =
+                        builder
+                                .comment(
+                                        "Maximum chance that a Flood-spawned mob becomes Elite."
+                                )
+                                .defineInRange(
+                                        "maximumEliteChance",
+                                        0.10,
+                                        0.0,
+                                        1.0
+                                );
+
+                eliteHeatBonus =
+                        builder
+                                .comment(
+                                        "How many Heat levels above its spawning Heat an Elite uses for base health and damage scaling."
+                                )
+                                .defineInRange(
+                                        "eliteHeatBonus",
+                                        10,
+                                        0,
+                                        1000
+                                );
+
+                builder.pop();
+        }
     }
 
     public static final class HeatSettings {

@@ -1,6 +1,6 @@
 package com.jushymaso222.theflood.config;
 
-import com.jushymaso222.theflood.client.guide.ServerSettingEntry;
+import com.jushymaso222.theflood.guide.ServerSettingEntry;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 

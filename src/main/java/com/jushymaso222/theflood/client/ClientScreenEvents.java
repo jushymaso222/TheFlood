@@ -1,5 +1,10 @@
 package com.jushymaso222.theflood.client;
 
+import com.jushymaso222.theflood.hud.FloodSettingsIconButton;
+import com.jushymaso222.theflood.hud.FloodHudSettingsScreen;
+import com.jushymaso222.theflood.team.client.FloodTeamScreen;
+import com.jushymaso222.theflood.team.client.TeamTabButton;
+
 import com.jushymaso222.theflood.TheFlood;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
@@ -13,7 +18,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.gui.components.AbstractWidget;
 
-import com.jushymaso222.theflood.client.guide.FloodGuideScreen;
+import com.jushymaso222.theflood.guide.client.FloodGuideScreen;
 import net.minecraft.client.gui.components.ImageButton;
 import net.minecraft.resources.ResourceLocation;
 
