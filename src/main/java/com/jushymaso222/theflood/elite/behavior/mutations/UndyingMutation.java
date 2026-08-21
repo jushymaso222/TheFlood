@@ -338,6 +338,15 @@ public final class UndyingMutation
         );
     }
 
+    @Override
+        public boolean canDeactivate(
+                Mob elite
+        ) {
+        return !isRevivalActive(
+                elite
+        );
+        }
+
     private static void finishDeath(
             Mob elite
     ) {

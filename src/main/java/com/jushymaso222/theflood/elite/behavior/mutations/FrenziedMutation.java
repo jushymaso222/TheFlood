@@ -334,6 +334,24 @@ public final class FrenziedMutation
         );
     }
 
+    @Override
+    public void onDeactivated(
+            Mob elite
+    ) {
+        setAnger(
+                elite,
+                0.0F
+        );
+
+        updateMovementSpeed(
+                elite
+        );
+
+        updateKnockbackResistance(
+                elite
+        );
+    }
+
     private static float getAnger(
             Mob elite
     ) {

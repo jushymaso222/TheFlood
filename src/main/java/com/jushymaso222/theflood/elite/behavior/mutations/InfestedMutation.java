@@ -50,6 +50,16 @@ public final class InfestedMutation
     }
 
     @Override
+        public void onDeactivated(
+                Mob elite
+        ) {
+        elite.getPersistentData()
+                .remove(
+                        PROGRESS_KEY
+                );
+        }
+
+    @Override
     public String displayName() {
         return "Infested";
     }

@@ -63,6 +63,37 @@ public final class BulwarkMutation
     private static final double FRONT_DOT_THRESHOLD =
             0.0D;
 
+        @Override
+public void onDeactivated(
+        Mob elite
+) {
+    elite.getPersistentData()
+            .remove(
+                    STAGGER_KEY
+            );
+
+    elite.getPersistentData()
+            .remove(
+                    STUN_END_KEY
+            );
+
+    elite.getPersistentData()
+            .remove(
+                    WAS_STUNNED_KEY
+            );
+
+    elite.getNavigation()
+            .stop();
+
+    /*
+     * Only include this if your current Bulwark stun
+     * implementation disables AI.
+     */
+    elite.setNoAi(
+            false
+    );
+}
+
     private static void syncState(
             Mob elite
     ) {

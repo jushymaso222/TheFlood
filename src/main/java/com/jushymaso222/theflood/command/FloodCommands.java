@@ -27,6 +27,21 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.jushymaso222.theflood.TheFlood;
 
+import com.jushymaso222.theflood.elite.debug.EliteStatsWatch;
+import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
+
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+
 import com.jushymaso222.theflood.debug.DummyPlayerManager;
 import net.minecraftforge.common.util.FakePlayer;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -928,11 +943,94 @@ public final class FloodCommands {
                 elite
         );
 
+        flood.then(
+                Commands.literal(
+                        "stats"
+                )
+                .requires(
+                        source ->
+                                source.hasPermission(
+                                        2
+                                )
+                )
+                .executes(
+                        context ->
+                                toggleStats(
+                                        context.getSource()
+                                )
+                )
+        );
+
         event.getDispatcher()
                 .register(
                         flood
                 );
     }
+
+    private static int toggleStats(
+                CommandSourceStack source
+        ) throws CommandSyntaxException {
+
+        ServerPlayer player =
+                source.getPlayerOrException();
+
+        Mob lookedAt =
+                getLookedAtMob(
+                        player,
+                        32
+                );
+
+        /*
+        * Looking at nothing = close inspector.
+        */
+        if (lookedAt == null) {
+                EliteStatsWatch.clear(
+                        player
+                );
+
+                SyncMobStatsPacket.sendClosed(
+                        player
+                );
+
+                return 1;
+        }
+
+        /*
+        * Looking at the mob we're already inspecting
+        * toggles the inspector off.
+        */
+        if (
+                EliteStatsWatch.isWatching(
+                        player,
+                        lookedAt
+                )
+        ) {
+                EliteStatsWatch.clear(
+                        player
+                );
+
+                SyncMobStatsPacket.sendClosed(
+                        player
+                );
+
+                return 1;
+        }
+
+        /*
+        * Otherwise begin inspecting this mob.
+        */
+        EliteStatsWatch.watch(
+                player,
+                lookedAt
+        );
+
+        SyncMobStatsPacket.sendSnapshot(
+                player,
+                lookedAt
+        );
+
+        return 1;
+        }
 
     private static Mob getLookedAtMob(
             ServerPlayer player,

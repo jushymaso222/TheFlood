@@ -357,6 +357,15 @@ public final class PursuerMutation
         );
     }
 
+    @Override
+        public void onDeactivated(
+                Mob elite
+        ) {
+        resetPursuit(
+                elite
+        );
+        }
+
     private static void applyBurstAttributes(
             Mob elite
     ) {

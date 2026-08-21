@@ -329,6 +329,45 @@ public final class CommanderMutation
     }
 
     @Override
+        public void onDeactivated(
+                Mob elite
+        ) {
+        if (
+                elite.level() instanceof ServerLevel level
+        ) {
+                resetCommandGroup(
+                        level,
+                        elite
+                );
+        }
+
+        elite.getPersistentData()
+                .remove(
+                        NEXT_COMMAND_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        COMMANDED_PLAYER_UUID_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        RETREAT_PLAYER_UUID_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        RETREAT_END_TIME_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        RETREATING_KEY
+                );
+        }
+
+    @Override
     public void tick(
             Mob elite
     ) {

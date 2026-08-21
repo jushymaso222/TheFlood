@@ -1,12 +1,16 @@
 package com.jushymaso222.theflood.elite.client;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class ClientEliteStateData {
 
     public record EliteState(
             String mutationId,
+            String copiedMutationId,
+            boolean mimicRevealed,
+            List<String> attributes,
             float statusProgress,
             float statusMax,
             boolean statusActive,
@@ -23,6 +27,9 @@ public final class ClientEliteStateData {
     public static void setState(
             int entityId,
             String mutationId,
+            String copiedMutationId,
+            boolean mimicRevealed,
+            List<String> attributes,
             float statusProgress,
             float statusMax,
             boolean statusActive,
@@ -32,6 +39,9 @@ public final class ClientEliteStateData {
                 entityId,
                 new EliteState(
                         mutationId,
+                        copiedMutationId,
+                        mimicRevealed,
+                        attributes,
                         statusProgress,
                         statusMax,
                         statusActive,

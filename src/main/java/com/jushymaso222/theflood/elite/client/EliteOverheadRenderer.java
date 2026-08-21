@@ -22,6 +22,12 @@ import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.jushymaso222.theflood.elite.EliteAttributes;
+import com.jushymaso222.theflood.elite.attributes.SpecialAttributeRegistry;
+
+import java.util.ArrayList;
+import java.util.List;
+
 @Mod.EventBusSubscriber(
         modid = TheFlood.MOD_ID,
         value = Dist.CLIENT,
@@ -35,7 +41,231 @@ public final class EliteOverheadRenderer {
     private static final int BAR_HEIGHT =
             4;
 
+    private static final int STANDARD_ATTRIBUTE_COLOR =
+        0xFFFFFFFF;
+
+    private static final int SPECIAL_ATTRIBUTE_COLOR =
+        0xFFFF66FF;
+
     private EliteOverheadRenderer() {
+    }
+
+    private record RenderedAttribute(
+                String name,
+                int color
+        ) {
+        }
+
+    private static void renderAttributeLine(
+                ClientEliteStateData.EliteState state,
+                Font font,
+                PoseStack poseStack,
+                MultiBufferSource buffer,
+                int packedLight,
+                float y
+        ) {
+        List<String> attributes =
+                state.attributes();
+
+        if (
+                attributes == null
+                || attributes.isEmpty()
+        ) {
+                return;
+        }
+
+        List<RenderedAttribute> rendered =
+                new ArrayList<>();
+
+        int totalWidth =
+                0;
+
+        for (
+                String stored :
+                attributes
+        ) {
+                EliteAttributes.RolledAttribute attribute =
+                        parseAttribute(
+                                stored
+                        );
+
+                if (attribute == null) {
+                continue;
+                }
+
+                String displayName =
+                        getAttributeDisplayName(
+                                attribute
+                        );
+
+                boolean special =
+                        SpecialAttributeRegistry.contains(
+                                attribute.id()
+                        );
+
+                int color =
+                        special
+                                ? SPECIAL_ATTRIBUTE_COLOR
+                                : STANDARD_ATTRIBUTE_COLOR;
+
+                rendered.add(
+                        new RenderedAttribute(
+                                displayName,
+                                color
+                        )
+                );
+
+                totalWidth +=
+                        font.width(
+                                displayName
+                        );
+        }
+
+        if (rendered.isEmpty()) {
+                return;
+        }
+
+        String separator =
+                " • ";
+
+        int separatorWidth =
+                font.width(
+                        separator
+                );
+
+        totalWidth +=
+                separatorWidth
+                        * (
+                        rendered.size() - 1
+                );
+
+        float x =
+                -totalWidth / 2.0F;
+
+        for (
+                int i = 0;
+                i < rendered.size();
+                i++
+        ) {
+                RenderedAttribute attribute =
+                        rendered.get(
+                                i
+                        );
+
+                font.drawInBatch(
+                        attribute.name(),
+                        x,
+                        y,
+                        attribute.color(),
+                        false,
+                        poseStack.last()
+                                .pose(),
+                        buffer,
+                        Font.DisplayMode.NORMAL,
+                        0x80000000,
+                        packedLight
+                );
+
+                x +=
+                        font.width(
+                                attribute.name()
+                        );
+
+                if (
+                        i < rendered.size() - 1
+                ) {
+                font.drawInBatch(
+                        separator,
+                        x,
+                        y,
+                        STANDARD_ATTRIBUTE_COLOR,
+                        false,
+                        poseStack.last()
+                                .pose(),
+                        buffer,
+                        Font.DisplayMode.NORMAL,
+                        0x80000000,
+                        packedLight
+                );
+
+                x +=
+                        separatorWidth;
+                }
+        }
+        }
+
+    private static EliteAttributes.RolledAttribute parseAttribute(
+        String stored
+) {
+    if (
+            stored == null
+            || stored.isBlank()
+    ) {
+        return null;
+    }
+
+    String[] parts =
+            stored.split(
+                    ":",
+                    2
+            );
+
+    String id =
+            parts[0];
+
+    int level =
+            1;
+
+    if (parts.length > 1) {
+        try {
+            level =
+                    Integer.parseInt(
+                            parts[1]
+                    );
+        } catch (NumberFormatException ignored) {
+            level =
+                    1;
+        }
+    }
+
+    level =
+            Math.max(
+                    1,
+                    Math.min(
+                            3,
+                            level
+                    )
+            );
+
+    return new EliteAttributes.RolledAttribute(
+            id,
+            level
+    );
+    }
+
+    private static String getAttributeDisplayName(
+        EliteAttributes.RolledAttribute attribute
+) {
+    String name =
+            attribute.id()
+                    .replace(
+                            "_",
+                            " "
+                    )
+                    .toUpperCase();
+
+    return switch (
+            attribute.level()
+    ) {
+        case 2 ->
+                name + "+";
+
+        case 3 ->
+                name + "++";
+
+        default ->
+                name;
+    };
     }
 
     @SubscribeEvent
@@ -73,6 +303,27 @@ public final class EliteOverheadRenderer {
             MultiBufferSource buffer,
             int packedLight
     ) {
+        EliteMutation actualMutation =
+                EliteMutationRegistry.get(
+                        state.mutationId()
+                );
+
+        boolean isMimic =
+                actualMutation != null
+                && "mimic".equals(
+                        actualMutation.id()
+                );
+
+        /*
+        * Dormant Mimics reveal absolutely NOTHING.
+        */
+        if (
+                isMimic
+                && !state.mimicRevealed()
+        ) {
+        return;
+        }
+
         Minecraft minecraft =
                 Minecraft.getInstance();
 
@@ -85,10 +336,20 @@ public final class EliteOverheadRenderer {
          * Position the entire Elite UI above
          * the mob's head.
          */
+
+        boolean hasStatusBar =
+                state.statusActive()
+                && state.statusMax() > 0.0F;
+
+        double verticalOffset =
+                hasStatusBar
+                        ? 0.75D
+                        : 0.55D;
+
         poseStack.translate(
                 0.0D,
                 mob.getBbHeight()
-                        + 0.55D,
+                        + verticalOffset,
                 0.0D
         );
 
@@ -109,10 +370,28 @@ public final class EliteOverheadRenderer {
         /*
          * Mutation / behavior name.
          */
-        String behaviorName =
+        String behaviorName;
+
+        if (isMimic) {
+        EliteMutation copiedMutation =
+                EliteMutationRegistry.get(
+                        state.copiedMutationId()
+                );
+
+        String copiedName =
+                copiedMutation != null
+                        ? copiedMutation.displayName()
+                        : "Unknown";
+
+        behaviorName =
+                "MIMIC: "
+                        + copiedName.toUpperCase();
+        } else {
+        behaviorName =
                 getBehaviorDisplayName(
                         state.mutationId()
                 );
+        }
 
         float textX =
                 -font.width(
@@ -133,6 +412,15 @@ public final class EliteOverheadRenderer {
                 packedLight
         );
 
+        renderAttributeLine(
+                state,
+                font,
+                poseStack,
+                buffer,
+                packedLight,
+                10.0F
+        );
+
         /*
          * Generic mutation status bar.
          *
@@ -144,15 +432,12 @@ public final class EliteOverheadRenderer {
          * Undying  -> regeneration
          * etc.
          */
-        if (
-                state.statusActive()
-                && state.statusMax() > 0.0F
-        ) {
-            renderStatusBar(
-                    state,
-                    poseStack,
-                    12
-            );
+        if (hasStatusBar) {
+                renderStatusBar(
+                        state,
+                        poseStack,
+                        22
+                );
         }
 
         poseStack.popPose();

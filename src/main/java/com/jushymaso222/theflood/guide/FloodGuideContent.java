@@ -165,6 +165,403 @@ public final class FloodGuideContent {
                 )
         );
 
+        /*
+        * =========================================================
+        * ELITES
+        * =========================================================
+        */
+
+        PAGES.put(
+                FloodGuideCategory.ELITES,
+                List.of(
+
+                        new FloodGuidePage(
+                                "What are Elites?",
+                                """
+                                Elites are enhanced Flood-controlled enemies that
+                                begin appearing as Heat increases.
+
+                                Every Elite has a Behavior that changes how it fights.
+                                Elites may also possess Attributes that further modify
+                                their abilities.
+
+                                Higher Heat increases the threat posed by Elites and
+                                allows more dangerous combinations to appear.
+
+                                An Elite's Behavior and Attributes are displayed above
+                                it once identified.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Elite Behaviors",
+                                """
+                                Every Elite possesses one Behavior.
+
+                                Behaviors fundamentally change how an enemy fights and
+                                often introduce mechanics that must be learned and
+                                countered.
+
+                                Unlike Attributes, a Behavior is not simply a stat
+                                increase.
+
+                                Learning to recognize each Behavior is important as
+                                Heat rises and Elite encounters become increasingly
+                                dangerous.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Frenzied",
+                                """
+                                Frenzied Elites specialize in aggressive close-range
+                                combat.
+
+                                They are extremely dangerous once allowed to maintain
+                                pressure on their target.
+
+                                Control their movement and avoid allowing them to stay
+                                within striking distance for extended periods.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Bulwark",
+                                """
+                                Bulwark Elites specialize in defense.
+
+                                Their defenses can make direct attacks ineffective
+                                until the Bulwark is staggered.
+
+                                Watch its status indicator and exploit opportunities
+                                when its defenses have been disrupted.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Infested",
+                                """
+                                Infested Elites produce dangerous creatures during
+                                combat.
+
+                                These creatures can quickly turn a manageable fight
+                                into an overwhelming one if ignored.
+
+                                Controlling the additional enemies is often just as
+                                important as fighting the Elite itself.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Undying",
+                                """
+                                Undying Elites refuse to die normally.
+
+                                When fatally wounded, they enter a revival state
+                                instead of immediately dying.
+
+                                Deal enough damage before the revival completes to
+                                finish the Elite permanently.
+
+                                Failed attempts weaken its ability to revive again.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Commander",
+                                """
+                                Commander Elites coordinate nearby Flood-controlled
+                                enemies against their target.
+
+                                While supported by its forces, a Commander prefers to
+                                remain away from direct combat and gains additional
+                                protection.
+
+                                Eliminating its support can make the Commander much
+                                easier to confront.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Spiked",
+                                """
+                                Spiked Elites alternate between defensive states that
+                                punish different forms of attack.
+
+                                Pay attention to its current state and adapt your
+                                attacks accordingly.
+
+                                Relying entirely on one type of weapon can make a
+                                Spiked Elite considerably harder to kill.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Pursuer",
+                                """
+                                Pursuer Elites specialize in relentless pursuit.
+
+                                They can periodically gain extreme mobility to close
+                                distance with fleeing targets.
+
+                                Creating distance may provide temporary safety, but
+                                do not expect a Pursuer to remain behind for long.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Shifting",
+                                """
+                                Shifting Elites behave as though they are not entirely
+                                anchored to normal space.
+
+                                They can shift away from incoming projectiles and
+                                periodically reposition behind their target.
+
+                                Watch and listen for signs of an incoming shift.
+                                Reacting quickly can prevent a devastating attack.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "████████",
+                                """
+                                CLASSIFICATION: ████████
+
+                                Available information regarding this classification
+                                is incomplete.
+
+                                Reports indicate that some Flood entities may exhibit
+                                behavior inconsistent with their apparent
+                                classification.
+
+                                IDENTIFICATION:
+                                ███████████████████████
+
+                                BEHAVIOR:
+                                ███████████████████████
+
+                                THREAT ASSESSMENT:
+                                UNKNOWN
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Elite Attributes",
+                                """
+                                Attributes modify an Elite beyond its normal Behavior.
+
+                                An Elite may possess multiple different Attributes.
+
+                                Attributes can also appear at increased ranks:
+
+                                ATTRIBUTE
+                                ATTRIBUTE+
+                                ATTRIBUTE++
+
+                                Higher ranks strengthen the existing effect.
+
+                                Standard Attributes primarily modify an enemy's normal
+                                combat capabilities.
+
+                                Special Attributes introduce entirely new mechanics
+                                and are considerably rarer.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Standard Attributes I",
+                                """
+                                Swift
+                                Increased movement speed.
+
+                                Tough
+                                Increased maximum health.
+
+                                Deadly
+                                Increased attack damage.
+
+                                Resilient
+                                Increased defensive capabilities.
+
+                                Hasty
+                                Increased attack speed.
+
+                                Reach
+                                Increased attack reach.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Standard Attributes II",
+                                """
+                                Leaping
+                                Improved jumping and mobility.
+
+                                Stalwart
+                                Increased resistance to knockback.
+
+                                Armored
+                                Increased armor.
+
+                                Regenerative
+                                Regenerates health when given time to recover.
+
+                                Fleet
+                                Becomes faster while actively pursuing a target.
+
+                                Brutal
+                                Attacks cause increased knockback.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Standard Attributes III",
+                                """
+                                Tenacious
+                                Increased tracking and pursuit range.
+
+                                Healthy
+                                Increased maximum health.
+
+                                Heavy
+                                Gains additional durability at the cost of mobility.
+
+                                Berserk
+                                Becomes increasingly dangerous as its health falls.
+
+                                Executioner
+                                Deals increased damage to badly injured targets.
+
+                                Vengeful
+                                Temporarily becomes stronger after taking damage.
+
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Standard Attributes IV",
+                                """
+                                Adrenalized
+                                Temporarily becomes faster after taking damage.
+
+                                Unyielding
+                                Large incoming attacks temporarily strengthen its
+                                defenses.
+
+                                Evasive
+                                Improved ability to avoid attacks.
+
+                                Climber
+                                Improved ability to pursue players vertically.
+
+                                Fireproof
+                                Resistant to fire damage.
+
+                                Blastproof
+                                Resistant to explosion damage.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Standard Attributes V",
+                                """
+                                Deflecting
+                                Resistant to projectile damage.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Special Attributes",
+                                """
+                                Special Attributes are rare modifiers that introduce
+                                additional combat mechanics.
+
+                                Their names are displayed differently from Standard
+                                Attributes to warn players of the additional threat.
+
+                                Special Attributes can also appear as + and ++
+                                variants.
+
+                                An Elite possessing a Special Attribute should not be
+                                approached as though it were simply a stronger normal
+                                enemy.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Vampiric",
+                                """
+                                Successful attacks restore some of the Elite's health.
+
+                                Higher ranks increase the strength of the healing.
+
+                                Allowing a Vampiric Elite to repeatedly land attacks
+                                can undo significant amounts of damage dealt to it.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Radioactive",
+                                """
+                                Radioactive Elites emit a hazardous area around
+                                themselves.
+
+                                Remaining inside this area causes radiation exposure
+                                to accumulate.
+
+                                Exposure is initially harmless, but remaining within
+                                the affected area for too long causes continuous
+                                damage.
+
+                                Leave the radioactive area to begin recovering.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Volatile",
+                                """
+                                Damage dealt to a Volatile Elite causes instability to
+                                build.
+
+                                Once enough instability accumulates, the Elite
+                                releases a damaging shockwave around itself.
+
+                                Continuing to attack aggressively at close range can
+                                therefore become extremely dangerous.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Static",
+                                """
+                                Static Elites periodically charge nearby players with
+                                unstable energy.
+
+                                A targeted player receives a brief warning before the
+                                charge discharges.
+
+                                Escape the Elite's effective range before the charge
+                                completes to avoid the resulting strike.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Corrosive",
+                                """
+                                Successful attacks from a Corrosive Elite temporarily
+                                reduce the effectiveness of the victim's armor.
+
+                                Repeated attacks refresh the effect.
+
+                                Heavily armored players should be especially careful,
+                                as Corrosive Elites can temporarily undermine one of
+                                their greatest defenses.
+                                """
+                        )
+                )
+        );
+
 
         /*
          * =========================================================

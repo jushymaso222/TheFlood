@@ -8,6 +8,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
 import com.jushymaso222.theflood.guide.network.SyncServerSettingsPacket;
 import com.jushymaso222.theflood.elite.network.SyncEliteStatePacket;
+import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
 
 public final class FloodNetwork {
 
@@ -37,6 +38,14 @@ public final class FloodNetwork {
                 SyncEliteStatePacket::encode,
                 SyncEliteStatePacket::decode,
                 SyncEliteStatePacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                SyncMobStatsPacket.class,
+                SyncMobStatsPacket::encode,
+                SyncMobStatsPacket::decode,
+                SyncMobStatsPacket::handle
         );
 
         CHANNEL.registerMessage(

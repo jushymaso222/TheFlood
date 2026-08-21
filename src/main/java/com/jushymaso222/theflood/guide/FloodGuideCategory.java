@@ -10,6 +10,10 @@ public enum FloodGuideCategory {
             "Heat"
     ),
 
+    ELITES(
+            "Elites"
+    ),
+
     TEAMS(
             "Teams"
     ),

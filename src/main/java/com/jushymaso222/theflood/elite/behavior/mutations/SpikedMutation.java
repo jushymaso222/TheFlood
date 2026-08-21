@@ -390,6 +390,26 @@ public final class SpikedMutation
         }
     }
 
+    @Override
+        public void onDeactivated(
+                Mob elite
+        ) {
+        elite.getPersistentData()
+                .remove(
+                        PHASE_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        PHASE_PROGRESS_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        REFLECTING_KEY
+                );
+        }
+
     private static void syncState(
             Mob elite
     ) {

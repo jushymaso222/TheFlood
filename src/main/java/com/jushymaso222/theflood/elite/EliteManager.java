@@ -78,13 +78,38 @@ public final class EliteManager {
                 );
         }
 
+        /*
+        * Roll this Elite's attributes ONCE.
+        */
+        List<EliteAttributes.RolledAttribute> rolledAttributes =
+                EliteAttributes.rollAttributes(
+                        sourceHeat
+                );
+
+        /*
+        * Store them permanently on the entity.
+        */
         EliteData.setAttributes(
                 mob,
-                List.of()
+                EliteAttributes.serialize(
+                        rolledAttributes
+                )
+        );
+
+        /*
+        * Apply their actual stat modifiers.
+        */
+        EliteAttributes.applyAll(
+                mob,
+                rolledAttributes
         );
 
         mob.setGlowingTag(
                 true
+        );
+
+        EliteStateSync.syncBasic(
+                mob
         );
         }
 
@@ -105,29 +130,70 @@ public final class EliteManager {
     );
 
     EliteMutation mutation =
-            EliteMutationRegistry.get(
-                    mutationId
-            );
+        null;
 
-    if (mutation != null) {
+        if (
+                mutationId != null
+                && !mutationId.isBlank()
+        ) {
+        mutation =
+                EliteMutationRegistry.get(
+                        mutationId
+                );
+        }
+
+        /*
+        * No mutation supplied, or the supplied mutation
+        * doesn't exist.
+        *
+        * Pick a real mutation instead.
+        */
+        if (mutation == null) {
+        mutation =
+                EliteMutationRegistry.random();
+        }
+
+        if (mutation != null) {
         EliteData.setMutation(
                 mob,
                 mutation.id()
         );
-    } else {
-        EliteData.setMutation(
-                mob,
-                "none"
-        );
-    }
+        }
+
+    List<String> storedAttributes;
+
+        if (
+                attributes == null
+                || attributes.isEmpty()
+        ) {
+        storedAttributes =
+                EliteAttributes.serialize(
+                        EliteAttributes.rollAttributes(
+                                sourceHeat
+                        )
+                );
+        } else {
+        storedAttributes =
+                EliteAttributes.normalizeStoredAttributes(
+                        attributes
+                );
+        }
 
     EliteData.setAttributes(
             mob,
-            attributes
+            storedAttributes
+    );
+
+    EliteAttributes.applyAll(
+            mob
     );
 
     mob.setGlowingTag(
             true
+    );
+
+    EliteStateSync.syncBasic(
+            mob
     );
 }
 

@@ -30,6 +30,16 @@ public interface EliteMutation {
     ) {
     }
 
+    default boolean canBeMimicked() {
+        return true;
+        }
+
+    default boolean canDeactivate(
+                Mob elite
+        ) {
+        return true;
+        }
+
     /*
      * Allows a mutation to modify damage
      * received by the Elite.
@@ -65,6 +75,16 @@ public interface EliteMutation {
     ) {
         return false;
     }
+
+    default void onActivated(
+                Mob elite
+        ) {
+        }
+
+        default void onDeactivated(
+                Mob elite
+        ) {
+        }
 
     /*
      * Called when this Elite dies.
