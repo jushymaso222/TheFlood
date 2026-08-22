@@ -183,9 +183,9 @@ public final class MimicMutation
         elite.getNavigation()
                 .stop();
 
-        elite.setGlowingTag(
-                false
-        );
+        // elite.setGlowingTag(
+        //         false
+        // );
 
         elite.setCustomNameVisible(
                 false
@@ -470,9 +470,9 @@ public final class MimicMutation
                         0L
                 );
 
-        elite.setGlowingTag(
-                true
-        );
+        // elite.setGlowingTag(
+        //         true
+        // );
 
         elite.setTarget(
                 attacker
@@ -742,9 +742,9 @@ public final class MimicMutation
         elite.getNavigation()
                 .stop();
 
-        elite.setGlowingTag(
-                false
-        );
+        // elite.setGlowingTag(
+        //         false
+        // );
 
         elite.setCustomNameVisible(
                 false

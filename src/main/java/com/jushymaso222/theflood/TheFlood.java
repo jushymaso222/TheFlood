@@ -9,7 +9,12 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import org.slf4j.Logger;
 import com.jushymaso222.theflood.compat.mekanism.TurretPlacementEvents;
+import com.jushymaso222.theflood.elite.presentation.particle.EliteParticles;
 import net.minecraftforge.common.MinecraftForge;
+import com.jushymaso222.theflood.sound.FloodSounds;
+
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(TheFlood.MOD_ID)
 public class TheFlood {
@@ -28,6 +33,18 @@ public class TheFlood {
                 ModConfig.Type.CLIENT,
                 TheFloodClientConfig.CLIENT_CONFIG,
                 "theflood-client.toml"
+        );
+
+        IEventBus modEventBus =
+                FMLJavaModLoadingContext.get()
+                        .getModEventBus();
+
+        EliteParticles.PARTICLES.register(
+                modEventBus
+        );
+
+        FloodSounds.SOUNDS.register(
+                modEventBus
         );
 
         MinecraftForge.EVENT_BUS.register(

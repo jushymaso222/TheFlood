@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.jushymaso222.theflood.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "theflood.refmap.json",
+  "mixins": [],
+  "client": [
+    "client.HumanoidModelMixin",
+    "client.AbstractZombieModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -14,7 +14,8 @@ public final class ClientEliteStateData {
             float statusProgress,
             float statusMax,
             boolean statusActive,
-            int statusColor
+            int statusColor,
+            String poseId
     ) {
     }
 
@@ -33,7 +34,8 @@ public final class ClientEliteStateData {
             float statusProgress,
             float statusMax,
             boolean statusActive,
-            int statusColor
+            int statusColor,
+            String poseId
     ) {
         STATES.put(
                 entityId,
@@ -45,7 +47,8 @@ public final class ClientEliteStateData {
                         statusProgress,
                         statusMax,
                         statusActive,
-                        statusColor
+                        statusColor,
+                        poseId
                 )
         );
     }

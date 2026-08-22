@@ -558,6 +558,34 @@ public final class FloodGuideContent {
                                 as Corrosive Elites can temporarily undermine one of
                                 their greatest defenses.
                                 """
+                        ),
+
+                        new FloodGuidePage(
+                                "Suppressing",
+                                """
+                                Watch your step when fighting this mob.
+                                
+                                Any hits dealt to the player reduce your movement
+                                speed for a short time.
+
+                                This can make for some extremely deadly combos
+                                depending on an elite's behavior. 
+                                
+                                Beware.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Siphoning",
+                                """
+                                These elites can 'borrow' health from nearby
+                                flood mobs.
+
+                                Make sure to kill any surrounding mobs to prevent
+                                the elite from regenerating in health during combat.
+
+                                Do not let them feed.
+                                """
                         )
                 )
         );

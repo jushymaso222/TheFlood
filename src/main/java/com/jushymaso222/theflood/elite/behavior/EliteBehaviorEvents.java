@@ -2,6 +2,7 @@ package com.jushymaso222.theflood.elite.behavior;
 
 import com.jushymaso222.theflood.TheFlood;
 import com.jushymaso222.theflood.elite.EliteData;
+import com.jushymaso222.theflood.elite.presentation.ElitePoseController;
 
 import net.minecraft.world.entity.Mob;
 
@@ -40,6 +41,10 @@ public final class EliteBehaviorEvents {
         }
 
         EliteBehaviorHooks.tick(
+                mob
+        );
+
+        ElitePoseController.tick(
                 mob
         );
     }

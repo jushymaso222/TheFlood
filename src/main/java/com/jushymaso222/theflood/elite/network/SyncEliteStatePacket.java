@@ -20,6 +20,7 @@ public class SyncEliteStatePacket {
         private final boolean statusActive;
         private final int statusColor;
         private final List<String> attributes;
+        private final String poseId;
 
     public SyncEliteStatePacket(
         int entityId,
@@ -30,7 +31,8 @@ public class SyncEliteStatePacket {
         float statusProgress,
         float statusMax,
         boolean statusActive,
-        int statusColor
+        int statusColor,
+        String poseId
 ) {
     this.entityId =
             entityId;
@@ -58,6 +60,9 @@ public class SyncEliteStatePacket {
 
     this.statusColor =
             statusColor;
+
+    this.poseId =
+            poseId;
 }
 
     public static void encode(
@@ -100,6 +105,10 @@ public class SyncEliteStatePacket {
     buffer.writeInt(
             message.statusColor
     );
+
+    buffer.writeUtf(
+            message.poseId
+    );
 }
 
     public static SyncEliteStatePacket decode(
@@ -116,7 +125,8 @@ public class SyncEliteStatePacket {
         buffer.readFloat(),
         buffer.readFloat(),
         buffer.readBoolean(),
-        buffer.readInt()
+        buffer.readInt(),
+        buffer.readUtf()
 );
 }
 
@@ -137,7 +147,8 @@ public class SyncEliteStatePacket {
                         packet.statusProgress,
                         packet.statusMax,
                         packet.statusActive,
-                        packet.statusColor
+                        packet.statusColor,
+                        packet.poseId
                 )
         );
 

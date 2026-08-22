@@ -76,46 +76,110 @@ public final class EliteAttributes {
         return pool;
     }
 
-    private static String rollAttributeId() {
+    private static String rollAttributeId(
+        Map<String, Integer> rolled
+) {
     List<String> standard =
             StandardAttributes.allIds();
 
     List<String> special =
             SpecialAttributeRegistry.allIds();
 
-    /*
-     * Specials are intentionally much rarer.
-     */
-    boolean rollSpecial =
-            !special.isEmpty()
-            && RANDOM.nextDouble()
-                    < SPECIAL_ATTRIBUTE_CHANCE;
+    String existingSpecial =
+            getExistingSpecial(
+                    rolled
+            );
 
-    if (rollSpecial) {
-        return special.get(
-                RANDOM.nextInt(
-                        special.size()
-                )
+    /*
+     * No Special has been rolled yet.
+     *
+     * We are allowed to roll either pool.
+     */
+    if (existingSpecial == null) {
+
+        boolean rollSpecial =
+                !special.isEmpty()
+                && RANDOM.nextDouble()
+                        < SPECIAL_ATTRIBUTE_CHANCE;
+
+        if (rollSpecial) {
+            return special.get(
+                    RANDOM.nextInt(
+                            special.size()
+                    )
+            );
+        }
+
+        if (!standard.isEmpty()) {
+            return standard.get(
+                    RANDOM.nextInt(
+                            standard.size()
+                    )
+            );
+        }
+
+        if (!special.isEmpty()) {
+            return special.get(
+                    RANDOM.nextInt(
+                            special.size()
+                    )
+            );
+        }
+
+        return null;
+    }
+
+    /*
+     * This Elite already has a Special.
+     *
+     * It may NEVER acquire a different one.
+     *
+     * We still include the existing Special as a
+     * possible result so it can become + or ++.
+     */
+    List<String> allowed =
+            new ArrayList<>(
+                    standard
+            );
+
+    int existingLevel =
+            rolled.getOrDefault(
+                    existingSpecial,
+                    0
+            );
+
+    if (
+            existingLevel > 0
+            && existingLevel < MAX_ATTRIBUTE_LEVEL
+    ) {
+        allowed.add(
+                existingSpecial
         );
     }
 
-    if (!standard.isEmpty()) {
-        return standard.get(
-                RANDOM.nextInt(
-                        standard.size()
-                )
-        );
+    if (allowed.isEmpty()) {
+        return null;
     }
 
-    /*
-     * Fallback if somehow no Standards exist.
-     */
-    if (!special.isEmpty()) {
-        return special.get(
-                RANDOM.nextInt(
-                        special.size()
+    return allowed.get(
+            RANDOM.nextInt(
+                    allowed.size()
+            )
+    );
+}
+
+private static String getExistingSpecial(
+        Map<String, Integer> rolled
+) {
+    for (String id : rolled.keySet()) {
+
+        if (
+                SpecialAttributeRegistry.contains(
+                        id
                 )
-        );
+        ) {
+            return id;
+        }
     }
 
     return null;
@@ -214,7 +278,7 @@ public final class EliteAttributes {
         }
 
         String selected =
-                rollAttributeId();
+                rollAttributeId(rolled);
 
         if (selected == null) {
                 return;
@@ -324,7 +388,7 @@ public final class EliteAttributes {
                 attempt++
         ) {
             String selected =
-                        rollAttributeId();
+                        rollAttributeId(rolled);
 
                 if (selected == null) {
                         return;
@@ -565,6 +629,12 @@ public final class EliteAttributes {
         return result;
     }
 
+    String acceptedSpecial =
+        null;
+
+    List<String> acceptedIds =
+        new ArrayList<>();
+
     for (String attribute : attributes) {
         if (
                 attribute == null
@@ -595,8 +665,41 @@ public final class EliteAttributes {
                         id
                 )
         ) {
-            continue;
+        continue;
         }
+
+        if (
+                acceptedIds.contains(
+                        id
+                )
+        ) {
+        continue;
+        }
+
+        boolean special =
+                SpecialAttributeRegistry.contains(
+                        id
+                );
+
+        if (special) {
+
+        if (acceptedSpecial == null) {
+                acceptedSpecial =
+                        id;
+        }
+
+        else if (
+                !acceptedSpecial.equals(
+                        id
+                )
+        ) {
+                continue;
+        }
+        }
+
+        acceptedIds.add(
+                id
+        );
 
         int level =
                 1;

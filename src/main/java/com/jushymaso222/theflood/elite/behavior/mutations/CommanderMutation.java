@@ -15,6 +15,16 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.MoverType;
 
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+import net.minecraft.core.particles.DustParticleOptions;
+
+import com.jushymaso222.theflood.elite.presentation.ElitePose;
+import com.jushymaso222.theflood.elite.presentation.ElitePresentation;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+import com.jushymaso222.theflood.sound.FloodSounds;
+
+import net.minecraft.world.entity.Entity;
+
 import net.minecraft.world.damagesource.DamageSource;
 
 import java.util.List;
@@ -41,6 +51,21 @@ public final class CommanderMutation
     private static final String RETREAT_END_TIME_KEY =
             "theflood_commander_retreat_end";
 
+    private static final String COMMAND_SEQUENCE_START_KEY =
+        "theflood_commander_sequence_start";
+
+        private static final String COMMAND_SEQUENCE_TARGET_KEY =
+                "theflood_commander_sequence_target";
+
+        private static final int WHISTLE_DELAY_TICKS =
+                5;
+
+        private static final int COMMAND_DELAY_TICKS =
+                8;
+
+        private static final int COMMAND_POSE_TICKS =
+                14;
+
     private static final int RETREAT_MAX_TICKS =
             100; // 5 seconds
 
@@ -48,7 +73,7 @@ public final class CommanderMutation
             240; // 12 seconds
 
     private static final double COMMAND_RADIUS =
-            16.0D;
+            32.0D;
 
     private static final int MIN_COMMAND_COUNT =
             2;
@@ -134,6 +159,231 @@ public final class CommanderMutation
         commander.getNavigation()
                 .stop();
     }
+
+    private static void startCommandSequence(
+        Mob commander,
+        ServerPlayer target
+) {
+    long now =
+            commander.level()
+                    .getGameTime();
+
+    commander.getPersistentData()
+            .putLong(
+                    COMMAND_SEQUENCE_START_KEY,
+                    now
+            );
+
+    commander.getPersistentData()
+            .putUUID(
+                    COMMAND_SEQUENCE_TARGET_KEY,
+                    target.getUUID()
+            );
+
+    ElitePresentation.setPose(
+            commander,
+            ElitePose.COMMANDING
+    );
+
+    EliteStateSync.syncBasic(
+            commander
+    );
+
+    commander.getNavigation()
+            .stop();
+}
+
+private static ServerPlayer getCommandSequenceTarget(
+        ServerLevel level,
+        Mob commander
+) {
+    if (
+            !commander.getPersistentData()
+                    .hasUUID(
+                            COMMAND_SEQUENCE_TARGET_KEY
+                    )
+    ) {
+        return null;
+    }
+
+    UUID targetId =
+            commander.getPersistentData()
+                    .getUUID(
+                            COMMAND_SEQUENCE_TARGET_KEY
+                    );
+
+    return level.getServer()
+            .getPlayerList()
+            .getPlayer(
+                    targetId
+            );
+}
+
+private static boolean tickCommandSequence(
+        ServerLevel level,
+        Mob commander
+) {
+    if (
+            !commander.getPersistentData()
+                    .contains(
+                            COMMAND_SEQUENCE_START_KEY
+                    )
+    ) {
+        return false;
+    }
+
+    long start =
+            commander.getPersistentData()
+                    .getLong(
+                            COMMAND_SEQUENCE_START_KEY
+                    );
+
+    long elapsed =
+            level.getGameTime()
+                    - start;
+
+    ServerPlayer target =
+            getCommandSequenceTarget(
+                    level,
+                    commander
+            );
+
+    /*
+     * Target disappeared/died during the signal.
+     */
+    if (
+            target == null
+            || !target.isAlive()
+            || target.isSpectator()
+    ) {
+        finishCommandSequence(
+                commander
+        );
+
+        return false;
+    }
+
+    /*
+     * Commander stays put during the signal.
+     */
+    commander.setTarget(
+            null
+    );
+
+    commander.getNavigation()
+            .stop();
+
+    if (
+            elapsed
+                    == WHISTLE_DELAY_TICKS
+    ) {
+        EliteSounds.playRandomPitch(
+                commander,
+                FloodSounds.COMMANDER_WHISTLE.get(),
+                1.0F,
+                1.0F,
+                0.02F
+        );
+    }
+
+    if (
+            elapsed
+                    == COMMAND_DELAY_TICKS
+    ) {
+        int commanded =
+                issueCommand(
+                        level,
+                        commander,
+                        target
+                );
+
+        if (commanded > 0) {
+            commander.getPersistentData()
+                    .putUUID(
+                            COMMANDED_PLAYER_UUID_KEY,
+                            target.getUUID()
+                    );
+
+            commander.getPersistentData()
+                    .putLong(
+                            NEXT_COMMAND_KEY,
+                            level.getGameTime()
+                                    + COMMAND_COOLDOWN_TICKS
+                    );
+        }
+        else {
+            commander.getPersistentData()
+                    .putLong(
+                            NEXT_COMMAND_KEY,
+                            level.getGameTime()
+                                    + 40
+                    );
+        }
+    }
+
+    if (
+            elapsed
+                    >= COMMAND_POSE_TICKS
+    ) {
+        boolean commandedSomething =
+                commander.getPersistentData()
+                        .hasUUID(
+                                COMMANDED_PLAYER_UUID_KEY
+                        );
+
+        finishCommandSequence(
+                commander
+        );
+
+        if (commandedSomething) {
+            startRetreat(
+                    commander,
+                    target
+            );
+        }
+        else {
+            float healthPercent =
+                    commander.getHealth()
+                            / commander.getMaxHealth();
+
+            if (
+                    healthPercent
+                            <= FLEE_HEALTH_THRESHOLD
+            ) {
+                startRetreat(
+                        commander,
+                        target
+                );
+            }
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+private static void finishCommandSequence(
+        Mob commander
+) {
+    commander.getPersistentData()
+            .remove(
+                    COMMAND_SEQUENCE_START_KEY
+            );
+
+    commander.getPersistentData()
+            .remove(
+                    COMMAND_SEQUENCE_TARGET_KEY
+            );
+
+    ElitePresentation.resetPose(
+            commander
+    );
+
+    EliteStateSync.syncBasic(
+            commander
+    );
+}
 
     private static ServerPlayer getRetreatPlayer(
             ServerLevel level,
@@ -343,6 +593,20 @@ public final class CommanderMutation
 
         elite.getPersistentData()
                 .remove(
+                        COMMAND_SEQUENCE_START_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        COMMAND_SEQUENCE_TARGET_KEY
+                );
+
+        ElitePresentation.resetPose(
+                elite
+        );
+
+        elite.getPersistentData()
+                .remove(
                         NEXT_COMMAND_KEY
                 );
 
@@ -377,6 +641,15 @@ public final class CommanderMutation
             return;
         }
 
+        if (
+                tickCommandSequence(
+                        level,
+                        elite
+                )
+        ) {
+        return;
+        }
+
         ServerPlayer commandedPlayer =
                 getCommandedPlayer(
                         level,
@@ -395,6 +668,11 @@ public final class CommanderMutation
             return;
         }
 
+        updateCommandedState(
+                level,
+                elite
+        );
+
         if (
                 elite.getPersistentData()
                         .getBoolean(
@@ -408,11 +686,6 @@ public final class CommanderMutation
 
             return;
         }
-
-        updateCommandedState(
-                level,
-                elite
-        );
 
         ServerPlayer target =
                 getPlayerTarget(
@@ -433,43 +706,54 @@ public final class CommanderMutation
                         );
 
         if (gameTime < nextCommand) {
-            return;
-        }
+                return;
+                }
 
-        int commanded =
-            issueCommand(
-                    level,
-                    elite,
-                    target
-            );
+                /*
+                * Do not perform the whistle/command animation
+                * unless there is actually somebody available
+                * to command.
+                */
+                if (
+                        !hasCommandableMobs(
+                                level,
+                                elite
+                        )
+                ) {
+                /*
+                * Check again soon, but don't whistle.
+                */
+                elite.getPersistentData()
+                        .putLong(
+                                NEXT_COMMAND_KEY,
+                                gameTime + 40
+                        );
 
-        if (commanded <= 0) {
-            elite.getPersistentData()
-                    .putLong(
-                            NEXT_COMMAND_KEY,
-                            gameTime + 40
-                    );
+                /*
+                * If he's wounded and has nobody around,
+                * preserve the existing coward behavior.
+                */
+                float healthPercent =
+                        elite.getHealth()
+                                / elite.getMaxHealth();
 
-            float healthPercent =
-                    elite.getHealth()
-                            / elite.getMaxHealth();
+                if (
+                        healthPercent
+                                <= FLEE_HEALTH_THRESHOLD
+                ) {
+                        startRetreat(
+                                elite,
+                                target
+                        );
+                }
 
-            /*
-            * A wounded Commander with no troops available
-            * prioritizes survival and attempts to escape.
-            */
-            if (
-                    healthPercent
-                            <= FLEE_HEALTH_THRESHOLD
-            ) {
-                startRetreat(
+                return;
+                }
+
+                startCommandSequence(
                         elite,
                         target
                 );
-            }
-
-            return;
-        }
 
         elite.getPersistentData()
                 .putLong(
@@ -489,6 +773,36 @@ public final class CommanderMutation
                 target
         );
     }
+
+    private static boolean hasCommandableMobs(
+        ServerLevel level,
+        Mob commander
+) {
+    AABB searchArea =
+            commander.getBoundingBox()
+                    .inflate(
+                            COMMAND_RADIUS
+                    );
+
+    return !level.getEntitiesOfClass(
+            Mob.class,
+            searchArea,
+            mob ->
+                    mob != commander
+                    && mob.isAlive()
+                    && mob.getPersistentData()
+                            .getBoolean(
+                                    SpawnDirector.FLOOD_CONTROLLED_TAG
+                            )
+                    && !EliteData.isElite(
+                            mob
+                    )
+                    && !mob.getPersistentData()
+                            .getBoolean(
+                                    COMMANDED_TAG
+                            )
+    ).isEmpty();
+}
 
     private static ServerPlayer getPlayerTarget(
             Mob elite
@@ -910,11 +1224,29 @@ public final class CommanderMutation
             }
 
             if (
-                    mob.isAlive()
-                    && !mob.isRemoved()
-            ) {
+                        mob.isAlive()
+                        && !mob.isRemoved()
+                ) {
                 livingCommanded++;
-            }
+
+                /*
+                * Visual indicator that this mob is currently
+                * being buffed/commanded.
+                */
+                if (
+                        mob.tickCount
+                                % 5
+                                == 0
+                ) {
+                        EliteVisuals.headOrbit(
+                                mob,
+                                DustParticleOptions.REDSTONE,
+                                0.35D,
+                                3,
+                                0.18D
+                        );
+                }
+                }
         }
 
         syncDefenseBar(

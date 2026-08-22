@@ -8,6 +8,9 @@ import net.minecraft.world.entity.Mob;
 import net.minecraftforge.network.PacketDistributor;
 
 import com.jushymaso222.theflood.elite.behavior.mutations.MimicMutation;
+import com.jushymaso222.theflood.elite.presentation.ElitePoseController;
+
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
@@ -51,6 +54,11 @@ public final class EliteStateSync {
                         elite
                 );
 
+        String poseId =
+                ElitePoseController.getPose(
+                        elite
+                ).name();
+
         FloodNetwork.CHANNEL.send(
                 PacketDistributor.TRACKING_ENTITY_AND_SELF.with(
                         () -> elite
@@ -64,7 +72,8 @@ public final class EliteStateSync {
                         progress,
                         maxProgress,
                         active,
-                        color
+                        color,
+                        poseId
                 )
         );
         }
@@ -80,4 +89,60 @@ public final class EliteStateSync {
                 0xFFFFFFFF
         );
     }
+
+    public static void syncBasicTo(
+                Mob elite,
+                ServerPlayer player
+        ) {
+        String mutationId =
+                EliteData.getMutation(
+                        elite
+                );
+
+        boolean isMimic =
+                "mimic".equals(
+                        mutationId
+                );
+
+        String copiedMutationId =
+                isMimic
+                        ? MimicMutation.getCopiedMutationId(
+                                elite
+                        )
+                        : "";
+
+        boolean mimicRevealed =
+                isMimic
+                        && MimicMutation.isRevealed(
+                                elite
+                        );
+
+        List<String> attributes =
+                EliteData.getAttributes(
+                        elite
+                );
+
+        String poseId =
+                ElitePoseController.getPose(
+                        elite
+                ).name();
+
+        FloodNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(
+                        () -> player
+                ),
+                new SyncEliteStatePacket(
+                        elite.getId(),
+                        mutationId,
+                        copiedMutationId,
+                        mimicRevealed,
+                        attributes,
+                        0.0F,
+                        0.0F,
+                        false,
+                        0xFFFFFFFF,
+                        poseId
+                )
+        );
+        }
 }

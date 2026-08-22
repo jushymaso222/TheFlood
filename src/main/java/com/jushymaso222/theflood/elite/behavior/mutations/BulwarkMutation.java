@@ -7,6 +7,18 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
+import com.jushymaso222.theflood.elite.presentation.ElitePose;
+import com.jushymaso222.theflood.elite.presentation.ElitePresentation;
+
+import net.minecraft.sounds.SoundEvents;
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+
+import net.minecraft.core.particles.ParticleTypes;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+
 import java.util.UUID;
 
 import net.minecraft.server.level.ServerLevel;
@@ -125,6 +137,35 @@ public void onDeactivated(
     private static void stun(
             Mob elite
     ) {
+        ElitePresentation.setPose(
+                elite,
+                ElitePose.STUNNED
+        );
+
+        EliteVisuals.headBurst(
+                elite,
+                ParticleTypes.CRIT,
+                12,
+                0.2D,
+                0.03D
+        );
+
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.ITEM_BREAK,
+                0.8F,
+                0.75F,
+                0.05F
+        );
+
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.IRON_GOLEM_DAMAGE,
+                0.35F,
+                0.65F,
+                0.05F
+        );
+
         long stunEnd =
                 elite.level()
                         .getGameTime()
@@ -418,6 +459,10 @@ public void onDeactivated(
                         );
             }
 
+            ElitePresentation.resetPose(
+                        elite
+                );
+
             syncState(
                     elite
             );
@@ -427,6 +472,20 @@ public void onDeactivated(
 
         if (!stunned) {
             return;
+        }
+
+        if (
+                elite.tickCount
+                        % 5
+                        == 0
+        ) {
+        EliteVisuals.headOrbit(
+                elite,
+                ParticleTypes.CRIT,
+                0.35D,
+                3,
+                0.18D
+        );
         }
 
         elite.getPersistentData()

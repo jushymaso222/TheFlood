@@ -1,31 +1,30 @@
 package com.jushymaso222.theflood.elite.attributes;
 
+import java.util.List;
+import java.util.UUID;
+
 import com.jushymaso222.theflood.TheFlood;
 import com.jushymaso222.theflood.elite.EliteAttributes;
 import com.jushymaso222.theflood.elite.EliteData;
 
+import com.jushymaso222.theflood.elite.attributes.specials.CorrosiveAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.SuppressingAttribute;
+
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
-import net.minecraftforge.event.TickEvent;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.projectile.Projectile;
-
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.jushymaso222.theflood.elite.attributes.specials.CorrosiveAttribute;
-
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
-
-import net.minecraft.tags.DamageTypeTags;
-
-import java.util.List;
-import java.util.UUID;
 
 @Mod.EventBusSubscriber(
         modid = TheFlood.MOD_ID,
@@ -107,6 +106,9 @@ public final class StandardAttributeEvents {
         }
 
         CorrosiveAttribute.tickPlayer(
+                event.player
+        );
+        SuppressingAttribute.tickPlayer(
                 event.player
         );
     }

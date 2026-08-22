@@ -1,15 +1,18 @@
 package com.jushymaso222.theflood.elite.attributes;
 
-import com.jushymaso222.theflood.elite.attributes.specials.RadioactiveAttribute;
-import com.jushymaso222.theflood.elite.attributes.specials.VampiricAttribute;
-import com.jushymaso222.theflood.elite.attributes.specials.VolatileAttribute;
-import com.jushymaso222.theflood.elite.attributes.specials.StaticAttribute;
-import com.jushymaso222.theflood.elite.attributes.specials.CorrosiveAttribute;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.jushymaso222.theflood.elite.attributes.specials.CorrosiveAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.RadioactiveAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.StaticAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.VampiricAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.VolatileAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.SuppressingAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.SiphoningAttribute;
+import com.jushymaso222.theflood.elite.attributes.specials.PackboundAttribute;
 
 public final class SpecialAttributeRegistry {
 
@@ -22,6 +25,9 @@ public final class SpecialAttributeRegistry {
         register(new VolatileAttribute());
         register(new StaticAttribute());
         register(new CorrosiveAttribute());
+        register(new SuppressingAttribute());
+        register(new SiphoningAttribute());
+        register(new PackboundAttribute());
     }
 
     private SpecialAttributeRegistry() {

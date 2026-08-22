@@ -104,9 +104,9 @@ public final class EliteManager {
                 rolledAttributes
         );
 
-        mob.setGlowingTag(
-                true
-        );
+        // mob.setGlowingTag(
+        //         true
+        // );
 
         EliteStateSync.syncBasic(
                 mob
@@ -188,9 +188,9 @@ public final class EliteManager {
             mob
     );
 
-    mob.setGlowingTag(
-            true
-    );
+//     mob.setGlowingTag(
+//             true
+//     );
 
     EliteStateSync.syncBasic(
             mob
@@ -224,9 +224,9 @@ public final class EliteManager {
                         mob
                 )
         ) {
-            mob.setGlowingTag(
-                    true
-            );
+        //     mob.setGlowingTag(
+        //             true
+        //     );
         }
     }
 
