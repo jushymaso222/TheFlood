@@ -14,6 +14,7 @@ import net.minecraft.sounds.SoundEvents;
 import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
 import com.jushymaso222.theflood.elite.presentation.EliteSounds;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
 import net.minecraft.core.particles.ParticleTypes;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -74,6 +75,18 @@ public final class BulwarkMutation
      */
     private static final double FRONT_DOT_THRESHOLD =
             0.0D;
+
+            @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                );
+        }
 
         @Override
 public void onDeactivated(

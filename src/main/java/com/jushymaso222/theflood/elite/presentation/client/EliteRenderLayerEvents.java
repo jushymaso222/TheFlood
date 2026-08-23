@@ -13,6 +13,15 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.jushymaso222.theflood.elite.presentation.client.ShiftingPhaseLayer;
+import com.jushymaso222.theflood.elite.presentation.client.SpikedBarrierLayer;
+
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.RenderLayer;
+
+import com.jushymaso222.theflood.elite.presentation.client.UndyingGhostLayer;
+
 @Mod.EventBusSubscriber(
         modid = TheFlood.MOD_ID,
         value = Dist.CLIENT,
@@ -66,11 +75,36 @@ public final class EliteRenderLayerEvents {
             return;
         }
 
-        // renderer.addLayer(
-        //         new EliteGlowLayer<T, M>(
-        //                 renderer
-        //         )
-        // );
+        renderer.addLayer(
+                new ShiftingPhaseLayer<T, M>(
+                        renderer
+                )
+        );
+
+        renderer.addLayer(
+                new SpikedBarrierLayer<T, M>(
+                        renderer
+                )
+        );
+
+        // if (
+        //         renderer.getModel()
+        //                 instanceof HumanoidModel<?>
+        // ) {
+        //         @SuppressWarnings({
+        //                 "rawtypes",
+        //                 "unchecked"
+        //         })
+        //         RenderLayer<T, M> ghostLayer =
+        //                 (RenderLayer<T, M>)
+        //                         new UndyingGhostLayer(
+        //                                 renderer
+        //                         );
+
+        //         renderer.addLayer(
+        //                 ghostLayer
+        //         );
+        // }
     }
 
 

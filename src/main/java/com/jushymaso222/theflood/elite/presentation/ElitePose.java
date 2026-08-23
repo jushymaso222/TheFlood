@@ -4,19 +4,13 @@ public enum ElitePose {
 
     DEFAULT,
 
-    STUNNED,
+    STUNNED, //done
 
-    COLLAPSED,
+    COMMANDING, //done
 
-    REVIVING,
+    UNDYING_DOWNED,
 
-    COMMANDING,
+    UNDYING_SINKING,
 
-    CHARGING,
-
-    SHIFTING,
-
-    BACKSTAB,
-
-    RETREATING
+    CONJURING // done
 }

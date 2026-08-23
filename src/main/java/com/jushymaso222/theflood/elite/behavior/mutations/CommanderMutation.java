@@ -15,6 +15,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.MoverType;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
 import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
 import net.minecraft.core.particles.DustParticleOptions;
 
@@ -127,6 +128,18 @@ public final class CommanderMutation
     public String displayName() {
         return "Commander";
     }
+
+    @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                );
+        }
 
     private static void startRetreat(
             Mob commander,

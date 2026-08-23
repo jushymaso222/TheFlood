@@ -32,6 +32,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
+import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+
+import com.jushymaso222.theflood.elite.drops.boon.BoonData;
+import com.jushymaso222.theflood.elite.drops.boon.BoonType;
+
 public class SpawnDirector {
 
     private static final Random RANDOM = new Random();
@@ -58,6 +66,29 @@ public class SpawnDirector {
         long gameTime = level.getGameTime();
 
         for (ServerPlayer player : level.players()) {
+            if (
+                        BoonData.hasBoon(
+                                player,
+                                BoonType.TRANQUILITY
+                        )
+                ) {
+                /*
+                * Tranquility heavily suppresses normal ambient
+                * Flood spawning without changing the player's Heat.
+                *
+                * Existing mobs are untouched.
+                * Hordes/Blood Moons remain separate systems.
+                */
+                if (
+                        RANDOM.nextInt(
+                                10
+                        ) != 0
+                ) {
+                        continue;
+                }
+                }
+
+
             int heat = HeatManager.getEffectiveHeat(player);
 
             if (heat < TheFloodConfig.MOBS.zombie.unlockHeat.get()) {
@@ -642,6 +673,12 @@ public class SpawnDirector {
                 heat
         );
 
+        if (mob instanceof Spider spider) {
+                makeSpiderAlwaysHostile(
+                        spider
+                );
+        }
+
         level.addFreshEntity(mob);
 
         if (
@@ -654,6 +691,28 @@ public class SpawnDirector {
                 );
         }
     }
+
+    private static void makeSpiderAlwaysHostile(
+                Spider spider
+        ) {
+        spider.targetSelector.addGoal(
+                1,
+                new NearestAttackableTargetGoal<>(
+                        spider,
+                        Player.class,
+                        true
+                )
+        );
+
+        spider.goalSelector.addGoal(
+                2,
+                new MeleeAttackGoal(
+                        spider,
+                        1.0D,
+                        true
+                )
+        );
+        }
 
     private static void makeHordeMobAggressive(Mob mob, ServerPlayer player, boolean isBloodMoonMob) {
         double followRange = isBloodMoonMob

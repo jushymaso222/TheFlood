@@ -255,15 +255,22 @@ public final class FloodGuideContent {
                         new FloodGuidePage(
                                 "Undying",
                                 """
-                                Undying Elites refuse to die normally.
+                                Undying Elites refuse to remain dead.
 
-                                When fatally wounded, they enter a revival state
-                                instead of immediately dying.
+                                When fatally wounded, their body collapses and begins
+                                attempting to reform.
+
+                                During this state, continue attacking the Elite to
+                                prevent its revival.
 
                                 Deal enough damage before the revival completes to
-                                finish the Elite permanently.
+                                destroy the Elite permanently.
 
-                                Failed attempts weaken its ability to revive again.
+                                If the revival succeeds, the Elite returns with a
+                                portion of its health restored.
+
+                                Each successful revival makes the next attempt easier
+                                to interrupt.
                                 """
                         ),
 
@@ -585,6 +592,85 @@ public final class FloodGuideContent {
                                 the elite from regenerating in health during combat.
 
                                 Do not let them feed.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Boons",
+                                """
+                                Elite enemies may rarely drop powerful objects known
+                                as Boons.
+
+                                A Boon can be consumed to grant its effect for a
+                                limited duration.
+
+                                Only one Boon may be active at a time. Attempting to
+                                consume another while a Boon is already active will
+                                fail without consuming the item.
+
+                                Active Boons and their remaining duration are displayed
+                                alongside other status effects in the inventory.
+
+                                Boons are rare. More dangerous Elite encounters provide
+                                more opportunities to discover one.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Boon of Defense",
+                                """
+                                Temporarily reduces damage received from Flood-controlled
+                                enemies.
+
+                                Damage from unrelated sources is unaffected.
+
+                                This Boon can provide considerable protection during
+                                dangerous encounters where avoiding every attack may
+                                not be possible.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Boon of Attack",
+                                """
+                                Temporarily increases damage dealt to Flood-controlled
+                                enemies.
+
+                                The effect applies specifically when fighting the Flood
+                                and does not increase damage against unrelated creatures.
+
+                                Use this Boon when preparing to confront particularly
+                                dangerous Flood enemies or large concentrations of them.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Boon of Hoarders",
+                                """
+                                Temporarily improves the rewards obtained from Elite
+                                enemies.
+
+                                While active, defeated Elites provide additional reward
+                                rolls and may yield greater quantities of loot.
+
+                                The Boon does not guarantee rare rewards, but provides
+                                considerably more opportunities to obtain them.
+                                """
+                        ),
+
+                        new FloodGuidePage(
+                                "Boon of Tranquility",
+                                """
+                                Temporarily suppresses normal Flood activity around the
+                                affected player.
+
+                                The Boon does not reduce Heat or erase enemies that
+                                already exist.
+
+                                Certain major threats are also unaffected.
+
+                                Tranquility provides a temporary opportunity to explore,
+                                recover, or prepare without normal Flood pressure.
                                 """
                         )
                 )

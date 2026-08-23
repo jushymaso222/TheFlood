@@ -22,6 +22,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import com.jushymaso222.theflood.elite.drops.boon.BoonData;
+import com.jushymaso222.theflood.elite.drops.boon.BoonType;
+
 import com.jushymaso222.theflood.elite.EliteManager;
 
 @Mod.EventBusSubscriber(
@@ -345,10 +348,25 @@ long fixedDrain =
                         scalingHeat
                 );
 
+        double boonMultiplier =
+                1.0D;
+
+        if (
+                player != null
+                && BoonData.hasBoon(
+                        player,
+                        BoonType.ATTACK
+                )
+        ) {
+        boonMultiplier =
+                1.50D;
+        }
+
         event.setAmount(
                 (float) (
                         event.getAmount()
                                 * multiplier
+                                * boonMultiplier
                 )
         );
     }
@@ -423,10 +441,19 @@ long fixedDrain =
         float originalDamage =
                 event.getAmount();
 
+        double boonMultiplier =
+                BoonData.hasBoon(
+                        player,
+                        BoonType.DEFENSE
+                )
+                        ? 0.60D
+                        : 1.0D;
+
         float finalDamage =
                 (float) (
                         originalDamage
                                 * finalMultiplier
+                                * boonMultiplier
                 );
 
         event.setAmount(

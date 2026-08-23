@@ -17,8 +17,11 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.core.particles.ParticleTypes;
 
 public final class ShiftingMutation
         implements EliteMutation {
@@ -130,6 +133,27 @@ public final class ShiftingMutation
     }
 
     @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                )
+                || EliteMobCompatibility.isEnderman(
+                        mob
+                )
+                || EliteMobCompatibility.isWarden(
+                        mob
+                )
+                || EliteMobCompatibility.isSpider(
+                        mob
+                );
+        }
+
+    @Override
     public void onDeactivated(
             Mob elite
     ) {
@@ -143,6 +167,29 @@ public final class ShiftingMutation
                 elite
         );
     }
+
+    private static void playShiftEffect(
+        Mob elite,
+        boolean playSound
+) {
+    EliteVisuals.burst(
+            elite,
+            ParticleTypes.PORTAL,
+            24,
+            0.45D,
+            0.12D
+    );
+
+    if (playSound) {
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.ENDERMAN_TELEPORT,
+                1.0F,
+                1.0F,
+                0.05F
+        );
+    }
+}
 
     private static final double PROJECTILE_DETECTION_RADIUS =
         4.0D;
@@ -535,25 +582,6 @@ public final class ShiftingMutation
             elite,
             target
         );
-
-        /*
-        * TEMPORARY backstab reaction cue.
-        *
-        * This plays immediately after Shifting appears
-        * behind the player, marking the beginning of the
-        * reaction window.
-        */
-        elite.level()
-                .playSound(
-                        null,
-                        elite.getX(),
-                        elite.getY(),
-                        elite.getZ(),
-                        SoundEvents.ENDERMAN_TELEPORT,
-                        SoundSource.HOSTILE,
-                        1.0F,
-                        1.25F
-                );
     }
 
     private static void tickBackstab(
@@ -644,16 +672,12 @@ public final class ShiftingMutation
     private static void interruptBackstab(
             Mob elite
     ) {
-        elite.level()
-        .playSound(
-                null,
-                elite.getX(),
-                elite.getY(),
-                elite.getZ(),
+        EliteSounds.playRandomPitch(
+                elite,
                 SoundEvents.AMETHYST_BLOCK_BREAK,
-                SoundSource.HOSTILE,
                 1.0F,
-                0.8F
+                0.8F,
+                0.05F
         );
 
         returnToOrigin(
@@ -707,26 +731,46 @@ public final class ShiftingMutation
     }
 
     private static void teleportBehindPlayer(
-            Mob elite,
-            ServerPlayer target
-    ) {
-        Vec3 destination =
-                getBackstabPosition(
-                        elite,
-                        target
-                );
+        Mob elite,
+        ServerPlayer target
+) {
+    Vec3 destination =
+            getBackstabPosition(
+                    elite,
+                    target
+            );
 
-        elite.teleportTo(
-                destination.x,
-                target.getY(),
-                destination.z
-        );
+    /*
+     * Departure effect.
+     *
+     * Sound plays here once.
+     */
+    playShiftEffect(
+            elite,
+            true
+    );
 
-        facePlayer(
-                elite,
-                target
-        );
-    }
+    elite.teleportTo(
+            destination.x,
+            target.getY(),
+            destination.z
+    );
+
+    /*
+     * Arrival particles.
+     *
+     * No second sound.
+     */
+    playShiftEffect(
+            elite,
+            false
+    );
+
+    facePlayer(
+            elite,
+            target
+    );
+}
 
     private static Vec3 getBackstabPosition(
             Mob elite,
@@ -781,10 +825,20 @@ public final class ShiftingMutation
                                 BACKSTAB_ORIGIN_Z_KEY
                         );
 
+        playShiftEffect(
+                elite,
+                true
+        );
+
         elite.teleportTo(
                 x,
                 y,
                 z
+        );
+
+        playShiftEffect(
+                elite,
+                false
         );
     }
 
@@ -857,10 +911,20 @@ public final class ShiftingMutation
                                 )
                         );
 
+        playShiftEffect(
+                elite,
+                true
+        );
+
         elite.teleportTo(
                 destination.x,
                 elite.getY(),
                 destination.z
+        );
+
+        playShiftEffect(
+                elite,
+                false
         );
 
         return true;

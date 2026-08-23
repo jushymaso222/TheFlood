@@ -5,6 +5,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 
+import net.minecraft.core.particles.ParticleTypes;
+
 public final class EliteVisuals {
 
     private EliteVisuals() {
@@ -548,6 +550,111 @@ public final class EliteVisuals {
             );
         }
     }
+
+    public static void burst(
+        ServerLevel level,
+        ParticleOptions particle,
+        double x,
+        double y,
+        double z,
+        int count,
+        double spreadX,
+        double spreadY,
+        double spreadZ,
+        double speed
+) {
+    level.sendParticles(
+            particle,
+            x,
+            y,
+            z,
+            count,
+            spreadX,
+            spreadY,
+            spreadZ,
+            speed
+    );
+}
+
+        public static void ritualSigil(
+        ServerLevel level,
+        Mob elite,
+        ParticleOptions particle,
+        int points,
+        double radius,
+        double rotationSpeed
+) {
+    double time =
+            level.getGameTime()
+                    * rotationSpeed;
+
+    for (
+            int i = 0;
+            i < points;
+            i++
+    ) {
+        double angle =
+                time
+                        + (
+                        Math.PI * 2.0D
+                                * i
+                                / points
+                );
+
+        double x =
+                elite.getX()
+                        + Math.cos(angle)
+                        * radius;
+
+        double z =
+                elite.getZ()
+                        + Math.sin(angle)
+                        * radius;
+
+        level.sendParticles(
+                particle,
+                x,
+                elite.getY() + 0.03D,
+                z,
+                1,
+                0.0D,
+                0.0D,
+                0.0D,
+                0.0D
+        );
+    }
+}
+
+        public static void undyingSmoke(
+        ServerLevel level,
+        Mob elite
+) {
+    burst(
+            level,
+            ParticleTypes.WITCH,
+            elite.getX(),
+            elite.getY() + 0.1D,
+            elite.getZ(),
+            4,
+            0.35D,
+            0.08D,
+            0.35D,
+            0.02D
+    );
+
+    burst(
+            level,
+            ParticleTypes.SMOKE,
+            elite.getX(),
+            elite.getY() + 0.1D,
+            elite.getZ(),
+            3,
+            0.30D,
+            0.08D,
+            0.30D,
+            0.01D
+    );
+}
 
 
     /*

@@ -1,11 +1,19 @@
 package com.jushymaso222.theflood.elite.behavior.mutations;
 
 import com.jushymaso222.theflood.elite.behavior.EliteMutation;
-import com.jushymaso222.theflood.elite.EliteData;
 import com.jushymaso222.theflood.elite.EliteStateSync;
 
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.Mob;
+
+import com.jushymaso222.theflood.elite.presentation.ElitePose;
+import com.jushymaso222.theflood.elite.presentation.ElitePresentation;
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 
 public final class UndyingMutation
         implements EliteMutation {
@@ -30,6 +38,18 @@ public final class UndyingMutation
 
     private static final String REVIVAL_MAX_PROGRESS_KEY =
             "theflood_undying_revival_max_progress";
+
+    private static final String REASSEMBLE_END_KEY =
+        "theflood_undying_reassemble_end";
+
+    private static final String FINAL_DEATH_END_KEY =
+        "theflood_undying_final_death_end";
+
+        private static final int FINAL_DEATH_ANIMATION_TICKS =
+                24;
+
+        private static final int REASSEMBLE_TICKS =
+                16;
 
     private static final int REGEN_DELAY_TICKS =
             100; // 5 sec
@@ -63,6 +83,18 @@ public final class UndyingMutation
     }
 
     @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                );
+        }
+
+    @Override
     public boolean handleLethalDamage(
             Mob elite,
             float incomingDamage
@@ -90,6 +122,15 @@ public final class UndyingMutation
     private static void startRevivalCheck(
             Mob elite
     ) {
+        ElitePresentation.setPose(
+                elite,
+                ElitePose.UNDYING_DOWNED
+        );
+
+        EliteStateSync.syncBasic(
+                elite
+        );
+
         int failures =
                 elite.getPersistentData()
                         .getInt(
@@ -181,6 +222,18 @@ public final class UndyingMutation
             DamageSource source,
             float damage
     ) {
+        if (
+                elite.getPersistentData()
+                        .getBoolean(
+                                FINAL_DEATH_KEY
+                        )
+                && !source.is(
+                        DamageTypes.GENERIC_KILL
+                )
+        ) {
+        return 0.0F;
+        }
+
         elite.getPersistentData()
                 .putLong(
                         LAST_HURT_TIME_KEY,
@@ -227,22 +280,193 @@ public final class UndyingMutation
         return 0.0F;
     }
 
-    @Override
-    public void tick(
-            Mob elite
+    private static boolean tickReassembly(
+        Mob elite
+) {
+    long end =
+            elite.getPersistentData()
+                    .getLong(
+                            REASSEMBLE_END_KEY
+                    );
+
+    if (end <= 0L) {
+        return false;
+    }
+
+    if (
+            elite.level()
+                    .getGameTime()
+                    < end
     ) {
-        if (isRevivalActive(elite)) {
-            tickRevivalCheck(
-                    elite
+        return true;
+    }
+
+    elite.getPersistentData()
+            .putLong(
+                    REASSEMBLE_END_KEY,
+                    0L
             );
 
-            return;
+    elite.setNoAi(
+            false
+    );
+
+    EliteStateSync.syncBasic(
+            elite
+    );
+
+    return false;
+}
+
+        private static boolean tickFinalDeath(
+        Mob elite
+) {
+    long end =
+            elite.getPersistentData()
+                    .getLong(
+                            FINAL_DEATH_END_KEY
+                    );
+
+    if (end <= 0L) {
+        return false;
+    }
+
+    long now =
+            elite.level()
+                    .getGameTime();
+
+    if (
+            elite.level() instanceof ServerLevel level
+    ) {
+        /*
+         * Keep the ritual alive while the pieces
+         * are being pulled downward.
+         */
+        if (
+                elite.tickCount
+                        % 2
+                        == 0
+        ) {
+            EliteVisuals.ritualSigil(
+                    level,
+                    elite,
+                    ParticleTypes.ENCHANT,
+                    20,
+                    1.15D,
+                    0.16D
+            );
         }
 
+        /*
+         * Heavier smoke during the final pull.
+         */
+        if (
+                elite.tickCount
+                        % 3
+                        == 0
+        ) {
+            EliteVisuals.undyingSmoke(
+                    level,
+                    elite
+            );
+        }
+    }
+
+    if (now < end) {
+        return true;
+    }
+
+    /*
+     * Final portal-collapse burst.
+     */
+    if (
+            elite.level() instanceof ServerLevel level
+    ) {
+        EliteVisuals.burst(
+                elite,
+                ParticleTypes.PORTAL,
+                30,
+                0.55D,
+                0.08D
+        );
+
+        EliteVisuals.burst(
+                elite,
+                ParticleTypes.WITCH,
+                18,
+                0.45D,
+                0.04D
+        );
+    }
+
+    elite.getPersistentData()
+            .putLong(
+                    FINAL_DEATH_END_KEY,
+                    0L
+            );
+
+    /*
+     * FINAL_DEATH_KEY is already true, so
+     * handleLethalDamage() will finally allow this
+     * lethal hit through.
+     */
+    elite.setNoAi(
+            false
+    );
+
+    elite.hurt(
+            elite.damageSources()
+                    .genericKill(),
+            Float.MAX_VALUE
+    );
+
+    return true;
+}
+
+    @Override
+        public void tick(
+                Mob elite
+        ) {
+        if (
+                tickFinalDeath(
+                        elite
+                )
+        ) {
+        return;
+        }
+        /*
+        * Downed ritual owns the entity completely.
+        */
+        if (
+                isRevivalActive(
+                        elite
+                )
+        ) {
+                tickRevivalCheck(
+                        elite
+                );
+
+                return;
+        }
+
+        /*
+        * Reassembly also owns the entity until finished.
+        */
+        if (
+                tickReassembly(
+                        elite
+                )
+        ) {
+                return;
+        }
+
+        /*
+        * Only regenerate while behaving normally.
+        */
         tickRegeneration(
                 elite
         );
-    }
+        }
 
     private static void tickRegeneration(
             Mob elite
@@ -269,6 +493,21 @@ public final class UndyingMutation
             return;
         }
 
+        if (
+                elite.tickCount
+                        % 6
+                        == 0
+                && elite.level() instanceof ServerLevel level
+        ) {
+        EliteVisuals.burst(
+                elite,
+                ParticleTypes.WITCH,
+                2,
+                0.25D,
+                0.01D
+        );
+        }
+
         elite.heal(
                 REGEN_PER_TICK
         );
@@ -282,6 +521,36 @@ public final class UndyingMutation
                         .getLong(
                                 REVIVAL_END_TIME_KEY
                         );
+
+        if (
+                elite.level() instanceof ServerLevel level
+        ) {
+        if (
+                elite.tickCount
+                        % 3
+                        == 0
+        ) {
+                EliteVisuals.ritualSigil(
+                        level,
+                        elite,
+                        ParticleTypes.ENCHANT,
+                        16,
+                        1.1D,
+                        0.10D
+                );
+        }
+
+        if (
+                elite.tickCount
+                        % 5
+                        == 0
+        ) {
+                EliteVisuals.undyingSmoke(
+                        level,
+                        elite
+                );
+        }
+        }
 
         if (
                 elite.level()
@@ -299,6 +568,14 @@ public final class UndyingMutation
     private static void failRevivalCheck(
             Mob elite
     ) {
+        ElitePresentation.resetPose(
+                elite
+        );
+
+        EliteStateSync.syncBasic(
+                elite
+        );
+
         int failures =
                 elite.getPersistentData()
                         .getInt(
@@ -318,8 +595,12 @@ public final class UndyingMutation
                         false
                 );
 
-        elite.setNoAi(
-                false
+        elite.getPersistentData()
+        .putLong(
+                REASSEMBLE_END_KEY,
+                elite.level()
+                        .getGameTime()
+                        + REASSEMBLE_TICKS
         );
 
         float revivedHealth =
@@ -332,11 +613,16 @@ public final class UndyingMutation
                         revivedHealth
                 )
         );
-
-        EliteStateSync.syncBasic(
-                elite
-        );
     }
+
+    private static boolean isReassembling(
+                Mob elite
+        ) {
+        return elite.getPersistentData()
+                .getLong(
+                        REASSEMBLE_END_KEY
+                ) > 0L;
+        }
 
     @Override
         public boolean canDeactivate(
@@ -344,12 +630,15 @@ public final class UndyingMutation
         ) {
         return !isRevivalActive(
                 elite
-        );
+        )
+                && !isReassembling(
+                        elite
+                );
         }
 
     private static void finishDeath(
-            Mob elite
-    ) {
+                Mob elite
+        ) {
         elite.getPersistentData()
                 .putBoolean(
                         REVIVAL_ACTIVE_KEY,
@@ -362,18 +651,25 @@ public final class UndyingMutation
                         true
                 );
 
+        elite.getPersistentData()
+                .putLong(
+                        FINAL_DEATH_END_KEY,
+                        elite.level()
+                                .getGameTime()
+                                + FINAL_DEATH_ANIMATION_TICKS
+                );
+
         elite.setNoAi(
-                false
+                true
+        );
+
+        ElitePresentation.setPose(
+                elite,
+                ElitePose.UNDYING_SINKING
         );
 
         EliteStateSync.syncBasic(
                 elite
         );
-
-        elite.hurt(
-                elite.damageSources()
-                        .genericKill(),
-                Float.MAX_VALUE
-        );
-    }
+        }
 }

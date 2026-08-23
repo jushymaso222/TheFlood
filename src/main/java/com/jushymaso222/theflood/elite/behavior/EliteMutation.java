@@ -30,6 +30,12 @@ public interface EliteMutation {
     ) {
     }
 
+    default boolean canApplyTo(
+            Mob mob
+    ) {
+        return true;
+    }
+
     default boolean canBeMimicked() {
         return true;
         }

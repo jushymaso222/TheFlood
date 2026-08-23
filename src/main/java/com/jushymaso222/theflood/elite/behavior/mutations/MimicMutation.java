@@ -11,9 +11,16 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.projectile.Projectile;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +74,7 @@ public final class MimicMutation
      * change copied mutation every 10 seconds.
      */
     private static final int MUTATION_DURATION_TICKS =
-            200;
+            400;
 
     /*
      * Don't instantly hide because vanilla AI briefly
@@ -102,6 +109,18 @@ public final class MimicMutation
     public String displayName() {
         return "Mimic";
     }
+
+    @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                );
+        }
 
     private static void ensureMimicHealthBonus(
             Mob elite
@@ -523,7 +542,22 @@ public final class MimicMutation
         }
 
         List<EliteMutation> choices =
-                getMimicableMutations();
+                getMimicableMutations(
+                        elite
+                );
+
+        if (
+                oldMutation != null
+                && choices.size() > 1
+        ) {
+        choices.removeIf(
+                mutation ->
+                        mutation.id()
+                                .equals(
+                                        oldMutation.id()
+                                )
+        );
+        }
 
         if (choices.isEmpty()) {
             elite.getPersistentData()
@@ -542,10 +576,34 @@ public final class MimicMutation
                                 )
                 );
 
+        /*
+        * We already deactivated the old mutation above.
+        *
+        * Only play the transformation effect if we're actually
+        * switching to a different behavior.
+        */
+        String oldId =
+                oldMutation != null
+                        ? oldMutation.id()
+                        : "";
+
+        String newId =
+                selected.id();
+
+        if (
+                !newId.equals(
+                        oldId
+                )
+        ) {
+        playMutationShiftEffect(
+                elite
+        );
+        }
+
         elite.getPersistentData()
                 .putString(
                         COPIED_MUTATION_KEY,
-                        selected.id()
+                        newId
                 );
 
         selected.onActivated(
@@ -562,54 +620,42 @@ public final class MimicMutation
                         elite.level()
                                 .getGameTime()
                                 + MUTATION_DURATION_TICKS
-        );
+                );
 
         /*
         * Synced display state for the client renderer.
-        *
-        * Vanilla rendering stays disabled; our Elite renderer
-        * reads this to determine the copied mutation.
         */
-
         elite.setCustomNameVisible(
                 false
         );
-
-        selected.onActivated(
-                elite
-        );
-
-        elite.getPersistentData()
-                .putLong(
-                        NEXT_SHIFT_KEY,
-                        elite.level()
-                                .getGameTime()
-                                + MUTATION_DURATION_TICKS
-                );
     }
 
-    private static List<EliteMutation> getMimicableMutations() {
+    private static List<EliteMutation> getMimicableMutations(
+                Mob elite
+        ) {
         List<EliteMutation> choices =
                 new ArrayList<>();
 
         for (
                 EliteMutation mutation :
-                EliteMutationRegistry.all()
+                EliteMutationRegistry.validFor(
+                        elite
+                )
         ) {
-            if (
-                    mutation == null
-                    || !mutation.canBeMimicked()
-            ) {
+                if (
+                        mutation == null
+                        || !mutation.canBeMimicked()
+                ) {
                 continue;
-            }
+                }
 
-            choices.add(
-                    mutation
-            );
+                choices.add(
+                        mutation
+                );
         }
 
         return choices;
-    }
+        }
 
     private static EliteMutation getCopiedMutation(
             Mob elite
@@ -758,6 +804,34 @@ public final class MimicMutation
                 elite
         );
     }
+
+    private static void playMutationShiftEffect(
+                Mob elite
+        ) {
+        EliteVisuals.burst(
+                elite,
+                ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                18,
+                0.55D,
+                0.025D
+        );
+
+        EliteVisuals.burst(
+                elite,
+                ParticleTypes.POOF,
+                12,
+                0.45D,
+                0.04D
+        );
+
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.ILLUSIONER_MIRROR_MOVE,
+                0.9F,
+                1.05F,
+                0.06F
+        );
+        }
 
     private static ServerPlayer getStoredTarget(
             ServerLevel level,

@@ -1,0 +1,377 @@
+{
+  "rolls": {
+    "5": 65,
+    "6": 22,
+    "7": 10,
+    "8": 3
+  },
+
+  "amounts": {
+    "1": 80,
+    "2": 16,
+    "3": 4
+  },
+
+  "items": [
+
+    {
+      "tag": "forge:ingots/iron",
+      "weight": 120,
+      "weightPerHeat": -1.10,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:ingots/copper",
+      "weight": 110,
+      "weightPerHeat": -1.05,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:ingots/gold",
+      "weight": 90,
+      "weightPerHeat": -0.65,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:dusts/redstone",
+      "weight": 100,
+      "weightPerHeat": -0.90,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:gems/lapis",
+      "weight": 80,
+      "weightPerHeat": -0.65,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:gems/emerald",
+      "weight": 50,
+      "weightPerHeat": 0.05,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "tag": "forge:gems/amethyst",
+      "weight": 45,
+      "weightPerHeat": 0.05,
+      "min": 1,
+      "max": 3
+    },
+
+    {
+      "tag": "forge:gems/diamond",
+      "weight": 12,
+      "weightPerHeat": 0.65,
+      "minHeat": 5,
+      "min": 1,
+      "max": 2
+    },
+
+    {
+      "item": "minecraft:slime_ball",
+      "weight": 45,
+      "weightPerHeat": -0.20,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:ender_pearl",
+      "weight": 38,
+      "weightPerHeat": 0.15,
+      "minHeat": 5,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:phantom_membrane",
+      "weight": 25,
+      "weightPerHeat": 0.05,
+      "minHeat": 8,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:prismarine_crystals",
+      "weight": 18,
+      "weightPerHeat": 0.03,
+      "minHeat": 10,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:nautilus_shell",
+      "weight": 8,
+      "weightPerHeat": 0.06,
+      "minHeat": 15,
+      "min": 1,
+      "max": 2
+    },
+
+    {
+      "item": "minecraft:experience_bottle",
+      "weight": 35,
+      "weightPerHeat": 0.30,
+      "minHeat": 5,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:golden_apple",
+      "weight": 8,
+      "weightPerHeat": 0.18,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:name_tag",
+      "weight": 15,
+      "weightPerHeat": -0.08,
+      "minHeat": 5,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:saddle",
+      "weight": 15,
+      "weightPerHeat": -0.08,
+      "minHeat": 5,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "tag": "forge:gems/quartz",
+      "weight": 3,
+      "weightPerHeat": 0.90,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:glowstone_dust",
+      "weight": 2,
+      "weightPerHeat": 0.70,
+      "minHeat": 8,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:magma_cream",
+      "weight": 1,
+      "weightPerHeat": 0.55,
+      "minHeat": 10,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:ghast_tear",
+      "weight": 0.5,
+      "weightPerHeat": 0.40,
+      "minHeat": 15,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:blaze_rod",
+      "weight": 0.25,
+      "weightPerHeat": 0.50,
+      "minHeat": 20,
+      "min": 1,
+      "max": 2
+    },
+
+    {
+      "item": "minecraft:diamond_sword",
+      "weight": 2.5,
+      "weightPerHeat": 0.12,
+      "minHeat": 25,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_pickaxe",
+      "weight": 2.0,
+      "weightPerHeat": 0.11,
+      "minHeat": 25,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_axe",
+      "weight": 2.0,
+      "weightPerHeat": 0.10,
+      "minHeat": 25,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_helmet",
+      "weight": 1.5,
+      "weightPerHeat": 0.10,
+      "minHeat": 30,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_chestplate",
+      "weight": 1.0,
+      "weightPerHeat": 0.09,
+      "minHeat": 30,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_leggings",
+      "weight": 1.25,
+      "weightPerHeat": 0.09,
+      "minHeat": 30,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:diamond_boots",
+      "weight": 1.5,
+      "weightPerHeat": 0.10,
+      "minHeat": 30,
+      "min": 1,
+      "max": 1
+    },
+
+    {
+      "item": "minecraft:ender_eye",
+      "weight": 3,
+      "weightPerHeat": 0.20,
+      "minHeat": 35,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:netherite_scrap",
+      "weight": 0.75,
+      "weightPerHeat": 0.10,
+      "minHeat": 35,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "minecraft:music_disc_pigstep",
+      "weight": 0.30,
+      "weightPerHeat": 0.01,
+      "minHeat": 35,
+      "min": 1,
+      "max": 1
+    },
+
+    {
+      "item": "minecraft:totem_of_undying",
+      "weight": 0.35,
+      "weightPerHeat": 0.04,
+      "minHeat": 45,
+      "min": 1,
+      "max": 1
+    },
+
+    {
+      "item": "minecraft:enchanted_golden_apple",
+      "weight": 0.15,
+      "weightPerHeat": 0.02,
+      "minHeat": 55,
+      "min": 1,
+      "max": 1
+    },
+
+    {
+      "item": "minecraft:shulker_shell",
+      "weight": 5,
+      "weightPerHeat": 0.08,
+      "minHeat": 70,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:chorus_fruit",
+      "weight": 18,
+      "weightPerHeat": 0.12,
+      "minHeat": 70,
+      "min": 1,
+      "max": 3
+    },
+    {
+      "item": "minecraft:dragon_breath",
+      "weight": 4,
+      "weightPerHeat": 0.10,
+      "minHeat": 70,
+      "min": 1,
+      "max": 2
+    },
+    {
+      "item": "minecraft:music_disc_otherside",
+      "weight": 0.75,
+      "weightPerHeat": 0.01,
+      "minHeat": 70,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "generator": "potion",
+      "weight": 14,
+      "weightPerHeat": 0.12,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "generator": "enchanted_book",
+      "weight": 6,
+      "weightPerHeat": 0.10,
+      "minHeat": 15,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "generator": "smithing_template",
+      "weight": 1.5,
+      "weightPerHeat": 0.03,
+      "minHeat": 20,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "theflood:boon_hoarders",
+      "weight": 2.25,
+      "weightPerHeat": 0.01,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "theflood:boon_attack",
+      "weight": 2.25,
+      "weightPerHeat": 0.01,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "theflood:boon_defense",
+      "weight": 2.25,
+      "weightPerHeat": 0.01,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    },
+    {
+      "item": "theflood:boon_tranquility",
+      "weight": 2.25,
+      "weightPerHeat": 0.01,
+      "minHeat": 10,
+      "min": 1,
+      "max": 1
+    }
+  ]
+}

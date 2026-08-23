@@ -9,6 +9,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.projectile.Projectile;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+import net.minecraft.sounds.SoundEvents;
+
 public final class SpikedMutation
         implements EliteMutation {
 
@@ -77,6 +81,30 @@ public final class SpikedMutation
     public String displayName() {
         return "Spiked";
     }
+
+    @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                )
+                || EliteMobCompatibility.isEnderman(
+                        mob
+                )
+                || EliteMobCompatibility.isWarden(
+                        mob
+                )
+                || EliteMobCompatibility.isSpider(
+                        mob
+                )
+                || EliteMobCompatibility.isCreeper(
+                        mob
+                );
+        }
 
     @Override
     public void tick(
@@ -295,8 +323,8 @@ public final class SpikedMutation
     }
 
     private static void swapPhase(
-            Mob elite
-    ) {
+                Mob elite
+        ) {
         String newPhase =
                 isBluePhase(
                         elite
@@ -316,10 +344,21 @@ public final class SpikedMutation
                         PHASE_DURATION_TICKS
                 );
 
+        /*
+        * Short stance-change cue.
+        */
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.BEACON_POWER_SELECT,
+                0.75F,
+                1.15F,
+                0.05F
+        );
+
         syncState(
                 elite
         );
-    }
+}
 
     private static boolean isRangedAttack(
             DamageSource source

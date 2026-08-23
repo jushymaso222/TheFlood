@@ -10,6 +10,15 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Silverfish;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import com.jushymaso222.theflood.elite.presentation.ElitePose;
+import com.jushymaso222.theflood.elite.presentation.ElitePresentation;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+
 import java.util.Random;
 
 public final class InfestedMutation
@@ -23,6 +32,21 @@ public final class InfestedMutation
 
     public static final String INFESTED_EXPIRE_TAG =
             "theflood_infested_expire";
+
+    private static final String CONJURE_START_KEY =
+        "theflood_infested_conjure_start";
+
+        private static final String CONJURE_TARGET_KEY =
+                "theflood_infested_conjure_target";
+
+        private static final int SOUND_DELAY_TICKS =
+                4;
+
+        private static final int SPAWN_DELAY_TICKS =
+                8;
+
+        private static final int CONJURE_DURATION_TICKS =
+                14;
 
     /*
      * 200 ticks = 10 seconds.
@@ -50,6 +74,18 @@ public final class InfestedMutation
     }
 
     @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                );
+        }
+
+    @Override
         public void onDeactivated(
                 Mob elite
         ) {
@@ -57,6 +93,20 @@ public final class InfestedMutation
                 .remove(
                         PROGRESS_KEY
                 );
+
+        elite.getPersistentData()
+                .remove(
+                        CONJURE_START_KEY
+                );
+
+        elite.getPersistentData()
+                .remove(
+                        CONJURE_TARGET_KEY
+                );
+
+        ElitePresentation.resetPose(
+                elite
+        );
         }
 
     @Override
@@ -72,6 +122,15 @@ public final class InfestedMutation
                 !(elite.level() instanceof ServerLevel level)
         ) {
             return;
+        }
+
+        if (
+                tickConjure(
+                        level,
+                        elite
+                )
+        ) {
+        return;
         }
 
         /*
@@ -104,14 +163,13 @@ public final class InfestedMutation
                 progress
                         >= SPAWN_INTERVAL_TICKS
         ) {
-            spawnInfestation(
-                    level,
-                    elite,
-                    target
-            );
+        startConjure(
+                elite,
+                target
+        );
 
-            progress =
-                    0;
+        progress =
+                0;
         }
 
         elite.getPersistentData()
@@ -125,6 +183,165 @@ public final class InfestedMutation
                 progress
         );
     }
+
+    private static void startConjure(
+        Mob elite,
+        ServerPlayer target
+) {
+    long now =
+            elite.level()
+                    .getGameTime();
+
+    elite.getPersistentData()
+            .putLong(
+                    CONJURE_START_KEY,
+                    now
+            );
+
+    elite.getPersistentData()
+            .putUUID(
+                    CONJURE_TARGET_KEY,
+                    target.getUUID()
+            );
+
+    ElitePresentation.setPose(
+            elite,
+            ElitePose.CONJURING
+    );
+
+    EliteStateSync.syncBasic(
+            elite
+    );
+
+    elite.getNavigation()
+            .stop();
+}
+
+        private static boolean tickConjure(
+        ServerLevel level,
+        Mob elite
+) {
+    if (
+            !elite.getPersistentData()
+                    .contains(
+                            CONJURE_START_KEY
+                    )
+    ) {
+        return false;
+    }
+
+    long start =
+            elite.getPersistentData()
+                    .getLong(
+                            CONJURE_START_KEY
+                    );
+
+    long elapsed =
+            level.getGameTime()
+                    - start;
+
+    ServerPlayer target =
+            null;
+
+    if (
+            elite.getPersistentData()
+                    .hasUUID(
+                            CONJURE_TARGET_KEY
+                    )
+    ) {
+        target =
+                level.getServer()
+                        .getPlayerList()
+                        .getPlayer(
+                                elite.getPersistentData()
+                                        .getUUID(
+                                                CONJURE_TARGET_KEY
+                                        )
+                        );
+    }
+
+    if (
+            target == null
+            || !target.isAlive()
+            || target.isSpectator()
+    ) {
+        finishConjure(
+                elite
+        );
+
+        return false;
+    }
+
+    elite.getNavigation()
+            .stop();
+
+    if (
+            elapsed
+                    == SOUND_DELAY_TICKS
+    ) {
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.EVOKER_PREPARE_SUMMON,
+                1.0F,
+                1.15F,
+                0.05F
+        );
+    }
+
+    if (
+            elapsed
+                    == SPAWN_DELAY_TICKS
+    ) {
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.SILVERFISH_AMBIENT,
+                1.0F,
+                0.85F,
+                0.08F
+        );
+
+        spawnInfestation(
+                level,
+                elite,
+                target
+        );
+    }
+
+    if (
+            elapsed
+                    >= CONJURE_DURATION_TICKS
+    ) {
+        finishConjure(
+                elite
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+        private static void finishConjure(
+        Mob elite
+) {
+    elite.getPersistentData()
+            .remove(
+                    CONJURE_START_KEY
+            );
+
+    elite.getPersistentData()
+            .remove(
+                    CONJURE_TARGET_KEY
+            );
+
+    ElitePresentation.resetPose(
+            elite
+    );
+
+    EliteStateSync.syncBasic(
+            elite
+    );
+}
 
     private static void spawnInfestation(
             ServerLevel level,
@@ -221,6 +438,19 @@ public final class InfestedMutation
              * Keep them focused on the encounter.
              */
             silverfish.setPersistenceRequired();
+
+            EliteVisuals.burst(
+                        level,
+                        ParticleTypes.POOF,
+                        elite.getX() + offsetX,
+                        elite.getY() + 0.1D,
+                        elite.getZ() + offsetZ,
+                        8,
+                        0.18D,
+                        0.05D,
+                        0.18D,
+                        0.02D
+                );
 
             level.addFreshEntity(
                     silverfish

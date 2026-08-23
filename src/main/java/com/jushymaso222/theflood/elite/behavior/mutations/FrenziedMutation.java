@@ -6,9 +6,14 @@ import com.jushymaso222.theflood.elite.behavior.EliteMutation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Mob;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+
+import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
+
+import net.minecraft.core.particles.DustParticleOptions;
 
 import java.util.UUID;
 
@@ -138,6 +143,27 @@ public final class FrenziedMutation
     public String displayName() {
         return "Frenzied";
     }
+
+        @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                )
+                || EliteMobCompatibility.isEnderman(
+                        mob
+                )
+                || EliteMobCompatibility.isWarden(
+                        mob
+                )
+                || EliteMobCompatibility.isSpider(
+                        mob
+                );
+        }
 
     @Override
     public float modifyIncomingDamage(
@@ -276,6 +302,16 @@ public final class FrenziedMutation
                 getAnger(
                         elite
                 );
+        
+        float angerPercent =
+                getAngerPercent(
+                        elite
+                );
+
+        tickAngerVisuals(
+                elite,
+                angerPercent
+        );
 
         if (anger <= 0.0F) {
             return;
@@ -333,6 +369,61 @@ public final class FrenziedMutation
                 elite
         );
     }
+
+    private static void tickAngerVisuals(
+        Mob elite,
+        float angerPercent
+) {
+    if (angerPercent <= 0.15F) {
+        return;
+    }
+
+    /*
+     * More anger = more frequent particles.
+     *
+     * Low anger:
+     * every ~10 ticks
+     *
+     * High anger:
+     * every ~2 ticks
+     */
+    int interval =
+            Math.max(
+                    2,
+                    10
+                            - Math.round(
+                                    angerPercent
+                                            * 8.0F
+                            )
+            );
+
+    if (
+            elite.tickCount
+                    % interval
+                    != 0
+    ) {
+        return;
+    }
+
+    int particles =
+            1
+                    + Math.round(
+                            angerPercent
+                                    * 3.0F
+                    );
+
+    EliteVisuals.headOrbit(
+            elite,
+            DustParticleOptions.REDSTONE,
+            0.30D
+                    + angerPercent
+                    * 0.10D,
+            particles,
+            0.16D
+                    + angerPercent
+                    * 0.10D
+    );
+}
 
     @Override
     public void onDeactivated(

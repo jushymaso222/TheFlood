@@ -16,7 +16,7 @@ import com.jushymaso222.theflood.elite.behavior.mutations.SpikedMutation;
 import com.jushymaso222.theflood.elite.behavior.mutations.UndyingMutation;
 import com.jushymaso222.theflood.elite.behavior.mutations.MimicMutation;
 
-import java.util.List;
+import net.minecraft.world.entity.Mob;
 
 public final class EliteMutationRegistry {
 
@@ -46,6 +46,41 @@ public final class EliteMutationRegistry {
 
     private EliteMutationRegistry() {
     }
+
+    public static List<EliteMutation> validFor(
+                Mob mob
+        ) {
+        return all()
+                .stream()
+                .filter(
+                        mutation ->
+                                mutation != null
+                                && mutation.canApplyTo(
+                                        mob
+                                )
+                )
+                .toList();
+        }
+
+        public static EliteMutation randomFor(
+                Mob mob
+        ) {
+        List<EliteMutation> valid =
+                validFor(
+                        mob
+                );
+
+        if (valid.isEmpty()) {
+                return null;
+        }
+
+        return valid.get(
+                mob.getRandom()
+                        .nextInt(
+                                valid.size()
+                        )
+        );
+        }
 
     private static void register(
             EliteMutation mutation

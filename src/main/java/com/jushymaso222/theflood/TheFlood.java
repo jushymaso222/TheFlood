@@ -16,11 +16,17 @@ import com.jushymaso222.theflood.sound.FloodSounds;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
+import com.jushymaso222.theflood.elite.drops.boon.BoonItems;
+import com.jushymaso222.theflood.elite.drops.boon.effect.BoonEffects;
+
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+
 @Mod(TheFlood.MOD_ID)
 public class TheFlood {
 
     public static final String MOD_ID = "theflood";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public TheFlood() {
         ModLoadingContext.get().registerConfig(
@@ -44,6 +50,14 @@ public class TheFlood {
         );
 
         FloodSounds.SOUNDS.register(
+                modEventBus
+        );
+
+        BoonItems.register(
+                modEventBus
+        );
+
+        BoonEffects.register(
                 modEventBus
         );
 

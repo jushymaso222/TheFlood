@@ -10,6 +10,11 @@ import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
+import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import com.jushymaso222.theflood.elite.presentation.EliteSounds;
+
+import net.minecraft.sounds.SoundEvents;
+
 import java.util.UUID;
 
 public final class PursuerMutation
@@ -84,6 +89,27 @@ public final class PursuerMutation
     public String displayName() {
         return "Pursuer";
     }
+
+    @Override
+        public boolean canApplyTo(
+                Mob mob
+        ) {
+        return EliteMobCompatibility.isZombie(
+                mob
+        )
+                || EliteMobCompatibility.isSkeleton(
+                        mob
+                )
+                || EliteMobCompatibility.isEnderman(
+                        mob
+                )
+                || EliteMobCompatibility.isWarden(
+                        mob
+                )
+                || EliteMobCompatibility.isSpider(
+                        mob
+                );
+        }
 
     @Override
     public void tick(
@@ -281,8 +307,8 @@ public final class PursuerMutation
     }
 
     private static void startBurst(
-            Mob elite
-    ) {
+                Mob elite
+        ) {
         elite.getPersistentData()
                 .putLong(
                         BURST_END_KEY,
@@ -290,6 +316,20 @@ public final class PursuerMutation
                                 .getGameTime()
                                 + BURST_DURATION_TICKS
                 );
+
+        /*
+        * Pursuer announces the beginning of its charge.
+        *
+        * This method only runs once when the burst begins,
+        * so the roar cannot repeat every tick.
+        */
+        EliteSounds.playRandomPitch(
+                elite,
+                SoundEvents.ZOGLIN_ANGRY,
+                0.75F,
+                1.15F,
+                0.05F
+        );
 
         applyBurstAttributes(
                 elite
@@ -302,7 +342,7 @@ public final class PursuerMutation
                 true,
                 STATUS_COLOR
         );
-    }
+        }
 
     private static void tickBurst(
             Mob elite,

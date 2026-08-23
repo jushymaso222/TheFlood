@@ -33,8 +33,15 @@ public class TimeEvents {
             customWorldTime = actualWorldTime;
         }
 
-        if (Math.abs(actualWorldTime - (long) customWorldTime) > 20) {
-            customWorldTime = actualWorldTime;
+        if (
+                Math.abs(
+                        actualWorldTime
+                                - (long) customWorldTime
+                )
+                        > 20
+        ) {
+            customWorldTime =
+                    actualWorldTime;
         }
 
         customWorldTime += getTimeIncreasePerTick(customWorldTime);
@@ -46,8 +53,52 @@ public class TimeEvents {
         customWorldTime = newTime;
     }
 
+    public static long resolveTimeSet(
+            long requestedTime
+    ) {
+        if (customWorldTime < 0) {
+            return requestedTime;
+        }
+
+        long currentAbsolute =
+                (long) customWorldTime;
+
+        long currentDay =
+                Math.floorDiv(
+                        currentAbsolute,
+                        24000L
+                );
+
+        long currentTimeOfDay =
+                Math.floorMod(
+                        currentAbsolute,
+                        24000L
+                );
+
+        long requestedTimeOfDay =
+                Math.floorMod(
+                        requestedTime,
+                        24000L
+                );
+
+        if (
+                requestedTimeOfDay
+                        < currentTimeOfDay
+        ) {
+            currentDay++;
+        }
+
+        return currentDay
+                * 24000L
+                + requestedTimeOfDay;
+    }
+
     private static double getTimeIncreasePerTick(double worldTime) {
-        long timeOfDay = ((long) worldTime) % 24000L;
+        long timeOfDay =
+                Math.floorMod(
+                        (long) worldTime,
+                        24000L
+                );
 
         int dayMinutes = TheFloodConfig.TIME.dayLengthMinutes.get();
         int nightMinutes = TheFloodConfig.TIME.nightLengthMinutes.get();
