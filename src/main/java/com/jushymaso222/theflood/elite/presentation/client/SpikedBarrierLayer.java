@@ -163,35 +163,33 @@ public class SpikedBarrierLayer<
                         * PULSE_SCALE;
 
 
-        /*
-         * =================================================
-         * SIZE
-         * =================================================
-         *
-         * Wider than the mob, but not enormously so.
-         *
-         * Height radius creates an ellipsoid instead of
-         * a perfect sphere.
-         */
+        SpikedBarrierDimensions.Dimensions dimensions =
+                SpikedBarrierDimensions.get(
+                        mob
+                );
 
-        float radius =
-            mob.getBbHeight()
-                    * 0.62F
-                    * pulseScale;
+        if (dimensions == null) {
+                return;
+        }
 
         float radiusX =
-                radius;
+                dimensions.radiusX()
+                        * pulseScale;
 
         float radiusY =
-                radius;
+                dimensions.radiusY()
+                        * pulseScale;
 
         float radiusZ =
-                radius;
-
+                dimensions.radiusZ()
+                        * pulseScale;
 
         /*
-         * Center the field vertically around the mob.
-         */
+        * =================================================
+        * RENDER
+        * =================================================
+        */
+
         VertexConsumer buffer =
                 bufferSource.getBuffer(
                         RenderType.entityTranslucentEmissive(
@@ -201,18 +199,25 @@ public class SpikedBarrierLayer<
 
         poseStack.pushPose();
 
+        /*
+        * The LivingEntityRenderer has already transformed
+        * us into the entity's model space.
+        *
+        * Do not translate by half the world-space bounding
+        * box height here.
+        */
         poseStack.translate(
                 0.0D,
-                0.45D,
+                dimensions.centerYOffset(),
                 0.0D
         );
 
         renderEllipsoid(
                 poseStack,
                 buffer,
-                radius,
-                radius,
-                radius,
+                radiusX,
+                radiusY,
+                radiusZ,
                 red,
                 green,
                 blue,

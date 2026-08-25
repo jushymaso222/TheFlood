@@ -127,6 +127,68 @@ public final class BoonManager {
         }
     }
 
+    public static void restoreStatusEffect(
+        ServerPlayer player
+) {
+    if (
+            !BoonData.hasActiveBoon(
+                    player
+            )
+    ) {
+        return;
+    }
+
+    String boonId =
+            BoonData.getActiveBoonId(
+                    player
+            );
+
+    BoonType type =
+            BoonType.fromId(
+                    boonId
+            );
+
+    if (type == null) {
+        BoonData.clear(
+                player
+        );
+
+        return;
+    }
+
+    long remainingTicks =
+            BoonData.getRemainingTicks(
+                    player
+            );
+
+    if (remainingTicks <= 0L) {
+        deactivate(
+                player
+        );
+
+        return;
+    }
+
+    MobEffect statusEffect =
+            getStatusEffect(
+                    type
+            );
+
+    player.addEffect(
+            new MobEffectInstance(
+                    statusEffect,
+                    (int) Math.min(
+                            Integer.MAX_VALUE,
+                            remainingTicks
+                    ),
+                    0,
+                    false,
+                    false,
+                    true
+            )
+    );
+}
+
 
     public static void deactivate(
             ServerPlayer player

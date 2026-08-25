@@ -48,39 +48,91 @@ public final class EliteMutationRegistry {
     }
 
     public static List<EliteMutation> validFor(
-                Mob mob
-        ) {
-        return all()
-                .stream()
-                .filter(
-                        mutation ->
-                                mutation != null
-                                && mutation.canApplyTo(
-                                        mob
-                                )
-                )
-                .toList();
-        }
+        Mob mob,
+        boolean isHordeMob
+) {
+    return all()
+            .stream()
+            .filter(
+                    mutation ->
+                            mutation != null
+                            && mutation.canApplyTo(
+                                    mob
+                            )
+                            && (
+                                    isHordeMob
+                                    || !"commander".equals(
+                                            mutation.id()
+                                    )
+                            )
+            )
+            .toList();
+}
+
+public static List<EliteMutation> validFor(
+        Mob mob
+) {
+    return validFor(
+            mob,
+            false
+    );
+}
 
         public static EliteMutation randomFor(
-                Mob mob
+        Mob mob,
+        boolean isHordeMob
+) {
+    List<EliteMutation> valid =
+            validFor(
+                    mob,
+                    isHordeMob
+            );
+
+    if (valid.isEmpty()) {
+        return null;
+    }
+
+    List<EliteMutation> weighted =
+            new ArrayList<>();
+
+    for (
+            EliteMutation mutation :
+            valid
+    ) {
+        int weight =
+                "commander".equals(
+                        mutation.id()
+                )
+                        ? 3
+                        : 1;
+
+        for (
+                int i = 0;
+                i < weight;
+                i++
         ) {
-        List<EliteMutation> valid =
-                validFor(
-                        mob
-                );
-
-        if (valid.isEmpty()) {
-                return null;
+            weighted.add(
+                    mutation
+            );
         }
+    }
 
-        return valid.get(
-                mob.getRandom()
-                        .nextInt(
-                                valid.size()
-                        )
-        );
-        }
+    return weighted.get(
+            mob.getRandom()
+                    .nextInt(
+                            weighted.size()
+                    )
+    );
+}
+
+public static EliteMutation randomFor(
+        Mob mob
+) {
+    return randomFor(
+            mob,
+            false
+    );
+}
 
     private static void register(
             EliteMutation mutation

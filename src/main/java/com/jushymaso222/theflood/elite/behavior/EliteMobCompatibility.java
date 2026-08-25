@@ -7,6 +7,7 @@ import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.entity.monster.WitherSkeleton;
 
 public final class EliteMobCompatibility {
 
@@ -19,9 +20,18 @@ public final class EliteMobCompatibility {
         return mob instanceof Zombie;
     }
 
+    public static boolean isWitherSkeleton(
+            Mob mob
+    ) {
+        return mob instanceof WitherSkeleton;
+    }
+
     public static boolean isSkeleton(
             Mob mob
     ) {
+        if (mob instanceof WitherSkeleton) {
+                return false;
+        }
         return mob instanceof AbstractSkeleton;
     }
 

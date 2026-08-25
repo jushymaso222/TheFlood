@@ -142,6 +142,27 @@ public final class EliteOverheadRenderer {
         float x =
                 -totalWidth / 2.0F;
 
+        /*
+        * Draw one continuous background behind the entire
+        * attribute line.
+        *
+        * Individual text pieces must NOT draw their own
+        * backgrounds or their padded edges overlap and
+        * create dark vertical seams.
+        */
+        drawRect(
+                poseStack,
+                (int) Math.floor(
+                        -totalWidth / 2.0F
+                ) - 1,
+                (int) Math.floor(
+                        y
+                ) - 1,
+                totalWidth + 2,
+                font.lineHeight + 2,
+                0x80000000
+        );
+
         for (
                 int i = 0;
                 i < rendered.size();
@@ -162,7 +183,7 @@ public final class EliteOverheadRenderer {
                                 .pose(),
                         buffer,
                         Font.DisplayMode.NORMAL,
-                        0x80000000,
+                        0,
                         packedLight
                 );
 
@@ -184,7 +205,7 @@ public final class EliteOverheadRenderer {
                                 .pose(),
                         buffer,
                         Font.DisplayMode.NORMAL,
-                        0x80000000,
+                        0,
                         packedLight
                 );
 

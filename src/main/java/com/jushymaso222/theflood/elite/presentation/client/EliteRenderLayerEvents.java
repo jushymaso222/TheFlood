@@ -33,9 +33,9 @@ public final class EliteRenderLayerEvents {
     }
 
     @SubscribeEvent
-    public static void addLayers(
-            EntityRenderersEvent.AddLayers event
-    ) {
+        public static void addLayers(
+                EntityRenderersEvent.AddLayers event
+        ) {
         addLayer(
                 event,
                 EntityType.ZOMBIE
@@ -48,6 +48,16 @@ public final class EliteRenderLayerEvents {
 
         addLayer(
                 event,
+                EntityType.CREEPER
+        );
+
+        addLayer(
+                event,
+                EntityType.SPIDER
+        );
+
+        addLayer(
+                event,
                 EntityType.ENDERMAN
         );
 
@@ -55,7 +65,7 @@ public final class EliteRenderLayerEvents {
                 event,
                 EntityType.WARDEN
         );
-    }
+        }
 
 
     private static <

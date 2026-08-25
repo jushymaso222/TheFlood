@@ -28,40 +28,51 @@ public final class EliteManager {
     }
 
     public static void tryMakeElite(
-                Mob mob,
-                int heat
-        ) {
-        if (
-                !EliteMobCompatibility.canBecomeElite(
-                        mob
-                )
-        ) {
-                return;
-        }
+        Mob mob,
+        int heat,
+        boolean isHordeMob
+) {
+    if (EliteData.isElite(mob)) {
+        return;
+    }
 
-        if (EliteData.isElite(mob)) {
-                return;
-        }
+    if (
+            !EliteMobCompatibility.canBecomeElite(
+                    mob
+            )
+    ) {
+        return;
+    }
 
+    double chance =
+            getEliteChance(
+                    heat
+            );
 
+    if (
+            RANDOM.nextDouble()
+                    >= chance
+    ) {
+        return;
+    }
 
-        double chance =
-                getEliteChance(
-                        heat
-                );
+    makeElite(
+            mob,
+            heat,
+            isHordeMob
+    );
+}
 
-        if (
-                RANDOM.nextDouble()
-                        >= chance
-        ) {
-                return;
-        }
-
-        makeElite(
-                mob,
-                heat
-        );
-        }
+public static void tryMakeElite(
+        Mob mob,
+        int heat
+) {
+    tryMakeElite(
+            mob,
+            heat,
+            false
+    );
+}
 
         private static ServerPlayer findResponsiblePlayer(
         DamageSource source
@@ -87,71 +98,6 @@ public final class EliteManager {
     }
 
     return null;
-}
-
-        public static void restoreStatusEffect(
-        ServerPlayer player
-) {
-    if (
-            !BoonData.hasActiveBoon(
-                    player
-            )
-    ) {
-        return;
-    }
-
-    String boonId =
-            BoonData.getActiveBoonId(
-                    player
-            );
-
-    BoonType type =
-            BoonType.fromId(
-                    boonId
-            );
-
-    if (type == null) {
-        BoonData.clear(
-                player
-        );
-
-        return;
-    }
-
-    long remainingTicks =
-            BoonData.getRemainingTicks(
-                    player
-            );
-
-    /*
-     * It expired while the player was dead / respawning.
-     */
-    if (remainingTicks <= 0L) {
-        deactivate(
-                player
-        );
-
-        return;
-    }
-
-    MobEffect statusEffect =
-            getStatusEffect(
-                    type
-            );
-
-    player.addEffect(
-            new MobEffectInstance(
-                    statusEffect,
-                    (int) Math.min(
-                            Integer.MAX_VALUE,
-                            remainingTicks
-                    ),
-                    0,
-                    false,
-                    false,
-                    true
-            )
-    );
 }
 
 private static final String ELITE_DROPS_PROCESSED_KEY =
@@ -211,79 +157,71 @@ private static final String ELITE_DROPS_PROCESSED_KEY =
     );
 }
 
+public static void makeElite(
+        Mob mob,
+        int sourceHeat
+) {
+    makeElite(
+            mob,
+            sourceHeat,
+            false
+    );
+}
+
     public static void makeElite(
-                Mob mob,
-                int sourceHeat
-        ) {
-        if (
-                !EliteMobCompatibility.canBecomeElite(
-                        mob
-                )
-        ) {
-        return;
-        }
-        
-        EliteData.setElite(
+        Mob mob,
+        int sourceHeat,
+        boolean isHordeMob
+) {
+    EliteData.setElite(
+            mob,
+            true
+    );
+
+    EliteData.setSourceHeat(
+            mob,
+            sourceHeat
+    );
+
+    EliteMutation mutation =
+            EliteMutationRegistry.randomFor(
+                    mob,
+                    isHordeMob
+            );
+
+    if (mutation != null) {
+        EliteData.setMutation(
                 mob,
-                true
+                mutation.id()
         );
-
-        EliteData.setSourceHeat(
+    } else {
+        EliteData.setMutation(
                 mob,
-                sourceHeat
+                "none"
         );
+    }
 
-        EliteMutation mutation =
-                EliteMutationRegistry.randomFor(
-                        mob
-                );
+    List<EliteAttributes.RolledAttribute> rolledAttributes =
+            EliteAttributes.rollAttributes(
+                    sourceHeat
+            );
 
-        if (mutation != null) {
-                EliteData.setMutation(
-                        mob,
-                        mutation.id()
-                );
-        } else {
-                EliteData.setMutation(
-                        mob,
-                        "none"
-                );
-        }
+    EliteData.setAttributes(
+            mob,
+            EliteAttributes.serialize(
+                    rolledAttributes
+            )
+    );
 
-        /*
-        * Roll this Elite's attributes ONCE.
-        */
-        List<EliteAttributes.RolledAttribute> rolledAttributes =
-                EliteAttributes.rollAttributes(
-                        sourceHeat
-                );
+    EliteAttributes.applyAll(
+            mob,
+            rolledAttributes
+    );
 
-        /*
-        * Store them permanently on the entity.
-        */
-        EliteData.setAttributes(
-                mob,
-                EliteAttributes.serialize(
-                        rolledAttributes
-                )
-        );
-
-        /*
-        * Apply their actual stat modifiers.
-        */
-        EliteAttributes.applyAll(
-                mob,
-                rolledAttributes
-        );
-
-        // mob.setGlowingTag(
-        //         true
-        // );
-
-        EliteStateSync.syncBasic(
-                mob
-        );
-        }
+    EliteStateSync.syncBasic(
+            mob
+    );
+}
 
     public static void makeElite(
         Mob mob,

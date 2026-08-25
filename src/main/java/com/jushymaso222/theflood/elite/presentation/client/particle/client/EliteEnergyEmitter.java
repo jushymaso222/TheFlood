@@ -24,6 +24,9 @@ import java.util.Random;
 )
 public final class EliteEnergyEmitter {
 
+    private static long lastEmissionGameTime =
+            Long.MIN_VALUE;
+
     private static final Random RANDOM =
             new Random();
 
@@ -76,6 +79,12 @@ public final class EliteEnergyEmitter {
         Minecraft minecraft =
                 Minecraft.getInstance();
 
+        if (
+                minecraft.isPaused()
+        ) {
+        return;
+        }
+
         ClientLevel level =
                 minecraft.level;
 
@@ -92,13 +101,35 @@ public final class EliteEnergyEmitter {
         /*
          * Don't emit every tick.
          */
+        long gameTime =
+        level.getGameTime();
+
+        /*
+        * Client ticks can continue while the world itself
+        * is not advancing.
+        *
+        * Never emit more than once for the same game tick.
+        */
         if (
-                level.getGameTime()
+                gameTime
+                        == lastEmissionGameTime
+        ) {
+        return;
+        }
+
+        /*
+        * Don't emit every game tick.
+        */
+        if (
+                gameTime
                         % SPAWN_INTERVAL
                         != 0
         ) {
-            return;
+        return;
         }
+
+        lastEmissionGameTime =
+                gameTime;
 
         /*
          * Scan loaded entities near the client.

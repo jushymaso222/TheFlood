@@ -670,7 +670,8 @@ public class SpawnDirector {
         */
         EliteManager.tryMakeElite(
                 mob,
-                heat
+                heat,
+                isHordeMob
         );
 
         if (mob instanceof Spider spider) {
