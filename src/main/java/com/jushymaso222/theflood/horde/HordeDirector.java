@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import com.jushymaso222.theflood.progression.HeatManager;
+import com.jushymaso222.theflood.time.BloodMoonState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -440,14 +441,13 @@ public class HordeDirector {
         );
     }
 
-    private static boolean isBloodMoon(ServerLevel level) {
-        int day = getDay(level);
-        long timeOfDay = level.getDayTime() % 24000L;
-
-        return day % TheFloodConfig.TIME.bloodMoonFrequencyDays.get() == 0
-                && timeOfDay >= 13000L
-                && timeOfDay <= 23000L;
-    }
+    private static boolean isBloodMoon(
+        ServerLevel level
+) {
+    return BloodMoonState.isBloodMoon(
+            level.getDayTime()
+    );
+}
 
     private static int getDay(ServerLevel level) {
         return (int) (level.getDayTime() / 24000L) + 1;

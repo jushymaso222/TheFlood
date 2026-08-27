@@ -14,19 +14,30 @@ public class FloodHudLayoutScreen extends Screen {
 
     private static final int HEAT_SIZE = 32;
 
-    private static final ResourceLocation HEAT_FLAME =
-            new ResourceLocation(
-                    TheFlood.MOD_ID,
-                    "textures/gui/flame1.png"
-            );
+    private static final ResourceLocation FLOOD_HUD_PREVIEW =
+                new ResourceLocation(
+                        TheFlood.MOD_ID,
+                        "textures/gui/progression/green_floodxp_empty.png"
+                );
+
+        private static final int FLOOD_HUD_TEXTURE_WIDTH = 629;
+        private static final int FLOOD_HUD_TEXTURE_HEIGHT = 133;
+
+        private static final int FLOOD_HUD_PREVIEW_WIDTH = 220;
+
+        private static final int FLOOD_HUD_PREVIEW_HEIGHT =
+                Math.round(
+                        FLOOD_HUD_PREVIEW_WIDTH
+                                * (
+                                FLOOD_HUD_TEXTURE_HEIGHT
+                                        / (float) FLOOD_HUD_TEXTURE_WIDTH
+                        )
+                );
 
     private DragTarget dragging = DragTarget.NONE;
 
     private double heatX;
     private double heatY;
-
-    private double dayX;
-    private double dayY;
 
     private double teamX;
         private double teamY;
@@ -46,9 +57,6 @@ public class FloodHudLayoutScreen extends Screen {
     protected void init() {
         heatX = TheFloodClientConfig.HEAT_HUD_X.get();
         heatY = TheFloodClientConfig.HEAT_HUD_Y.get();
-
-        dayX = TheFloodClientConfig.DAY_HUD_X.get();
-        dayY = TheFloodClientConfig.DAY_HUD_Y.get();
 
         teamX =
                 TheFloodClientConfig.TEAM_HUD_X.get();
@@ -111,7 +119,6 @@ public class FloodHudLayoutScreen extends Screen {
         );
 
         renderHeatPreview(graphics);
-        renderDayPreview(graphics);
         renderTeamPreview(
                 graphics
         );
@@ -237,83 +244,71 @@ public class FloodHudLayoutScreen extends Screen {
         );
         }
 
-    private void renderHeatPreview(GuiGraphics graphics) {
-        int centerX = normalizedToScreenX(heatX);
-        int centerY = normalizedToScreenY(heatY);
+    private void renderHeatPreview(
+        GuiGraphics graphics
+) {
+    int centerX =
+            normalizedToScreenX(heatX);
 
-        int x = centerX - HEAT_SIZE / 2;
-        int y = centerY - HEAT_SIZE / 2;
+    int centerY =
+            normalizedToScreenY(heatY);
 
-        graphics.blit(
-                HEAT_FLAME,
-                x,
-                y,
-                0,
-                0,
-                HEAT_SIZE,
-                HEAT_SIZE,
-                32,
-                32
+    int x =
+            centerX
+                    - FLOOD_HUD_PREVIEW_WIDTH / 2;
+
+    int y =
+            centerY;
+
+    graphics.blit(
+            FLOOD_HUD_PREVIEW,
+            x,
+            y,
+            FLOOD_HUD_PREVIEW_WIDTH,
+            FLOOD_HUD_PREVIEW_HEIGHT,
+            0.0F,
+            0.0F,
+            FLOOD_HUD_TEXTURE_WIDTH,
+            FLOOD_HUD_TEXTURE_HEIGHT,
+            FLOOD_HUD_TEXTURE_WIDTH,
+            FLOOD_HUD_TEXTURE_HEIGHT
+    );
+
+    /*
+     * Example day/time so the preview represents
+     * the actual combined HUD.
+     */
+    String dayTimeText =
+            "DAY 10  •  14:25";
+
+    int dayTimeX =
+            centerX
+                    - font.width(dayTimeText) / 2;
+
+    int dayTimeY =
+            y
+                    - font.lineHeight
+                    + 2;
+
+    graphics.drawString(
+            font,
+            dayTimeText,
+            dayTimeX,
+            dayTimeY,
+            0xFFFFFFFF,
+            true
+    );
+
+    if (dragging == DragTarget.HEAT) {
+        drawSelectionBox(
+                graphics,
+                x - 2,
+                dayTimeY - 2,
+                x + FLOOD_HUD_PREVIEW_WIDTH + 2,
+                y + FLOOD_HUD_PREVIEW_HEIGHT + 2
         );
-
-        String heat = "10";
-
-        int textX =
-                centerX - font.width(heat) / 2;
-
-        int textY =
-                centerY - font.lineHeight / 2 + 3;
-
-        graphics.drawString(
-                font,
-                heat,
-                textX,
-                textY,
-                0xFFFFFFFF,
-                true
-        );
-
-        if (dragging == DragTarget.HEAT) {
-            drawSelectionBox(
-                    graphics,
-                    x - 2,
-                    y - 2,
-                    x + HEAT_SIZE + 2,
-                    y + HEAT_SIZE + 2
-            );
-        }
     }
-
-    private void renderDayPreview(GuiGraphics graphics) {
-        String text = "DAY 10 - 14:25";
-
-        int centerX = normalizedToScreenX(dayX);
-        int centerY = normalizedToScreenY(dayY);
-
-        int textWidth = font.width(text);
-
-        int x = centerX - textWidth / 2;
-        int y = centerY - font.lineHeight / 2;
-
-        graphics.drawString(
-                font,
-                text,
-                x,
-                y,
-                0xFFFFFFFF,
-                true
-        );
-
-        if (dragging == DragTarget.DAY) {
-            drawSelectionBox(
-                    graphics,
-                    x - 3,
-                    y - 3,
-                    x + textWidth + 3,
-                    y + font.lineHeight + 3
-            );
-        }
-    }
+}
 
     private void drawSelectionBox(
             GuiGraphics graphics,
@@ -340,11 +335,6 @@ public class FloodHudLayoutScreen extends Screen {
         if (button == 0) {
             if (isMouseOverHeat(mouseX, mouseY)) {
                 dragging = DragTarget.HEAT;
-                return true;
-            }
-
-            if (isMouseOverDay(mouseX, mouseY)) {
-                dragging = DragTarget.DAY;
                 return true;
             }
 
@@ -387,13 +377,6 @@ public class FloodHudLayoutScreen extends Screen {
         if (dragging == DragTarget.HEAT) {
             heatX = screenToNormalizedX(mouseX);
             heatY = screenToNormalizedY(mouseY);
-
-            return true;
-        }
-
-        if (dragging == DragTarget.DAY) {
-            dayX = screenToNormalizedX(mouseX);
-            dayY = screenToNormalizedY(mouseY);
 
             return true;
         }
@@ -441,19 +424,37 @@ public class FloodHudLayoutScreen extends Screen {
     }
 
     private boolean isMouseOverHeat(
-            double mouseX,
-            double mouseY
-    ) {
-        int centerX = normalizedToScreenX(heatX);
-        int centerY = normalizedToScreenY(heatY);
+        double mouseX,
+        double mouseY
+) {
+    int centerX =
+            normalizedToScreenX(heatX);
 
-        int half = HEAT_SIZE / 2;
+    int centerY =
+            normalizedToScreenY(heatY);
 
-        return mouseX >= centerX - half
-                && mouseX <= centerX + half
-                && mouseY >= centerY - half
-                && mouseY <= centerY + half;
-    }
+    int left =
+            centerX
+                    - FLOOD_HUD_PREVIEW_WIDTH / 2;
+
+    int right =
+            left
+                    + FLOOD_HUD_PREVIEW_WIDTH;
+
+    int top =
+            centerY
+                    - font.lineHeight
+                    + 2;
+
+    int bottom =
+            centerY
+                    + FLOOD_HUD_PREVIEW_HEIGHT;
+
+    return mouseX >= left
+            && mouseX <= right
+            && mouseY >= top
+            && mouseY <= bottom;
+}
 
     private boolean isMouseOverTeam(
                 double mouseX,
@@ -476,32 +477,6 @@ public class FloodHudLayoutScreen extends Screen {
                 && mouseY <= y
                         + TEAM_PREVIEW_HEIGHT;
         }
-
-    private boolean isMouseOverDay(
-            double mouseX,
-            double mouseY
-    ) {
-        String text = "DAY 10 - 14:25";
-
-        int centerX = normalizedToScreenX(dayX);
-        int centerY = normalizedToScreenY(dayY);
-
-        int textWidth = font.width(text);
-
-        int left = centerX - textWidth / 2;
-        int right = centerX + textWidth / 2;
-
-        int top =
-                centerY - font.lineHeight / 2;
-
-        int bottom =
-                top + font.lineHeight;
-
-        return mouseX >= left
-                && mouseX <= right
-                && mouseY >= top
-                && mouseY <= bottom;
-    }
 
     private int normalizedToScreenX(double value) {
         return (int) Math.round(value * width);
@@ -532,11 +507,8 @@ public class FloodHudLayoutScreen extends Screen {
     }
 
     private void resetPositions() {
-        heatX = 0.95;
+        heatX = 0.50;
         heatY = 0.06;
-
-        dayX = 0.50;
-        dayY = 0.08;
 
         teamX = 0.02;
         teamY = 0.35;
@@ -545,9 +517,6 @@ public class FloodHudLayoutScreen extends Screen {
     private void saveAndClose() {
         TheFloodClientConfig.HEAT_HUD_X.set(heatX);
         TheFloodClientConfig.HEAT_HUD_Y.set(heatY);
-
-        TheFloodClientConfig.DAY_HUD_X.set(dayX);
-        TheFloodClientConfig.DAY_HUD_Y.set(dayY);
 
         TheFloodClientConfig.TEAM_HUD_X.set(
                 teamX
