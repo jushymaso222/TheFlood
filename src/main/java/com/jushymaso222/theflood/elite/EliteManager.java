@@ -1,9 +1,11 @@
 package com.jushymaso222.theflood.elite;
 
 import com.jushymaso222.theflood.config.TheFloodConfig;
+import com.jushymaso222.theflood.progression.HeatManager;
 import com.jushymaso222.theflood.elite.behavior.EliteMutation;
 import com.jushymaso222.theflood.elite.behavior.EliteMutationRegistry;
 import com.jushymaso222.theflood.elite.behavior.EliteMobCompatibility;
+import com.jushymaso222.theflood.progression.FloodKillCredit;
 
 import com.jushymaso222.theflood.elite.drops.EliteDropContext;
 import com.jushymaso222.theflood.elite.drops.EliteDropResolver;
@@ -74,32 +76,6 @@ public static void tryMakeElite(
     );
 }
 
-        private static ServerPlayer findResponsiblePlayer(
-        DamageSource source
-) {
-    Entity sourceEntity =
-            source.getEntity();
-
-    if (
-            sourceEntity instanceof ServerPlayer player
-    ) {
-        return player;
-    }
-
-    Entity directEntity =
-            source.getDirectEntity();
-
-    if (
-            directEntity instanceof Projectile projectile
-            && projectile.getOwner()
-                    instanceof ServerPlayer player
-    ) {
-        return player;
-    }
-
-    return null;
-}
-
 private static final String ELITE_DROPS_PROCESSED_KEY =
         "theflood_elite_drops_processed";
 
@@ -136,10 +112,10 @@ private static final String ELITE_DROPS_PROCESSED_KEY =
         return;
     }
 
-    ServerPlayer killer =
-            findResponsiblePlayer(
-                    source
-            );
+        ServerPlayer killer =
+                FloodKillCredit.findResponsiblePlayer(
+                        source
+                );
 
     EliteDropContext context =
             new EliteDropContext(
@@ -151,6 +127,50 @@ private static final String ELITE_DROPS_PROCESSED_KEY =
                             mob
                     )
             );
+
+    double basePercent =
+        TheFloodConfig.ELITES
+                .eliteKillFloodXpPercent
+                .get();
+
+double maxDangerBonus =
+        TheFloodConfig.ELITES
+                .eliteDangerXpBonusPercent
+                .get();
+
+double dangerPercent =
+        EliteData.getDanger(mob)
+                / 100.0D;
+
+double totalPercent =
+        basePercent
+                + (
+                maxDangerBonus
+                        * dangerPercent
+                );
+
+long eliteXp =
+        Math.max(
+                1L,
+                Math.round(
+                        HeatManager.getFloodXpRequired(
+                                killer
+                        )
+                                * totalPercent
+                )
+        );
+
+    if (killer != null) {
+        HeatManager.addFloodXp(
+                killer,
+                eliteXp
+        );
+
+        HeatManager.addRewardFloodXp(
+                killer,
+                eliteXp
+        );
+    }
 
     EliteDropResolver.resolve(
             context
@@ -217,6 +237,17 @@ public static void makeElite(
             mob,
             rolledAttributes
     );
+
+    int danger =
+                EliteDanger.calculate(
+                        sourceHeat,
+                        rolledAttributes
+                );
+
+        EliteData.setDanger(
+                mob,
+                danger
+        );
 
     EliteStateSync.syncBasic(
             mob

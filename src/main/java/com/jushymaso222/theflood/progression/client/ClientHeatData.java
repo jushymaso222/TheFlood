@@ -31,18 +31,39 @@ public final class ClientHeatData {
         return effectiveHeat;
     }
 
+    private static long floodXp = 0;
+    private static long floodXpRequired = 100;
+
+    public static float getFloodXpProgress() {
+        if (floodXpRequired <= 0L) {
+            return 0.0F;
+        }
+
+        return Math.max(
+                0.0F,
+                Math.min(
+                        1.0F,
+                        floodXp / (float) floodXpRequired
+                )
+        );
+    }
+
     public static void update(
             int newSoloHeat,
             int newTeamHeat,
             int newBaseHeat,
             int newProximityBonus,
-            int newEffectiveHeat
+            int newEffectiveHeat,
+            long newFloodXp,
+            long newFloodXpRequired
     ) {
         soloHeat = newSoloHeat;
         teamHeat = newTeamHeat;
         baseHeat = newBaseHeat;
         proximityBonus = newProximityBonus;
         effectiveHeat = newEffectiveHeat;
+        floodXp = newFloodXp;
+        floodXpRequired = newFloodXpRequired;
     }
 
     public static void reset() {
@@ -51,5 +72,7 @@ public final class ClientHeatData {
         baseHeat = 1;
         proximityBonus = 0;
         effectiveHeat = 1;
+        floodXp = 0;
+        floodXpRequired = 100;
     }
 }

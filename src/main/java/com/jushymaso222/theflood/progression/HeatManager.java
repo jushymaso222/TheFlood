@@ -1,23 +1,21 @@
 package com.jushymaso222.theflood.progression;
 
-import com.jushymaso222.theflood.config.TheFloodConfig;
-import com.jushymaso222.theflood.team.FloodTeam;
-import com.jushymaso222.theflood.team.TeamManager;
-import net.minecraft.server.level.ServerPlayer;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.EntityType;
-
-import com.jushymaso222.theflood.network.FloodNetwork;
-import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
-import net.minecraftforge.network.PacketDistributor;
-
-import com.jushymaso222.theflood.debug.DummyPlayerManager;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.jushymaso222.theflood.config.TheFloodConfig;
+import com.jushymaso222.theflood.debug.DummyPlayerManager;
+import com.jushymaso222.theflood.network.FloodNetwork;
+import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
+import com.jushymaso222.theflood.progression.network.FloodXpGainPacket;
+import com.jushymaso222.theflood.team.FloodTeam;
+import com.jushymaso222.theflood.team.TeamManager;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.PacketDistributor;
 
 public final class HeatManager {
 
@@ -407,6 +405,77 @@ private static void checkMobUnlock(
         );
     }
 
+    public static long getFloodXp(
+        ServerPlayer player
+) {
+    return PlayerFloodData.getHeatProgressTicks(
+            player
+    );
+}
+
+public static long getFloodXpRequired(
+        ServerPlayer player
+) {
+    int heat =
+            getSoloHeat(player);
+
+    return getBaseFloodXpRequired(
+            heat
+    );
+}
+
+public static long getBaseFloodXpRequired(
+        int heat
+) {
+    long baseXp =
+            getTicksPerHeatLevel();
+
+    int normalizedHeat =
+            Math.max(
+                    1,
+                    heat
+            );
+
+    double growthPerHeat =
+        TheFloodConfig.HEAT
+                .floodXpGrowthPerHeat
+                .get();
+
+    double multiplier =
+            1.0D
+                    + (
+                    (normalizedHeat - 1)
+                            * growthPerHeat
+            );
+
+    return Math.max(
+            1L,
+            Math.round(
+                    baseXp * multiplier
+            )
+    );
+}
+
+public static float getFloodXpProgress(
+        ServerPlayer player
+) {
+    long required =
+            getFloodXpRequired(player);
+
+    if (required <= 0L) {
+        return 0.0F;
+    }
+
+    return Math.max(
+            0.0F,
+            Math.min(
+                    1.0F,
+                    getFloodXp(player)
+                            / (float) required
+            )
+    );
+}
+
     public static long getTicksPerHeatLevel() {
         long dayMinutes =
                 TheFloodConfig.TIME
@@ -426,46 +495,105 @@ private static void checkMobUnlock(
                 * 20L;
     }
 
-    public static boolean advanceSoloHeat(
-            ServerPlayer player
-    ) {
-        long ticksRequired =
-                getTicksPerHeatLevel();
-
-        long progress =
-                PlayerFloodData
-                        .getHeatProgressTicks(
-                                player
-                        )
-                        + 1;
-
-        if (progress < ticksRequired) {
-            PlayerFloodData
-                    .setHeatProgressTicks(
-                            player,
-                            progress
-                    );
-
-            return false;
+    public static boolean addFloodXp(
+        ServerPlayer player,
+        long amount
+) {
+    if (
+                player == null
+                || amount <= 0L
+        ) {
+        return false;
         }
 
-        /*
-         * Preserve overflow just in case timing/config changes
-         * ever cause progress to exceed one complete level.
-         */
-        progress -= ticksRequired;
+    long progress =
+            getFloodXp(player)
+                    + amount;
 
-        PlayerFloodData.setHeatProgressTicks(
-                player,
-                progress
-        );
+    boolean leveledUp = false;
+
+    while (
+            getSoloHeat(player)
+                    < PlayerFloodData.MAX_HEAT
+    ) {
+        long required =
+                getFloodXpRequired(
+                        player
+                );
+
+        if (progress < required) {
+            break;
+        }
+
+        progress -= required;
 
         PlayerFloodData.setSoloHeat(
                 player,
                 getSoloHeat(player) + 1
         );
 
-        return true;
+        leveledUp = true;
+    }
+
+    /*
+     * At max Heat there is no next level,
+     * so don't leave a nonsensical overflowing bar.
+     */
+    if (
+            getSoloHeat(player)
+                    >= PlayerFloodData.MAX_HEAT
+    ) {
+        progress = 0L;
+    }
+
+    PlayerFloodData.setHeatProgressTicks(
+            player,
+            progress
+    );
+
+    syncHeatToPlayer(
+            player
+    );
+
+    return leveledUp;
+}
+
+public static boolean addRewardFloodXp(
+        ServerPlayer player,
+        long amount
+) {
+    if (
+            player == null
+            || amount <= 0L
+    ) {
+        return false;
+    }
+
+    boolean leveledUp =
+            addFloodXp(
+                    player,
+                    amount
+            );
+
+    FloodNetwork.CHANNEL.send(
+            PacketDistributor.PLAYER.with(
+                    () -> player
+            ),
+            new FloodXpGainPacket(
+                    amount
+            )
+    );
+
+    return leveledUp;
+}
+
+    public static boolean advanceSoloHeat(
+            ServerPlayer player
+    ) {
+        return addFloodXp(
+                player,
+                1L
+        );
     }
 
     public static void syncHeatToPlayer(
@@ -487,6 +615,12 @@ private static void checkMobUnlock(
         int proximityBonus =
                 getProximityHeatBonus(player);
 
+        long floodXp =
+                getFloodXp(player);
+
+        long floodXpRequired =
+                getFloodXpRequired(player);
+
         int effectiveHeat =
                 PlayerFloodData.clampHeat(
                         baseHeat + proximityBonus
@@ -506,7 +640,9 @@ private static void checkMobUnlock(
                         teamHeat,
                         baseHeat,
                         proximityBonus,
-                        effectiveHeat
+                        effectiveHeat,
+                        floodXp,
+                        floodXpRequired
                 )
         );
     }

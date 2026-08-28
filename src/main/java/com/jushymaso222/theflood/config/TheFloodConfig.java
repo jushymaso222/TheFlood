@@ -38,6 +38,8 @@ public final class TheFloodConfig {
     public final ForgeConfigSpec.DoubleValue maximumEliteChance;
 
     public final ForgeConfigSpec.IntValue eliteHeatBonus;
+    public final ForgeConfigSpec.DoubleValue eliteKillFloodXpPercent;
+    public final ForgeConfigSpec.DoubleValue eliteDangerXpBonusPercent;
 
     private EliteSettings(
                 ForgeConfigSpec.Builder builder
@@ -93,6 +95,34 @@ public final class TheFloodConfig {
                                         0,
                                         1000
                                 );
+                
+                eliteKillFloodXpPercent =
+                        builder
+                                .comment(
+                                        "Percentage of the current Flood XP requirement "
+                                                + "awarded for killing an Elite.",
+                                        "0.15 = 15% of one Heat level."
+                                )
+                                .defineInRange(
+                                        "eliteKillFloodXpPercent",
+                                        0.10D,
+                                        0.0D,
+                                        1.0D
+                                );
+
+                eliteDangerXpBonusPercent =
+                        builder
+                                .comment(
+                                        "Maximum additional percentage of a Heat level "
+                                                + "awarded based on Elite Danger.",
+                                        "0.10 = a Danger 100 Elite adds another 10%."
+                                )
+                                .defineInRange(
+                                        "eliteDangerXpBonusPercent",
+                                        0.10D,
+                                        0.0D,
+                                        1.0D
+                                );
 
                 builder.pop();
         }
@@ -103,6 +133,8 @@ public final class TheFloodConfig {
         public final ForgeConfigSpec.IntValue proximityRadius;
         public final ForgeConfigSpec.IntValue proximityBaseHeatPerPlayer;
         public final ForgeConfigSpec.IntValue proximitySynergyPerPlayer;
+        public final ForgeConfigSpec.DoubleValue floodXpGrowthPerHeat;
+        public final ForgeConfigSpec.DoubleValue floodMobKillXpPercent;
 
         private HeatSettings(
                 ForgeConfigSpec.Builder builder
@@ -141,6 +173,34 @@ public final class TheFloodConfig {
                                 0,
                                 10
                         );
+
+                floodXpGrowthPerHeat =
+                        builder
+                                .comment(
+                                        "Percentage increase in Flood XP required "
+                                                + "for each Heat level.",
+                                        "0.05 = 5% more XP per Heat."
+                                )
+                                .defineInRange(
+                                        "floodXpGrowthPerHeat",
+                                        0.05D,
+                                        0.0D,
+                                        1.0D
+                                );
+
+                floodMobKillXpPercent =
+                        builder
+                                .comment(
+                                        "Percentage of the current Flood XP requirement "
+                                                + "awarded when a player kills a Flood mob.",
+                                        "0.0025 = 0.25% of one Heat level."
+                                )
+                                .defineInRange(
+                                        "floodMobKillXpPercent",
+                                        0.0025D,
+                                        0.0D,
+                                        1.0D
+                                );
 
                 builder.pop();
         }

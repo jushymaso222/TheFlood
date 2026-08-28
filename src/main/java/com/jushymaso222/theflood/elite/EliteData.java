@@ -22,12 +22,47 @@ public final class EliteData {
     private static final String SOURCE_HEAT_KEY =
         "theflood_elite_source_heat";
 
+    private static final String DANGER_KEY =
+        "theflood_elite_danger";
+
 public static int getSourceHeat(
         Mob mob
 ) {
     return mob.getPersistentData()
             .getInt(
                     SOURCE_HEAT_KEY
+            );
+}
+
+public static int getDanger(
+        Mob elite
+) {
+    return Math.max(
+            1,
+            Math.min(
+                    100,
+                    elite.getPersistentData()
+                            .getInt(
+                                    DANGER_KEY
+                            )
+            )
+    );
+}
+
+public static void setDanger(
+        Mob elite,
+        int danger
+) {
+    elite.getPersistentData()
+            .putInt(
+                    DANGER_KEY,
+                    Math.max(
+                            1,
+                            Math.min(
+                                    100,
+                                    danger
+                            )
+                    )
             );
 }
 

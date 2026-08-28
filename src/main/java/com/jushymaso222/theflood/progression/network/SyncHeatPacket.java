@@ -15,19 +15,25 @@ public class SyncHeatPacket {
     private final int baseHeat;
     private final int proximityBonus;
     private final int effectiveHeat;
+    private final long floodXp;
+    private final long floodXpRequired;
 
     public SyncHeatPacket(
         int soloHeat,
         int teamHeat,
         int baseHeat,
         int proximityBonus,
-        int effectiveHeat
+        int effectiveHeat,
+        long floodXp,
+        long floodXpRequired
     ) {
         this.soloHeat = soloHeat;
         this.teamHeat = teamHeat;
         this.baseHeat = baseHeat;
         this.proximityBonus = proximityBonus;
         this.effectiveHeat = effectiveHeat;
+        this.floodXp = floodXp;
+        this.floodXpRequired = floodXpRequired;
     }
 
     public static void encode(
@@ -39,6 +45,8 @@ public class SyncHeatPacket {
         buffer.writeInt(message.baseHeat);
         buffer.writeInt(message.proximityBonus);
         buffer.writeInt(message.effectiveHeat);
+        buffer.writeLong(message.floodXp);
+        buffer.writeLong(message.floodXpRequired);
     }
  
     public static SyncHeatPacket decode(
@@ -49,7 +57,9 @@ public class SyncHeatPacket {
                 buffer.readInt(),
                 buffer.readInt(),
                 buffer.readInt(),
-                buffer.readInt()
+                buffer.readInt(),
+                buffer.readLong(),
+                buffer.readLong()
         );
     }
 
@@ -66,7 +76,9 @@ public class SyncHeatPacket {
                         message.teamHeat,
                         message.baseHeat,
                         message.proximityBonus,
-                        message.effectiveHeat
+                        message.effectiveHeat,
+                        message.floodXp,
+                        message.floodXpRequired
                 )
         );
 

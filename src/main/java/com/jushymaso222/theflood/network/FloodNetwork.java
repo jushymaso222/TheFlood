@@ -9,6 +9,7 @@ import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
 import com.jushymaso222.theflood.guide.network.SyncServerSettingsPacket;
 import com.jushymaso222.theflood.elite.network.SyncEliteStatePacket;
 import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
+import com.jushymaso222.theflood.progression.network.FloodXpGainPacket;
 
 public final class FloodNetwork {
 
@@ -31,6 +32,14 @@ public final class FloodNetwork {
     }
 
     public static void register() {
+
+        CHANNEL.registerMessage(
+                id++,
+                FloodXpGainPacket.class,
+                FloodXpGainPacket::encode,
+                FloodXpGainPacket::decode,
+                FloodXpGainPacket::handle
+        );
 
         CHANNEL.registerMessage(
                 id++,

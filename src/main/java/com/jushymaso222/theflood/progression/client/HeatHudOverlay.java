@@ -382,17 +382,7 @@ private static float[] getFillColor(int heat) {
                     % 24000L;
 
     float progress =
-            dayTime
-                    / 24000.0F;
-
-    progress =
-            Math.max(
-                    0.0F,
-                    Math.min(
-                            1.0F,
-                            progress
-                    )
-            );
+        ClientHeatData.getFloodXpProgress();
 
 
     /*
@@ -449,6 +439,52 @@ private static float[] getFillColor(int heat) {
                 hudWidth,
                 hudHeight
         );
+
+        if (
+        ClientFloodXpGain.isVisible()
+) {
+    long gainedXp =
+            ClientFloodXpGain.getAccumulatedXp();
+
+    float alpha =
+            ClientFloodXpGain.getAlpha();
+
+    String text =
+            "+"
+                    + gainedXp;
+
+    int alphaByte =
+            Math.round(
+                    255.0F
+                            * alpha
+            );
+
+    int color =
+            getHeatNumberOutlineColor(heat);
+
+    int xpTextX =
+            barX
+                    - 10
+                    + hudWidth
+                    + scaleX(
+                            6,
+                            hudWidth
+                    );
+
+    int xpTextY =
+            centerY
+                    + minecraft.font.lineHeight / 2
+                    + 15;
+
+    graphics.drawString(
+            minecraft.font,
+            text,
+            xpTextX,
+            xpTextY,
+            color,
+            true
+    );
+}
 }
 
     private static void drawFloodHud(
