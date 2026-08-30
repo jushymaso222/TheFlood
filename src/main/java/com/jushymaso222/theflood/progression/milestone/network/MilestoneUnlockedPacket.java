@@ -1,15 +1,19 @@
 package com.jushymaso222.theflood.milestone.network;
 
+import com.jushymaso222.theflood.progression.milestone.client.ClientMilestoneData;
 import com.jushymaso222.theflood.progression.milestone.client.ClientMilestoneNotifications;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public class MilestoneUnlockedPacket {
+
+    private final ResourceLocation id;
 
     private final Component title;
     private final Component description;
@@ -19,11 +23,15 @@ public class MilestoneUnlockedPacket {
 
 
     public MilestoneUnlockedPacket(
+            ResourceLocation id,
             Component title,
             Component description,
             int progressionValue,
             double floodXpReward
     ) {
+        this.id =
+                id;
+
         this.title =
                 title;
 
@@ -42,6 +50,10 @@ public class MilestoneUnlockedPacket {
             MilestoneUnlockedPacket packet,
             FriendlyByteBuf buffer
     ) {
+        buffer.writeResourceLocation(
+                packet.id
+        );
+
         buffer.writeComponent(
                 packet.title
         );
@@ -64,6 +76,7 @@ public class MilestoneUnlockedPacket {
             FriendlyByteBuf buffer
     ) {
         return new MilestoneUnlockedPacket(
+                buffer.readResourceLocation(),
                 buffer.readComponent(),
                 buffer.readComponent(),
                 buffer.readVarInt(),
@@ -80,13 +93,29 @@ public class MilestoneUnlockedPacket {
                 contextSupplier.get();
 
         context.enqueueWork(
-                () ->
-                        ClientMilestoneNotifications.add(
-                                packet.title,
-                                packet.description,
-                                packet.progressionValue,
-                                packet.floodXpReward
-                        )
+                () -> {
+
+                    /*
+                     * Existing popup notification.
+                     */
+                    ClientMilestoneNotifications.add(
+                            packet.title,
+                            packet.description,
+                            packet.progressionValue,
+                            packet.floodXpReward
+                    );
+
+
+                    /*
+                     * Update milestone UI data immediately.
+                     *
+                     * This marks the milestone completed and
+                     * puts it at the top of the recent list.
+                     */
+                    ClientMilestoneData.addRecent(
+                                packet.id
+                        );
+                }
         );
 
         context.setPacketHandled(

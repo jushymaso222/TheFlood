@@ -15,6 +15,7 @@ public final class MilestoneDefinition {
 
     private final int progressionValue;
     private final double floodXpReward;
+    private final String categoryId;
 
     private final Predicate<ServerPlayer> condition;
 
@@ -23,6 +24,7 @@ public final class MilestoneDefinition {
             ResourceLocation id,
             Component title,
             Component description,
+            String categoryId,
             int progressionValue,
             double floodXpReward,
             Predicate<ServerPlayer> condition
@@ -35,6 +37,9 @@ public final class MilestoneDefinition {
 
         this.description =
                 description;
+
+        this.categoryId =
+                categoryId;
 
         this.progressionValue =
                 Math.max(
@@ -55,7 +60,6 @@ public final class MilestoneDefinition {
                 condition;
     }
 
-
     public ResourceLocation id() {
         return id;
     }
@@ -66,6 +70,10 @@ public final class MilestoneDefinition {
 
     public Component description() {
         return description;
+    }
+
+    public String categoryId() {
+        return categoryId;
     }
 
     public int progressionValue() {

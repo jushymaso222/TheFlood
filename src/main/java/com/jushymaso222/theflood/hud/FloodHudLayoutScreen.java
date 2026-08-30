@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import com.jushymaso222.theflood.team.client.TeamHudOverlay;
 import net.minecraft.resources.ResourceLocation;
 
 public class FloodHudLayoutScreen extends Screen {
@@ -23,24 +24,65 @@ public class FloodHudLayoutScreen extends Screen {
         private static final int FLOOD_HUD_TEXTURE_WIDTH = 629;
         private static final int FLOOD_HUD_TEXTURE_HEIGHT = 133;
 
-        private static final int FLOOD_HUD_PREVIEW_WIDTH = 220;
+        private static final float REFERENCE_GUI_WIDTH =
+                2560.0F / 3.0F;
 
-        private static final int FLOOD_HUD_PREVIEW_HEIGHT =
-                Math.round(
-                        FLOOD_HUD_PREVIEW_WIDTH
-                                * (
-                                FLOOD_HUD_TEXTURE_HEIGHT
-                                        / (float) FLOOD_HUD_TEXTURE_WIDTH
-                        )
+        private int getHudScaleWidth(
+                int baseWidth
+        ) {
+        return Math.round(
+                baseWidth
+                        * (
+                        width
+                                / REFERENCE_GUI_WIDTH
+                )
+        );
+        }
+
+        private int getHeatPreviewWidth() {
+        return getHudScaleWidth(220);
+        }
+
+        private int getHeatPreviewHeight() {
+        int previewWidth =
+                getHeatPreviewWidth();
+
+        return Math.round(
+                previewWidth
+                        * (
+                        FLOOD_HUD_TEXTURE_HEIGHT
+                                / (float) FLOOD_HUD_TEXTURE_WIDTH
+                )
+        );
+        }
+
+        private int getTeamPreviewWidth() {
+        return TeamHudOverlay
+                .getScaledCardWidth(
+                        width
                 );
+        }
+
+        private int getTeamPreviewHeight() {
+        return TeamHudOverlay
+                .getScaledCardHeight(
+                        width
+                ) * 2
+                + TeamHudOverlay
+                .getScaledCardSpacing(
+                        width
+                );
+        }
 
     private DragTarget dragging = DragTarget.NONE;
 
-    private double heatX;
-    private double heatY;
+    private HudAnchor heatAnchor;
+        private int heatXOffset;
+        private int heatYOffset;
 
-    private double teamX;
-        private double teamY;
+        private HudAnchor teamAnchor;
+        private int teamXOffset;
+        private int teamYOffset;
 
         private static final int TEAM_PREVIEW_WIDTH =
                 110;
@@ -55,14 +97,36 @@ public class FloodHudLayoutScreen extends Screen {
 
     @Override
     protected void init() {
-        heatX = TheFloodClientConfig.HEAT_HUD_X.get();
-        heatY = TheFloodClientConfig.HEAT_HUD_Y.get();
+        heatAnchor =
+                TheFloodClientConfig
+                        .HEAT_HUD_ANCHOR
+                        .get();
 
-        teamX =
-                TheFloodClientConfig.TEAM_HUD_X.get();
+        heatXOffset =
+                TheFloodClientConfig
+                        .HEAT_HUD_ANCHOR_X_OFFSET
+                        .get();
 
-        teamY =
-                TheFloodClientConfig.TEAM_HUD_Y.get();
+        heatYOffset =
+                TheFloodClientConfig
+                        .HEAT_HUD_ANCHOR_Y_OFFSET
+                        .get();
+
+
+        teamAnchor =
+                TheFloodClientConfig
+                        .TEAM_HUD_ANCHOR
+                        .get();
+
+        teamXOffset =
+                TheFloodClientConfig
+                        .TEAM_HUD_ANCHOR_X_OFFSET
+                        .get();
+
+        teamYOffset =
+                TheFloodClientConfig
+                        .TEAM_HUD_ANCHOR_Y_OFFSET
+                        .get();
 
         addRenderableWidget(
                 Button.builder(
@@ -134,32 +198,218 @@ public class FloodHudLayoutScreen extends Screen {
     private void renderTeamPreview(
                 GuiGraphics graphics
         ) {
+        int previewWidth =
+                getTeamPreviewWidth();
+
+        int previewHeight =
+                getTeamPreviewHeight();
+
+        FloodHudPositioning.Position position =
+                FloodHudPositioning.resolveClamped(
+                        teamAnchor,
+                        width,
+                        height,
+                        previewWidth,
+                        previewHeight,
+                        teamXOffset,
+                        teamYOffset
+                );
+
         int x =
-                normalizedToScreenX(teamX);
+                position.x();
 
         int y =
-                normalizedToScreenY(teamY);
+                position.y();
 
-        renderFakeTeammate(
+        float scale =
+                TeamHudOverlay.getHudScale(
+                        width
+                );
+
+        int cardHeight =
+                TeamHudOverlay
+                        .getScaledCardHeight(
+                                width
+                        );
+
+        int cardSpacing =
+                TeamHudOverlay
+                        .getScaledCardSpacing(
+                                width
+                        );
+
+        renderScaledFakeTeammate(
                 graphics,
                 x,
                 y,
+                scale,
                 "Bob",
                 0xFF64B5F6,
                 0.75F,
                 "32m"
         );
 
-        renderFakeTeammate(
+        renderScaledFakeTeammate(
                 graphics,
                 x,
-                y + 32,
+                y
+                        + cardHeight
+                        + cardSpacing,
+                scale,
                 "Alex",
                 0xFFE57373,
                 0.45F,
                 "57m"
         );
         }
+
+        private HudAnchor getClosestAnchor(
+        double x,
+        double y
+) {
+    boolean left =
+            x < width / 3.0;
+
+    boolean right =
+            x > width * 2.0 / 3.0;
+
+    boolean top =
+            y < height / 3.0;
+
+    boolean bottom =
+            y > height * 2.0 / 3.0;
+
+    if (top) {
+        if (left) {
+            return HudAnchor.TOP_LEFT;
+        }
+
+        if (right) {
+            return HudAnchor.TOP_RIGHT;
+        }
+
+        return HudAnchor.TOP_CENTER;
+    }
+
+    if (bottom) {
+        if (left) {
+            return HudAnchor.BOTTOM_LEFT;
+        }
+
+        if (right) {
+            return HudAnchor.BOTTOM_RIGHT;
+        }
+
+        return HudAnchor.BOTTOM_CENTER;
+    }
+
+    if (left) {
+        return HudAnchor.CENTER_LEFT;
+    }
+
+    if (right) {
+        return HudAnchor.CENTER_RIGHT;
+    }
+
+    return HudAnchor.CENTER;
+}
+
+        private void renderScaledFakeTeammate(
+        GuiGraphics graphics,
+        int x,
+        int y,
+        float scale,
+        String name,
+        int playerColor,
+        float health,
+        String distance
+) {
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            x,
+            y,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
+
+    renderFakeTeammate(
+            graphics,
+            0,
+            0,
+            name,
+            playerColor,
+            health,
+            distance
+    );
+
+    graphics.pose().popPose();
+}
+
+        private int getXOffsetForPosition(
+        HudAnchor anchor,
+        int x,
+        int elementWidth
+) {
+    return switch (anchor) {
+
+        case TOP_LEFT,
+             CENTER_LEFT,
+             BOTTOM_LEFT ->
+                x;
+
+        case TOP_CENTER,
+             CENTER,
+             BOTTOM_CENTER ->
+                x
+                        - (
+                        width / 2
+                                - elementWidth / 2
+                );
+
+        case TOP_RIGHT,
+             CENTER_RIGHT,
+             BOTTOM_RIGHT ->
+                width
+                        - elementWidth
+                        - x;
+    };
+}
+
+private int getYOffsetForPosition(
+        HudAnchor anchor,
+        int y,
+        int elementHeight
+) {
+    return switch (anchor) {
+
+        case TOP_LEFT,
+             TOP_CENTER,
+             TOP_RIGHT ->
+                y;
+
+        case CENTER_LEFT,
+             CENTER,
+             CENTER_RIGHT ->
+                y
+                        - (
+                        height / 2
+                                - elementHeight / 2
+                );
+
+        case BOTTOM_LEFT,
+             BOTTOM_CENTER,
+             BOTTOM_RIGHT ->
+                height
+                        - elementHeight
+                        - y;
+    };
+}
 
         private void renderFakeTeammate(
                 GuiGraphics graphics,
@@ -247,25 +497,35 @@ public class FloodHudLayoutScreen extends Screen {
     private void renderHeatPreview(
         GuiGraphics graphics
 ) {
-    int centerX =
-            normalizedToScreenX(heatX);
+    int previewWidth =
+            getHeatPreviewWidth();
 
-    int centerY =
-            normalizedToScreenY(heatY);
+    int previewHeight =
+            getHeatPreviewHeight();
+
+    FloodHudPositioning.Position position =
+            FloodHudPositioning.resolveClamped(
+                    heatAnchor,
+                    width,
+                    height,
+                    previewWidth,
+                    previewHeight,
+                    heatXOffset,
+                    heatYOffset
+            );
 
     int x =
-            centerX
-                    - FLOOD_HUD_PREVIEW_WIDTH / 2;
+            position.x();
 
     int y =
-            centerY;
+            position.y();
 
     graphics.blit(
             FLOOD_HUD_PREVIEW,
             x,
             y,
-            FLOOD_HUD_PREVIEW_WIDTH,
-            FLOOD_HUD_PREVIEW_HEIGHT,
+            previewWidth,
+            previewHeight,
             0.0F,
             0.0F,
             FLOOD_HUD_TEXTURE_WIDTH,
@@ -274,38 +534,65 @@ public class FloodHudLayoutScreen extends Screen {
             FLOOD_HUD_TEXTURE_HEIGHT
     );
 
-    /*
-     * Example day/time so the preview represents
-     * the actual combined HUD.
-     */
+    float scale =
+            previewWidth / 220.0F;
+
     String dayTimeText =
             "DAY 10  •  14:25";
 
+    float textWidth =
+            font.width(dayTimeText)
+                    * scale;
+
     int dayTimeX =
-            centerX
-                    - font.width(dayTimeText) / 2;
+            Math.round(
+                    x
+                            + previewWidth / 2.0F
+                            - textWidth / 2.0F
+            );
 
     int dayTimeY =
             y
-                    - font.lineHeight
-                    + 2;
+                    - Math.round(
+                    font.lineHeight
+                            * scale
+            )
+                    + Math.round(
+                    6.0F * scale
+            );
+
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            dayTimeX,
+            dayTimeY,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
 
     graphics.drawString(
             font,
             dayTimeText,
-            dayTimeX,
-            dayTimeY,
+            0,
+            0,
             0xFFFFFFFF,
             true
     );
+
+    graphics.pose().popPose();
 
     if (dragging == DragTarget.HEAT) {
         drawSelectionBox(
                 graphics,
                 x - 2,
                 dayTimeY - 2,
-                x + FLOOD_HUD_PREVIEW_WIDTH + 2,
-                y + FLOOD_HUD_PREVIEW_HEIGHT + 2
+                x + previewWidth + 2,
+                y + previewHeight + 2
         );
     }
 }
@@ -375,22 +662,86 @@ public class FloodHudLayoutScreen extends Screen {
         }
 
         if (dragging == DragTarget.HEAT) {
-            heatX = screenToNormalizedX(mouseX);
-            heatY = screenToNormalizedY(mouseY);
 
-            return true;
-        }
+                int elementWidth =
+                        getHeatPreviewWidth();
 
-        if (dragging == DragTarget.TEAM) {
+                int elementHeight =
+                        getHeatPreviewHeight();
 
-                teamX =
-                        screenToNormalizedX(
+                int x =
+                        (int) Math.round(
                                 mouseX
+                                        - elementWidth / 2.0
                         );
 
-                teamY =
-                        screenToNormalizedY(
+                int y =
+                        (int) Math.round(
                                 mouseY
+                                        - elementHeight / 2.0
+                        );
+
+                heatAnchor =
+                        getClosestAnchor(
+                                mouseX,
+                                mouseY
+                        );
+
+                heatXOffset =
+                        getXOffsetForPosition(
+                                heatAnchor,
+                                x,
+                                elementWidth
+                        );
+
+                heatYOffset =
+                        getYOffsetForPosition(
+                                heatAnchor,
+                                y,
+                                elementHeight
+                        );
+
+                return true;
+                }
+
+                if (dragging == DragTarget.TEAM) {
+
+                int elementWidth =
+                        getTeamPreviewWidth();
+
+                int elementHeight =
+                        getTeamPreviewHeight();
+
+                int x =
+                        (int) Math.round(
+                                mouseX
+                                        - elementWidth / 2.0
+                        );
+
+                int y =
+                        (int) Math.round(
+                                mouseY
+                                        - elementHeight / 2.0
+                        );
+
+                teamAnchor =
+                        getClosestAnchor(
+                                mouseX,
+                                mouseY
+                        );
+
+                teamXOffset =
+                        getXOffsetForPosition(
+                                teamAnchor,
+                                x,
+                                elementWidth
+                        );
+
+                teamYOffset =
+                        getYOffsetForPosition(
+                                teamAnchor,
+                                y,
+                                elementHeight
                         );
 
                 return true;
@@ -427,56 +778,55 @@ public class FloodHudLayoutScreen extends Screen {
         double mouseX,
         double mouseY
 ) {
-    int centerX =
-            normalizedToScreenX(heatX);
+    int previewWidth =
+            getHeatPreviewWidth();
 
-    int centerY =
-            normalizedToScreenY(heatY);
+    int previewHeight =
+            getHeatPreviewHeight();
 
-    int left =
-            centerX
-                    - FLOOD_HUD_PREVIEW_WIDTH / 2;
+    FloodHudPositioning.Position position =
+            FloodHudPositioning.resolveClamped(
+                    heatAnchor,
+                    width,
+                    height,
+                    previewWidth,
+                    previewHeight,
+                    heatXOffset,
+                    heatYOffset
+            );
 
-    int right =
-            left
-                    + FLOOD_HUD_PREVIEW_WIDTH;
-
-    int top =
-            centerY
-                    - font.lineHeight
-                    + 2;
-
-    int bottom =
-            centerY
-                    + FLOOD_HUD_PREVIEW_HEIGHT;
-
-    return mouseX >= left
-            && mouseX <= right
-            && mouseY >= top
-            && mouseY <= bottom;
+    return mouseX >= position.x()
+            && mouseX <= position.x() + previewWidth
+            && mouseY >= position.y() - font.lineHeight
+            && mouseY <= position.y() + previewHeight;
 }
 
     private boolean isMouseOverTeam(
-                double mouseX,
-                double mouseY
-        ) {
-        int x =
-                normalizedToScreenX(
-                        teamX
-                );
+        double mouseX,
+        double mouseY
+) {
+    int previewWidth =
+            getTeamPreviewWidth();
 
-        int y =
-                normalizedToScreenY(
-                        teamY
-                );
+    int previewHeight =
+            getTeamPreviewHeight();
 
-        return mouseX >= x
-                && mouseX <= x
-                        + TEAM_PREVIEW_WIDTH
-                && mouseY >= y
-                && mouseY <= y
-                        + TEAM_PREVIEW_HEIGHT;
-        }
+    FloodHudPositioning.Position position =
+            FloodHudPositioning.resolveClamped(
+                    teamAnchor,
+                    width,
+                    height,
+                    previewWidth,
+                    previewHeight,
+                    teamXOffset,
+                    teamYOffset
+            );
+
+    return mouseX >= position.x()
+            && mouseX <= position.x() + previewWidth
+            && mouseY >= position.y()
+            && mouseY <= position.y() + previewHeight;
+}
 
     private int normalizedToScreenX(double value) {
         return (int) Math.round(value * width);
@@ -507,26 +857,47 @@ public class FloodHudLayoutScreen extends Screen {
     }
 
     private void resetPositions() {
-        heatX = 0.50;
-        heatY = 0.06;
+    heatAnchor =
+            HudAnchor.TOP_CENTER;
 
-        teamX = 0.02;
-        teamY = 0.35;
-    }
+    heatXOffset = 0;
+    heatYOffset = 10;
+
+    teamAnchor =
+            HudAnchor.TOP_LEFT;
+
+    teamXOffset = 10;
+    teamYOffset = 75;
+}
 
     private void saveAndClose() {
-        TheFloodClientConfig.HEAT_HUD_X.set(heatX);
-        TheFloodClientConfig.HEAT_HUD_Y.set(heatY);
+    TheFloodClientConfig
+            .HEAT_HUD_ANCHOR
+            .set(heatAnchor);
 
-        TheFloodClientConfig.TEAM_HUD_X.set(
-                teamX
-        );
-        TheFloodClientConfig.TEAM_HUD_Y.set(
-                teamY
-        );
+    TheFloodClientConfig
+            .HEAT_HUD_ANCHOR_X_OFFSET
+            .set(heatXOffset);
 
-        onClose();
-    }
+    TheFloodClientConfig
+            .HEAT_HUD_ANCHOR_Y_OFFSET
+            .set(heatYOffset);
+
+
+    TheFloodClientConfig
+            .TEAM_HUD_ANCHOR
+            .set(teamAnchor);
+
+    TheFloodClientConfig
+            .TEAM_HUD_ANCHOR_X_OFFSET
+            .set(teamXOffset);
+
+    TheFloodClientConfig
+            .TEAM_HUD_ANCHOR_Y_OFFSET
+            .set(teamYOffset);
+
+    onClose();
+}
 
     @Override
     public void onClose() {
@@ -536,7 +907,6 @@ public class FloodHudLayoutScreen extends Screen {
     private enum DragTarget {
         NONE,
         HEAT,
-        DAY,
         TEAM
     }
 }

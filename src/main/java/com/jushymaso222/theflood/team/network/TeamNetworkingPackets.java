@@ -310,39 +310,116 @@ public final class TeamNetworkingPackets {
                 RequestInviteCandidatesPacket message,
                 Supplier<NetworkEvent.Context> contextSupplier
         ) {
-                NetworkEvent.Context context =
-                        contextSupplier.get();
+        NetworkEvent.Context context =
+                contextSupplier.get();
 
-                context.enqueueWork(() -> {
+        context.enqueueWork(() -> {
+
                 ServerPlayer player =
                         context.getSender();
 
                 if (player == null) {
-                        return;
+                return;
                 }
 
+                /*
+                * Normal connected players that can
+                * currently be invited.
+                */
                 List<ServerPlayer> candidates =
-                        TeamManager.getInvitablePlayers(player);
+                        TeamManager.getInvitablePlayers(
+                                player
+                        );
 
                 List<SyncInviteCandidatesPacket.Entry> entries =
                         new ArrayList<>();
 
-                for (ServerPlayer candidate : candidates) {
-                        entries.add(
-                                new SyncInviteCandidatesPacket.Entry(
-                                        candidate.getUUID(),
-                                        candidate.getGameProfile().getName()
+                for (
+                        ServerPlayer candidate :
+                        candidates
+                ) {
+                entries.add(
+                        new SyncInviteCandidatesPacket.Entry(
+                                candidate.getUUID(),
+                                candidate.getGameProfile()
+                                        .getName()
+                        )
+                );
+                }
+
+                /*
+                * Development FakePlayers are not necessarily
+                * in Minecraft's connected-player list, so add
+                * eligible dummies explicitly.
+                */
+                for (
+                        ServerPlayer dummy :
+                        DummyPlayerManager.getDummies()
+                ) {
+                /*
+                * Avoid duplicates just in case a dummy
+                * somehow already appeared above.
+                */
+                boolean alreadyPresent =
+                        entries.stream()
+                                .anyMatch(
+                                        entry ->
+                                                entry.id()
+                                                        .equals(
+                                                                dummy.getUUID()
+                                                        )
+                                );
+
+                if (alreadyPresent) {
+                        continue;
+                }
+
+                /*
+                * Don't include ourselves.
+                */
+                if (
+                        dummy.getUUID()
+                                .equals(
+                                        player.getUUID()
                                 )
-                        );
+                ) {
+                        continue;
+                }
+
+                /*
+                * Don't offer a dummy that's already
+                * part of a team.
+                */
+                if (
+                        TeamManager.getTeamForPlayer(
+                                dummy
+                        ) != null
+                ) {
+                        continue;
+                }
+
+                entries.add(
+                        new SyncInviteCandidatesPacket.Entry(
+                                dummy.getUUID(),
+                                dummy.getGameProfile()
+                                        .getName()
+                        )
+                );
                 }
 
                 FloodNetwork.CHANNEL.send(
-                        PacketDistributor.PLAYER.with(() -> player),
-                        new SyncInviteCandidatesPacket(entries)
+                        PacketDistributor.PLAYER.with(
+                                () -> player
+                        ),
+                        new SyncInviteCandidatesPacket(
+                                entries
+                        )
                 );
-                });
+        });
 
-                context.setPacketHandled(true);
+        context.setPacketHandled(
+                true
+        );
         }
         }
 

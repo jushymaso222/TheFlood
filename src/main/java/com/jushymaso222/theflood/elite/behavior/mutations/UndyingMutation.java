@@ -188,6 +188,16 @@ public final class UndyingMutation
         );
     }
 
+    public static boolean isFinalDeath(
+        Mob elite
+) {
+    return elite != null
+            && elite.getPersistentData()
+                    .getBoolean(
+                            FINAL_DEATH_KEY
+                    );
+}
+
     private static boolean isRevivalActive(
             Mob elite
     ) {

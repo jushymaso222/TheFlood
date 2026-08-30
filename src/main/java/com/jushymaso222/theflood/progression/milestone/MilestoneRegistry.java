@@ -19,6 +19,8 @@ import com.jushymaso222.theflood.progression.milestone.compat.PneumaticCraftMile
 import com.jushymaso222.theflood.progression.milestone.compat.ProjectEMilestones;
 import com.jushymaso222.theflood.progression.milestone.compat.TaCZMilestones;
 import com.jushymaso222.theflood.progression.milestone.compat.TwilightForestMilestones;
+import com.jushymaso222.theflood.progression.milestone.compat.MilestoneCompatDefinition;
+import com.jushymaso222.theflood.progression.milestone.compat.MilestoneCompatRegistry;
 
 import static com.jushymaso222.theflood.progression.milestone.MilestoneConditions.*;
 
@@ -78,6 +80,17 @@ public final class MilestoneRegistry {
      */
 
     private static void registerVanillaMilestones() {
+
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        "minecraft",
+                        null,
+                        Component.literal(
+                                "Minecraft"
+                        ),
+                        10
+                )
+        );
 
         /*
         * ============================================
@@ -224,6 +237,7 @@ public final class MilestoneRegistry {
             Predicate<ServerPlayer> condition
     ) {
         register(
+                "minecraft",
                 "vanilla/" + name,
                 title,
                 description,
@@ -241,7 +255,7 @@ public final class MilestoneRegistry {
      */
 
     public static void registerCompat(
-            String modId,
+            String categoryId,
             String name,
             String title,
             String description,
@@ -250,7 +264,8 @@ public final class MilestoneRegistry {
             Predicate<ServerPlayer> condition
     ) {
         register(
-                modId + "/" + name,
+                categoryId,
+                categoryId + "/" + name,
                 title,
                 description,
                 progressionValue,
@@ -267,6 +282,7 @@ public final class MilestoneRegistry {
      */
 
     public static void register(
+            String categoryId,
             String name,
             String title,
             String description,
@@ -286,6 +302,7 @@ public final class MilestoneRegistry {
                         Component.literal(
                                 description
                         ),
+                        categoryId,
                         progressionValue,
                         floodXpReward,
                         condition

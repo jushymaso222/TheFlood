@@ -1,18 +1,36 @@
 package com.jushymaso222.theflood.progression.milestone.compat;
 
 import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
+import net.minecraft.network.chat.Component;
 
 import static com.jushymaso222.theflood.progression.milestone.MilestoneConditions.*;
 
 public final class TwilightForestMilestones {
+
+    public static final String MOD_ID =
+            "twilightforest";
+
+    public static final String CATEGORY_ID =
+            "twilightforest";
 
     private TwilightForestMilestones() {
     }
 
     public static void register() {
 
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        CATEGORY_ID,
+                        MOD_ID,
+                        Component.literal(
+                                "The Twilight Forest"
+                        ),
+                        20
+                )
+        );
+
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "naga",
                 "Naga Defeated",
                 "You've overcome the first great beast of the Twilight.",
@@ -24,7 +42,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "lich",
                 "Twilight Lich Defeated",
                 "The Lich's reign has come to an end.",
@@ -36,7 +54,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "labyrinth",
                 "The Labyrinth",
                 "You've conquered the depths of the Labyrinth.",
@@ -48,7 +66,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "hydra",
                 "Hydra Defeated",
                 "The many-headed beast has fallen.",
@@ -60,7 +78,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "knights",
                 "Knightly Stronghold",
                 "You've broken through the Dark Forest's stronghold.",
@@ -72,7 +90,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "ur_ghast",
                 "Ur-Ghast Defeated",
                 "The tower's monstrous guardian has fallen.",
@@ -84,7 +102,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "yeti",
                 "Alpha Yeti Defeated",
                 "You've conquered the frozen forest's great beast.",
@@ -96,7 +114,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "glacier",
                 "Snow Queen Defeated",
                 "The ruler of the Aurora Palace has fallen.",
@@ -108,7 +126,7 @@ public final class TwilightForestMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "twilightforest",
+                CATEGORY_ID,
                 "finale",
                 "Twilight Conquered",
                 "You've reached the end of the Twilight's progression.",

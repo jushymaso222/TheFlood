@@ -33,6 +33,7 @@ import com.jushymaso222.theflood.progression.milestone.MilestoneManager;
 
 import com.jushymaso222.theflood.elite.debug.EliteStatsWatch;
 import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
+import com.jushymaso222.theflood.team.FloodTeamSavedData;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -331,92 +332,281 @@ public final class FloodCommands {
                                         })
                         )
                         /*
-                                * /flood heat set <amount>
-                         */
-                        .then(
-                                Commands.literal("set")
-                                        .then(
-                                                Commands.argument(
-                                                        "amount",
-                                                        IntegerArgumentType.integer(
-                                                                1,
-                                                                PlayerFloodData.MAX_HEAT
-                                                        )
-                                                )
-                                                        .executes(context -> {
-                                                            ServerPlayer player
-                                                                    = context.getSource()
-                                                                            .getPlayerOrException();
-
-                                                            int amount
-                                                                    = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "amount"
-                                                                    );
-
-                                                            setSoloHeat(
-                                                                    player,
-                                                                    amount
-                                                            );
-
-                                                            player.sendSystemMessage(
-                                                                    Component.literal(
-                                                                            "Solo Heat set to "
-                                                                            + amount
-                                                                            + ". Effective Heat: "
-                                                                            + HeatManager.getEffectiveHeat(player)
-                                                                    )
-                                                            );
-
-                                                            return 1;
-                                                        })
-                                        )
+ * /flood heat set <amount>
+ */
+.then(
+        Commands.literal("set")
+                .then(
+                        Commands.argument(
+                                "amount",
+                                IntegerArgumentType.integer(
+                                        1,
+                                        PlayerFloodData.MAX_HEAT
+                                )
                         )
-                        /*
-                                * /flood heat add <amount>
-                         */
-                        .then(
-                                Commands.literal("add")
-                                        .then(
-                                                Commands.argument(
-                                                        "amount",
-                                                        IntegerArgumentType.integer(1)
+                        .executes(context -> {
+                            ServerPlayer player =
+                                    context.getSource()
+                                            .getPlayerOrException();
+
+                            int amount =
+                                    IntegerArgumentType.getInteger(
+                                            context,
+                                            "amount"
+                                    );
+
+                            FloodTeam team =
+                                    TeamManager.getTeamForPlayer(
+                                            player
+                                    );
+
+                            if (team != null) {
+
+                                team.setTeamHeat(
+                                        amount
+                                );
+
+                                /*
+                                 * "set" represents an absolute progression
+                                 * point, so reset progress toward the next
+                                 * Heat level.
+                                 */
+                                team.setFloodXp(
+                                        0L
+                                );
+
+                                FloodTeamSavedData
+                                        .get(player.server)
+                                        .setDirty();
+
+                                syncTeamHeat(
+                                        player,
+                                        team
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Team Heat set to "
+                                                + team.getTeamHeat()
+                                                + ". Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
                                                 )
-                                                        .executes(context -> {
-                                                            ServerPlayer player
-                                                                    = context.getSource()
-                                                                            .getPlayerOrException();
-
-                                                            int amount
-                                                                    = IntegerArgumentType.getInteger(
-                                                                            context,
-                                                                            "amount"
-                                                                    );
-
-                                                            int newHeat
-                                                                    = HeatManager.getSoloHeat(player)
-                                                                    + amount;
-
-                                                            setSoloHeat(
-                                                                    player,
-                                                                    newHeat
-                                                            );
-
-                                                            player.sendSystemMessage(
-                                                                    Component.literal(
-                                                                            "Added "
-                                                                            + amount
-                                                                            + " Heat. Solo Heat: "
-                                                                            + newHeat
-                                                                            + " | Effective Heat: "
-                                                                            + HeatManager.getEffectiveHeat(player)
-                                                                    )
-                                                            );
-
-                                                            return 1;
-                                                        })
                                         )
+                                );
+
+                            } else {
+
+                                PlayerFloodData.setSoloHeat(
+                                        player,
+                                        amount
+                                );
+
+                                PlayerFloodData.setHeatProgressTicks(
+                                        player,
+                                        0L
+                                );
+
+                                HeatManager.syncHeatToPlayer(
+                                        player
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Solo Heat set to "
+                                                + HeatManager.getSoloHeat(
+                                                        player
+                                                )
+                                                + ". Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
+                                                )
+                                        )
+                                );
+                            }
+
+                            return 1;
+                        })
+                )
+)
+
+/*
+ * /flood heat add <amount>
+ */
+.then(
+        Commands.literal("add")
+                .then(
+                        Commands.argument(
+                                "amount",
+                                IntegerArgumentType.integer(1)
                         )
+                        .executes(context -> {
+                            ServerPlayer player =
+                                    context.getSource()
+                                            .getPlayerOrException();
+
+                            int amount =
+                                    IntegerArgumentType.getInteger(
+                                            context,
+                                            "amount"
+                                    );
+
+                            FloodTeam team =
+                                    TeamManager.getTeamForPlayer(
+                                            player
+                                    );
+
+                            if (team != null) {
+
+                                team.setTeamHeat(
+                                        team.getTeamHeat()
+                                                + amount
+                                );
+
+                                FloodTeamSavedData
+                                        .get(player.server)
+                                        .setDirty();
+
+                                syncTeamHeat(
+                                        player,
+                                        team
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Added "
+                                                + amount
+                                                + " Heat. Team Heat: "
+                                                + team.getTeamHeat()
+                                                + " | Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
+                                                )
+                                        )
+                                );
+
+                            } else {
+
+                                PlayerFloodData.setSoloHeat(
+                                        player,
+                                        HeatManager.getSoloHeat(
+                                                player
+                                        ) + amount
+                                );
+
+                                HeatManager.syncHeatToPlayer(
+                                        player
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Added "
+                                                + amount
+                                                + " Heat. Solo Heat: "
+                                                + HeatManager.getSoloHeat(
+                                                        player
+                                                )
+                                                + " | Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
+                                                )
+                                        )
+                                );
+                            }
+
+                            return 1;
+                        })
+                )
+)
+
+/*
+ * /flood heat remove <amount>
+ */
+.then(
+        Commands.literal("remove")
+                .then(
+                        Commands.argument(
+                                "amount",
+                                IntegerArgumentType.integer(1)
+                        )
+                        .executes(context -> {
+                            ServerPlayer player =
+                                    context.getSource()
+                                            .getPlayerOrException();
+
+                            int amount =
+                                    IntegerArgumentType.getInteger(
+                                            context,
+                                            "amount"
+                                    );
+
+                            FloodTeam team =
+                                    TeamManager.getTeamForPlayer(
+                                            player
+                                    );
+
+                            if (team != null) {
+
+                                team.setTeamHeat(
+                                        team.getTeamHeat()
+                                                - amount
+                                );
+
+                                FloodTeamSavedData
+                                        .get(player.server)
+                                        .setDirty();
+
+                                syncTeamHeat(
+                                        player,
+                                        team
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Removed "
+                                                + amount
+                                                + " Heat. Team Heat: "
+                                                + team.getTeamHeat()
+                                                + " | Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
+                                                )
+                                        )
+                                );
+
+                            } else {
+
+                                PlayerFloodData.setSoloHeat(
+                                        player,
+                                        HeatManager.getSoloHeat(
+                                                player
+                                        ) - amount
+                                );
+
+                                HeatManager.syncHeatToPlayer(
+                                        player
+                                );
+
+                                player.sendSystemMessage(
+                                        Component.literal(
+                                                "Removed "
+                                                + amount
+                                                + " Heat. Solo Heat: "
+                                                + HeatManager.getSoloHeat(
+                                                        player
+                                                )
+                                                + " | Effective Heat: "
+                                                + HeatManager.getEffectiveHeat(
+                                                        player
+                                                )
+                                        )
+                                );
+                            }
+
+                            return 1;
+                        })
+                )
+)
         );
 
         LiteralArgumentBuilder<CommandSourceStack> team
@@ -1148,21 +1338,36 @@ public final class FloodCommands {
         return mob;
     }
 
-    private static void setSoloHeat(
-            ServerPlayer player,
-            int heat
-    ) {
-        PlayerFloodData.setSoloHeat(
-                player,
-                heat
+    private static void syncTeamHeat(
+        ServerPlayer sourcePlayer,
+        FloodTeam team
+) {
+    for (UUID memberId : team.getMembers()) {
+
+        ServerPlayer member =
+                sourcePlayer.server
+                        .getPlayerList()
+                        .getPlayer(
+                                memberId
+                        );
+
+        if (member == null) {
+            continue;
+        }
+
+        /*
+         * Sync normal Heat/Flood XP HUD data.
+         */
+        HeatManager.syncHeatToPlayer(
+                member
         );
 
         /*
-        * Immediately update ClientHeatData so HUD elements
-        * reflect the new Effective Heat.
+         * Sync team-specific state such as Team Heat.
          */
-        HeatManager.syncHeatToPlayer(
-                player
+        TeamManager.syncTeamStateToPlayer(
+                member
         );
     }
+}
 }

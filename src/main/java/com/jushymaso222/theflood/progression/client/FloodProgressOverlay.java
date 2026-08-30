@@ -7,20 +7,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import com.jushymaso222.theflood.progression.HeatTier;
 
 import com.jushymaso222.theflood.progression.scaling.MobScaling;
 
 import java.util.List;
 
-@Mod.EventBusSubscriber(
-        modid = TheFlood.MOD_ID,
-        bus = Mod.EventBusSubscriber.Bus.MOD,
-        value = Dist.CLIENT
-)
 public final class FloodProgressOverlay {
 
     private static final int PANEL_WIDTH = 400;
@@ -68,14 +60,6 @@ public final class FloodProgressOverlay {
     private FloodProgressOverlay() {
     }
 
-    @SubscribeEvent
-    public static void registerOverlay(RegisterGuiOverlaysEvent event) {
-        event.registerAboveAll(
-                "flood_progress",
-                FloodProgressOverlay::render
-        );
-    }
-
     private static void render(
             net.minecraftforge.client.gui.overlay.ForgeGui gui,
             GuiGraphics graphics,
@@ -107,229 +91,217 @@ public final class FloodProgressOverlay {
          * on the number of players currently shown in the vanilla Tab list.
          */
         int panelY = 82;
-
-        drawPanel(
-                graphics,
-                minecraft,
-                mobs,
-                currentHeat,
-                panelX,
-                panelY
-        );
     }
 
-    private static void drawPanel(
-            GuiGraphics graphics,
-            Minecraft minecraft,
-            List<MobProgress> mobs,
-            int currentHeat,
-            int panelX,
-            int panelY
-    ) {
-        int panelRight = panelX + PANEL_WIDTH;
-        int panelBottom = panelY + PANEL_HEIGHT;
+    public static int renderSection(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        int currentHeat,
+        int x,
+        int y,
+        int width
+) {
+    List<MobProgress> mobs =
+            createMobProgressList();
 
-        // Semi-transparent black background.
-        graphics.fill(
-                panelX,
-                panelY,
-                panelRight,
-                panelBottom,
-                0xCC101010
+    int sectionHeight = 108;
+
+        int barY =
+                y + 60;
+
+    /*
+     * Title
+     */
+    graphics.drawString(
+            minecraft.font,
+            "FLOOD PROGRESSION",
+            x + 8,
+            y,
+            0xFFFFFFFF,
+            true
+    );
+
+    graphics.fill(
+                x + 8,
+                y + 13,
+                x + 50,
+                y + 14,
+                HeatTier.getColor(
+                        currentHeat
+                )
         );
 
-        // Border.
-        graphics.fill(
-                panelX,
-                panelY,
-                panelRight,
-                panelY + 1,
-                0xFF8A1C1C
-        );
+    /*
+     * Main progression area.
+     */
+    int barX =
+            x + 24;
 
-        graphics.fill(
-                panelX,
-                panelBottom - 1,
-                panelRight,
-                panelBottom,
-                0xFF8A1C1C
-        );
+    int barWidth =
+            width - 48;
 
-        graphics.fill(
-                panelX,
-                panelY,
-                panelX + 1,
-                panelBottom,
-                0xFF8A1C1C
-        );
+    drawProgressRail(
+            graphics,
+            mobs,
+            currentHeat,
+            barX,
+            barY,
+            barWidth
+    );
 
-        graphics.fill(
-                panelRight - 1,
-                panelY,
-                panelRight,
-                panelBottom,
-                0xFF8A1C1C
-        );
+    drawMobMarkers(
+            graphics,
+            minecraft,
+            mobs,
+            currentHeat,
+            barX,
+            barY,
+            barWidth
+    );
 
-        String title = "THE FLOOD — HEAT " + currentHeat;
+    drawCurrentHeatMarker(
+            graphics,
+            minecraft,
+            mobs,
+            currentHeat,
+            barX,
+            barY,
+            barWidth
+    );
 
-        graphics.drawCenteredString(
-                minecraft.font,
-                title,
-                panelX + PANEL_WIDTH / 2,
-                panelY + 7,
-                0xFFFFFF
-        );
+    drawUnknownFuture(
+            graphics,
+            minecraft,
+            mobs,
+            barX,
+            barY,
+            barWidth
+    );
 
-        String dangerLabel = getDangerLabel(mobs, currentHeat);
-        int dangerColor = getDangerColor(mobs, currentHeat);
+    return y + sectionHeight;
+}
 
-        graphics.drawCenteredString(
-                minecraft.font,
-                dangerLabel,
-                panelX + PANEL_WIDTH / 2,
-                panelY + 20,
-                dangerColor
-        );
-
-        int barX = panelX + 16;
-        int barY = panelY + 55;
-        int barWidth = PANEL_WIDTH - 32;
-
-        drawProgressBar(
-                graphics,
-                mobs,
-                currentHeat,
-                barX,
-                barY,
-                barWidth
-        );
-
-        drawMobMarkers(
-                graphics,
-                minecraft,
-                mobs,
-                currentHeat,
-                barX,
-                barY,
-                barWidth
-        );
+    private static void drawProgressRail(
+        GuiGraphics graphics,
+        List<MobProgress> mobs,
+        int currentHeat,
+        int x,
+        int y,
+        int width
+) {
+    if (mobs.isEmpty()) {
+        return;
     }
 
-    private static void drawProgressBar(
-            GuiGraphics graphics,
-            List<MobProgress> mobs,
-            int currentHeat,
-            int x,
-            int y,
-            int width
-    ) {
-        int barHeight = 7;
+    int finalUnlockHeat =
+        mobs.stream()
+                .mapToInt(
+                        MobProgress::unlockHeat
+                )
+                .max()
+                .orElse(1);
 
-        // Outer border.
-        graphics.fill(
-                x - 1,
-                y - 1,
-                x + width + 1,
-                y + barHeight + 1,
-                0xFF111111
-        );
+        int knownWidth =
+                Math.round(
+                        width * 0.82F
+                );
 
-        // Empty meter background.
+        float progress =
+                Math.max(
+                        0.0F,
+                        Math.min(
+                                1.0F,
+                                currentHeat
+                                        / (float) finalUnlockHeat
+                        )
+                );
+
+        int filledWidth =
+                Math.round(
+                        knownWidth * progress
+                );
+
+    /*
+     * Base rail.
+     */
+    graphics.fill(
+            x,
+            y,
+            x + knownWidth,
+            y + 2,
+            0xFF3A3A3A
+    );
+
+    /*
+     * Current known progress.
+     */
+    double knownProgress =
+            Math.max(
+                    0.0,
+                    Math.min(
+                            1.0,
+                            currentHeat
+                                    / (double) finalUnlockHeat
+                    )
+            );
+
+    int color =
+            HeatTier.getColor(
+                    currentHeat
+            );
+
+    if (filledWidth > 0) {
         graphics.fill(
                 x,
                 y,
-                x + width,
-                y + barHeight,
-                0xFF353535
+                x + filledWidth,
+                y + 2,
+                HeatTier.getColor(
+                        currentHeat
+                )
         );
 
-        double progress = calculateDangerProgress(mobs, currentHeat);
-        int filledWidth = (int) Math.round(width * progress);
-
-        int dangerColor = getDangerColor(mobs, currentHeat);
-
-        if (filledWidth > 0) {
-            graphics.fill(
-                    x,
-                    y,
-                    x + filledWidth,
-                    y + barHeight,
-                    dangerColor
-            );
-
-            // Thin highlight along the top of the filled area.
-            graphics.fill(
-                    x,
-                    y,
-                    x + filledWidth,
-                    y + 1,
-                    lightenColor(dangerColor)
-            );
-        }
-
-        // Add small divisions to make the meter feel staged.
-        // for (int i = 1; i < mobs.size(); i++) {
-        //     int dividerX = x + (int) Math.round(width * (i / (double) mobs.size()));
-
-        //     graphics.fill(
-        //             dividerX,
-        //             y,
-        //             dividerX + 1,
-        //             y + barHeight,
-        //             0xAA111111
-        //     );
-        // }
+        /*
+         * Tiny highlight gives it a little
+         * more depth without becoming chunky.
+         */
+        // graphics.fill(
+        //         x,
+        //         y,
+        //         x + filledWidth,
+        //         y + 1,
+        //         lightenColor(
+        //                 color
+        //         )
+        // );
     }
 
-    private static String getDangerLabel(
-            List<MobProgress> mobs,
-            int currentHeat
+    /*
+     * Unknown continuation.
+     */
+    int unknownStart =
+            x + knownWidth;
+
+    int unknownWidth =
+            width - knownWidth;
+
+    for (
+            int i = 0;
+            i < unknownWidth;
+            i += 4
     ) {
-        int unlocked = countUnlockedMobs(mobs, currentHeat);
-
-        return switch (unlocked) {
-            case 0 -> "DANGER: DORMANT";
-            case 1 -> "DANGER: MINIMAL";
-            case 2 -> "DANGER: RISING";
-            case 3 -> "DANGER: DANGEROUS";
-            case 4 -> "DANGER: SEVERE";
-            case 5 -> "DANGER: CRITICAL";
-            default -> "DANGER: THE FLOOD";
-        };
+        graphics.fill(
+                unknownStart + i,
+                y + 1,
+                Math.min(
+                        unknownStart + i + 2,
+                        x + width
+                ),
+                y + 2,
+                0xFF555555
+        );
     }
-
-    private static int countUnlockedMobs(
-            List<MobProgress> mobs,
-            int currentHeat
-    ) {
-        int count = 0;
-
-        for (MobProgress mob : mobs) {
-            if (currentHeat >= mob.unlockHeat()) {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    private static int getDangerColor(
-            List<MobProgress> mobs,
-            int currentHeat
-    ) {
-        int unlocked = countUnlockedMobs(mobs, currentHeat);
-
-        return switch (unlocked) {
-            case 0 -> 0xFF6B7770;
-            case 1 -> 0xFF6B7770;
-            case 2 -> 0xFF9D9A45;
-            case 3 -> 0xFFD09038;
-            case 4 -> 0xFFD45A32;
-            case 5 -> 0xFFC92F2F;
-            default -> 0xFF8F1515;
-        };
-    }
+}
 
     private static double calculateDangerProgress(
                 List<MobProgress> mobs,
@@ -358,137 +330,365 @@ public final class FloodProgressOverlay {
         }
 
     private static void drawMobMarkers(
-            GuiGraphics graphics,
-            Minecraft minecraft,
-            List<MobProgress> mobs,
-            int currentHeat,
-            int barX,
-            int barY,
-            int barWidth
-    ) {
-        int finalUnlockDay = mobs.stream()
-                .mapToInt(MobProgress::unlockHeat)
-                .max()
-                .orElse(1);
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        List<MobProgress> mobs,
+        int currentHeat,
+        int barX,
+        int barY,
+        int barWidth
+) {
+    int finalUnlockHeat =
+            mobs.stream()
+                    .mapToInt(
+                            MobProgress::unlockHeat
+                    )
+                    .max()
+                    .orElse(1);
 
-        for (MobProgress mob : mobs) {
-            double location =
-                    mob.unlockHeat() / (double) finalUnlockDay;
-
-            int centerX =
-                    barX + (int) Math.round(barWidth * location);
-
-            boolean unlocked =
-                    currentHeat >= mob.unlockHeat();
-
-            if (mob.type == EntityType.WARDEN) {
-                drawMobMarker(
-                        graphics,
-                        minecraft,
-                        mob,
-                        currentHeat,
-                        centerX - 7,
-                        barY,
-                        unlocked
-                );
-            } else {
-                drawMobMarker(
-                        graphics,
-                        minecraft,
-                        mob,
-                        currentHeat,
-                        centerX,
-                        barY,
-                        unlocked
-                );
-            }
-        }
-    }
-
-    private static void drawMobMarker(
-            GuiGraphics graphics,
-            Minecraft minecraft,
-            MobProgress mob,
-            int currentHeat,
-            int centerX,
-            int barY,
-            boolean unlocked
-    ) {
-        int iconSize = 16;
-        int iconX = centerX - iconSize / 2;
-        int iconY = barY - 20;
-        int textStartY = barY + 11;
-
-        /*
-         * Locked icons receive a dark gray tint.
-         * Unlocked icons render normally.
-         */
-        if (unlocked) {
-            graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-        } else {
-            graphics.setColor(0.25F, 0.25F, 0.25F, 1.0F);
-        }
-
-        graphics.blit(
-                mob.icon(),
-                iconX,
-                iconY,
-                0,
-                0,
-                iconSize,
-                iconSize,
-                iconSize,
-                iconSize
-        );
-
-        graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-        if (!unlocked) {
-            String unlockText = "H" + mob.unlockHeat();
-
-            graphics.drawCenteredString(
-                    minecraft.font,
-                    unlockText,
-                    centerX,
-                    textStartY,
-                    0x777777
+    int knownWidth =
+            Math.round(
+                    barWidth * 0.82F
             );
 
-            return;
+    for (int i = 0; i < mobs.size(); i++) {
+
+        MobProgress mob =
+                mobs.get(i);
+
+        double location =
+                mob.unlockHeat()
+                        / (double) finalUnlockHeat;
+
+        int centerX =
+                barX
+                        + Math.round(
+                                knownWidth
+                                        * (float) location
+                        );
+
+        boolean unlocked =
+                currentHeat
+                        >= mob.unlockHeat();
+
+        drawMobMarker(
+                graphics,
+                minecraft,
+                mob,
+                currentHeat,
+                centerX,
+                barY,
+                unlocked,
+                i
+        );
         }
+}
 
-        double health = MobScaling.getEffectiveHealth(
-                mob.type(),
-                currentHeat
-        );
+    private static void drawMobMarker(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        MobProgress mob,
+        int currentHeat,
+        int centerX,
+        int barY,
+        boolean unlocked,
+        int index
+) {
+    int iconSize = 16;
 
-        double damage = MobScaling.getEffectiveDamage(
-                mob.type(),
-                currentHeat
-        );
+    int iconX =
+            centerX
+                    - iconSize / 2;
 
-        String healthText =
-                "HP " + formatStat(health);
+    int iconY =
+            barY - 25;
 
-        String damageText =
-                "DMG " + formatStat(damage);
 
-        graphics.drawCenteredString(
-                minecraft.font,
-                healthText,
-                centerX,
-                textStartY,
-                0xFF7777
-        );
+    /*
+     * Unlock tick.
+     */
+    graphics.fill(
+            centerX,
+            barY - 2,
+            centerX + 1,
+            barY + 6,
+            unlocked
+                    ? HeatTier.getColor(
+                            currentHeat
+                    )
+                    : 0xFF666666
+    );
 
-        graphics.drawCenteredString(
-                minecraft.font,
-                damageText,
-                centerX,
-                textStartY + 9,
-                0xFFCC66
+
+    /*
+     * Icon tint.
+     */
+    if (unlocked) {
+        graphics.setColor(
+                1.0F,
+                1.0F,
+                1.0F,
+                1.0F
         );
     }
+    else {
+        graphics.setColor(
+                0.22F,
+                0.22F,
+                0.22F,
+                1.0F
+        );
+    }
+
+    graphics.blit(
+            mob.icon(),
+            iconX,
+            iconY,
+            0,
+            0,
+            iconSize,
+            iconSize,
+            iconSize,
+            iconSize
+    );
+
+    graphics.setColor(
+            1.0F,
+            1.0F,
+            1.0F,
+            1.0F
+    );
+
+    float statScale =
+                0.72F;
+
+
+    /*
+     * Locked.
+     */
+    if (!unlocked) {
+
+        String unlockText =
+                "HEAT "
+                        + mob.unlockHeat();
+
+        boolean above =
+                index % 2 != 0;
+
+        float labelY =
+                above
+                        ? barY - 40
+                        : barY + 10;
+
+        drawScaledCenteredString(
+                graphics,
+                minecraft,
+                unlockText,
+                centerX,
+                labelY,
+                0xFF777777,
+                0.72F
+        );
+
+        return;
+        }
+
+
+    /*
+     * Unlocked stats.
+     */
+    double health =
+            MobScaling.getEffectiveHealth(
+                    mob.type(),
+                    currentHeat
+            );
+
+    double damage =
+            MobScaling.getEffectiveDamage(
+                    mob.type(),
+                    currentHeat
+            );
+
+        drawScaledCenteredString(
+                graphics,
+                minecraft,
+                "HP " + formatStat(health),
+                centerX,
+                barY + 10,
+                0xFFFF7777,
+                statScale
+        );
+
+        drawScaledCenteredString(
+                graphics,
+                minecraft,
+                "DMG " + formatStat(damage),
+                centerX,
+                barY + 18,
+                0xFFFFCC66,
+                statScale
+        );
+}
+
+private static void drawCurrentHeatMarker(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        List<MobProgress> mobs,
+        int currentHeat,
+        int barX,
+        int barY,
+        int barWidth
+) {
+    if (mobs.isEmpty()) {
+        return;
+    }
+
+    int finalUnlockHeat =
+            mobs.stream()
+                    .mapToInt(
+                            MobProgress::unlockHeat
+                    )
+                    .max()
+                    .orElse(1);
+
+    int knownWidth =
+            Math.round(
+                    barWidth * 0.82F
+            );
+
+    double progress =
+            Math.max(
+                    0.0,
+                    Math.min(
+                            1.0,
+                            currentHeat
+                                    / (double) finalUnlockHeat
+                    )
+            );
+
+    int markerX =
+            barX
+                    + Math.round(
+                    knownWidth
+                            * (float) progress
+            );
+
+    int color =
+            HeatTier.getColor(
+                    currentHeat
+            );
+
+        /*
+        * Current Heat pointer.
+        */
+        graphics.fill(
+                markerX - 2,
+                barY - 7,
+                markerX + 3,
+                barY - 6,
+                color
+        );
+
+        graphics.fill(
+                markerX - 1,
+                barY - 6,
+                markerX + 2,
+                barY - 5,
+                color
+        );
+
+        graphics.fill(
+                markerX,
+                barY - 5,
+                markerX + 1,
+                barY - 2,
+                color
+        );
+}
+
+private static void drawScaledCenteredString(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        String text,
+        float centerX,
+        float y,
+        int color,
+        float scale
+) {
+    float textWidth =
+            minecraft.font.width(text)
+                    * scale;
+
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            centerX - textWidth / 2.0F,
+            y,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
+
+    graphics.drawString(
+            minecraft.font,
+            text,
+            0,
+            0,
+            color,
+            true
+    );
+
+    graphics.pose().popPose();
+}
+
+private static void drawUnknownFuture(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        List<MobProgress> mobs,
+        int barX,
+        int barY,
+        int barWidth
+) {
+    if (mobs.isEmpty()) {
+        return;
+    }
+
+    int knownWidth =
+            Math.round(
+                    barWidth * 0.82F
+            );
+
+    int unknownStart =
+            barX + knownWidth;
+
+    int unknownEnd =
+            barX + barWidth;
+
+    int centerX =
+            unknownStart
+                    + (
+                    unknownEnd
+                            - unknownStart
+            ) / 2;
+
+    /*
+     * Only one mysterious label.
+     *
+     * No "UNKNOWN" underneath it — that was
+     * making this look like another mob marker.
+     */
+    graphics.drawCenteredString(
+            minecraft.font,
+            "???",
+            centerX,
+            barY - 24,
+            0xFF777777
+    );
+}
 
     private static double getHeatBarPosition(
                 int heat,

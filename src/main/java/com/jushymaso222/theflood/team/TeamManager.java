@@ -149,9 +149,16 @@ public final class TeamManager {
         * A one-player team's Heat should equal
         * the owner's Solo Heat.
         */
-        recalculateTeamHeat(
-                owner.server,
-                team
+        team.setTeamHeat(
+                HeatManager.getSoloHeat(
+                        owner
+                )
+        );
+
+        team.setFloodXp(
+                PlayerFloodData.getHeatProgressTicks(
+                        owner
+                )
         );
 
         data.setDirty();
@@ -182,6 +189,62 @@ public final class TeamManager {
     // ------------------------------------------------------------
     // LOOKUPS
     // ------------------------------------------------------------
+
+        private static void mergePlayerProgressionIntoTeam(
+        ServerPlayer player,
+        FloodTeam team
+) {
+    int playerHeat =
+            HeatManager.getSoloHeat(
+                    player
+            );
+
+    long playerXp =
+            PlayerFloodData.getHeatProgressTicks(
+                    player
+            );
+
+    int teamHeat =
+            team.getTeamHeat();
+
+    long teamXp =
+            team.getFloodXp();
+
+
+    /*
+     * Player is further ahead by Heat level.
+     *
+     * Adopt their entire progression point.
+     */
+    if (playerHeat > teamHeat) {
+
+        team.setTeamHeat(
+                playerHeat
+        );
+
+        team.setFloodXp(
+                playerXp
+        );
+
+        return;
+    }
+
+
+    /*
+     * Same Heat level:
+     *
+     * Keep whichever progression bar is further ahead.
+     */
+    if (playerHeat == teamHeat) {
+
+        team.setFloodXp(
+                Math.max(
+                        teamXp,
+                        playerXp
+                )
+        );
+    }
+}
 
     public static boolean isInTeam(
             ServerPlayer player
@@ -853,20 +916,13 @@ public final class TeamManager {
                 teamId
         );
 
-        clearInvites(
-                playerId
+        mergePlayerProgressionIntoTeam(
+                player,
+                team
         );
 
-        /*
-         * Team membership affects Team Heat,
-         * so recalculate it now.
-         *
-         * This assumes you've already added the
-         * recalculateTeamHeat helper we discussed.
-         */
-        recalculateTeamHeat(
-                player.server,
-                team
+        clearInvites(
+                playerId
         );
 
         data.setDirty();
@@ -1008,11 +1064,6 @@ public final class TeamManager {
         );
 
         data.setDirty();
-
-        recalculateTeamHeat(
-                player.server,
-                team
-        );
 
         if (
                 !DummyPlayerManager.isDummy(
@@ -1249,197 +1300,13 @@ public final class TeamManager {
         FloodTeam team,
         ServerPlayer joiningPlayer
 ) {
-    int highestSoloHeat =
+    return Math.max(
+            team.getTeamHeat(),
             HeatManager.getSoloHeat(
                     joiningPlayer
-            );
-
-    /*
-     * Find the highest Solo Heat among the
-     * team's existing members.
-     */
-    for (UUID memberId : team.getMembers()) {
-
-        ServerPlayer member =
-                server.getPlayerList()
-                        .getPlayer(memberId);
-
-        if (member == null) {
-            member =
-                    DummyPlayerManager.getDummy(
-                            memberId
-                    );
-        }
-
-        if (member == null) {
-            continue;
-        }
-
-        highestSoloHeat =
-                Math.max(
-                        highestSoloHeat,
-                        HeatManager.getSoloHeat(
-                                member
-                        )
-                );
-    }
-
-    /*
-     * Project the member count AFTER this
-     * player joins.
-     */
-    int projectedMemberCount =
-            team.hasMember(
-                    joiningPlayer.getUUID()
-            )
-                    ? team.getMemberCount()
-                    : team.getMemberCount() + 1;
-
-    int additionalMembers =
-            Math.max(
-                    0,
-                    projectedMemberCount - 1
-            );
-
-    int baseBonus =
-            additionalMembers * 3;
-
-    int synergyBonus =
-            additionalMembers
-                    * (additionalMembers - 1)
-                    / 2;
-
-    int groupBonus =
-            baseBonus
-                    + synergyBonus;
-
-    return Math.min(
-            PlayerFloodData.MAX_HEAT,
-            Math.max(
-                    1,
-                    highestSoloHeat
-                            + groupBonus
             )
     );
 }
-
-    public static void recalculateTeamHeat(
-        MinecraftServer server,
-        FloodTeam team
-    ) {
-        int highestSoloHeat = 1;
-
-        /*
-        * Team progression is anchored to the most progressed
-        * individual player in the team.
-        */
-        for (UUID memberId :
-                team.getMembers()) {
-
-                ServerPlayer member =
-                        server.getPlayerList()
-                                .getPlayer(memberId);
-
-                /*
-                * Development FakePlayers may not be present
-                * in Minecraft's normal PlayerList.
-                */
-                if (member == null) {
-                member =
-                        DummyPlayerManager.getDummy(
-                                memberId
-                        );
-                }
-
-                if (member == null) {
-                continue;
-                }
-
-                highestSoloHeat =
-                        Math.max(
-                                highestSoloHeat,
-                                HeatManager.getSoloHeat(
-                                        member
-                                )
-                        );
-        }
-
-        /*
-        * Only additional members beyond the first
-        * contribute a team-size bonus.
-        */
-        int additionalMembers =
-                Math.max(
-                        0,
-                        team.getMemberCount() - 1
-                );
-
-        /*
-        * Nonlinear group scaling.
-        *
-        * Team size:
-        *
-        * 1 -> +0
-        * 2 -> +3
-        * 3 -> +7
-        * 4 -> +12
-        * 5 -> +18
-        * 6 -> +25
-        *
-        * Each additional teammate becomes slightly more
-        * valuable than the previous one.
-        */
-        int baseBonus =
-                additionalMembers * 3;
-
-        int synergyBonus =
-                additionalMembers
-                        * (additionalMembers - 1)
-                        / 2;
-
-        int groupBonus =
-                baseBonus + synergyBonus;
-
-        int calculatedHeat =
-                highestSoloHeat
-                        + groupBonus;
-
-        /*
-        * Flood Heat can never exceed 100.
-        */
-
-//        for (UUID memberId : team.getMembers()) {
-//                 ServerPlayer member =
-//                         server.getPlayerList().getPlayer(memberId);
-
-//                 if (member != null) {
-//                         member.sendSystemMessage(
-//                                 Component.literal(
-//                                         "[Team Heat Debug] "
-//                                                 + "members=" + team.getMemberCount()
-//                                                 + " highest=" + highestSoloHeat
-//                                                 + " bonus=" + groupBonus
-//                                                 + " calculated=" + calculatedHeat
-//                                 )
-//                         );
-
-//                         break;
-//                 }
-//         }
-        team.setTeamHeat(
-                Math.min(
-                        PlayerFloodData.MAX_HEAT,
-                        Math.max(
-                                1,
-                                calculatedHeat
-                        )
-                )
-        );
-
-        FloodTeamSavedData
-                .get(server)
-                .setDirty();
-    }
 
     // ------------------------------------------------------------
     // CLIENT SYNC

@@ -16,6 +16,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.projectile.Projectile;
 
+import com.jushymaso222.theflood.elite.behavior.mutations.UndyingMutation;
+
 import net.minecraft.world.entity.Mob;
 
 import java.util.List;
@@ -84,12 +86,43 @@ private static final String ELITE_DROPS_PROCESSED_KEY =
         DamageSource source
 ) {
         if (
+                !EliteData.isElite(
+                        mob
+                )
+        ) {
+                return;
+        }
+
+        /*
+        * Undying's first lethal hit is not a real death.
+        *
+        * The elite must complete its Undying death sequence
+        * before loot and Flood XP are allowed to process.
+        */
+        if (
+                "undying".equals(
+                        EliteData.getMutation(
+                                mob
+                        )
+                )
+                && !UndyingMutation.isFinalDeath(
+                        mob
+                )
+        ) {
+                return;
+        }
+
+        /*
+        * Only mark rewards as processed AFTER we've confirmed
+        * this is a legitimate final death.
+        */
+        if (
                 mob.getPersistentData()
                         .getBoolean(
                                 ELITE_DROPS_PROCESSED_KEY
                         )
         ) {
-        return;
+                return;
         }
 
         mob.getPersistentData()
@@ -98,19 +131,11 @@ private static final String ELITE_DROPS_PROCESSED_KEY =
                         true
                 );
 
-    if (
-            !EliteData.isElite(
-                    mob
-            )
-    ) {
-        return;
-    }
-
-    if (
-            !(mob.level() instanceof ServerLevel level)
-    ) {
-        return;
-    }
+        if (
+                !(mob.level() instanceof ServerLevel level)
+        ) {
+                return;
+        }
 
         ServerPlayer killer =
                 FloodKillCredit.findResponsiblePlayer(
@@ -149,7 +174,8 @@ double totalPercent =
                         * dangerPercent
                 );
 
-long eliteXp =
+    if (killer != null) {
+        long eliteXp =
         Math.max(
                 1L,
                 Math.round(
@@ -160,7 +186,6 @@ long eliteXp =
                 )
         );
 
-    if (killer != null) {
         HeatManager.addFloodXp(
                 killer,
                 eliteXp

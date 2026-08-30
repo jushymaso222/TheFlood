@@ -12,7 +12,9 @@ import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.jushymaso222.theflood.config.TheFloodClientConfig;
+import com.jushymaso222.theflood.hud.FloodHudPositioning;
 import net.minecraft.util.Mth;
+import com.jushymaso222.theflood.hud.FloodTabOverlay;
 import net.minecraft.resources.ResourceLocation;
 
 @Mod.EventBusSubscriber(
@@ -30,6 +32,58 @@ public final class TeamHudOverlay {
 
     public static final int CARD_SPACING =
             4;
+
+    private static final float REFERENCE_GUI_WIDTH =
+        2560.0F / 3.0F;
+
+        public static float getHudScale(
+                int screenWidth
+        ) {
+        return screenWidth
+                / REFERENCE_GUI_WIDTH;
+        }
+
+        public static int getScaledCardWidth(
+                int screenWidth
+        ) {
+        return Math.round(
+                CARD_WIDTH
+                        * getHudScale(
+                        screenWidth
+                )
+        );
+        }
+
+        public static int getScaledCardHeight(
+                int screenWidth
+        ) {
+        return Math.round(
+                CARD_HEIGHT
+                        * getHudScale(
+                        screenWidth
+                )
+        );
+        }
+
+        public static int getScaledCardSpacing(
+                int screenWidth
+        ) {
+        return Math.round(
+                CARD_SPACING
+                        * getHudScale(
+                        screenWidth
+                )
+        );
+        }
+
+        private static int scale(
+                int pixels,
+                float scale
+        ) {
+        return Math.round(
+                pixels * scale
+        );
+        }
 
 
     private static final ResourceLocation DIRECTION_ARROW =
@@ -113,8 +167,11 @@ public final class TeamHudOverlay {
             int screenWidth,
             int screenHeight
     ) {
-        if (!TheFloodClientConfig.TEAM_HUD_VISIBLE.get()) {
-            return;
+        if (
+                !TheFloodClientConfig.TEAM_HUD_VISIBLE.get()
+                || FloodTabOverlay.isTabOpen()
+        ) {
+        return;
         }
 
         Minecraft minecraft =
@@ -144,23 +201,71 @@ public final class TeamHudOverlay {
             return;
         }
 
-        /*
-         * Temporary position.
-         *
-         * We'll make this draggable immediately
-         * after confirming the card itself looks right.
-         */
-        int startX =
-                (int) Math.round(
-                        TheFloodClientConfig.TEAM_HUD_X.get()
-                                * screenWidth
+        float hudScale =
+                getHudScale(
+                        screenWidth
                 );
 
-        int startY =
-                (int) Math.round(
-                        TheFloodClientConfig.TEAM_HUD_Y.get()
-                                * screenHeight
+        int scaledCardWidth =
+                scale(
+                        CARD_WIDTH,
+                        hudScale
                 );
+
+        int scaledCardHeight =
+                scale(
+                        CARD_HEIGHT,
+                        hudScale
+                );
+
+        int scaledCardSpacing =
+                scale(
+                        CARD_SPACING,
+                        hudScale
+                );
+
+        int teamHudHeight =
+                teammates.isEmpty()
+                        ? 0
+                        : teammates.size()
+                                * scaledCardHeight
+                                + (
+                                teammates.size() - 1
+                        )
+                                * scaledCardSpacing;
+
+        if (
+                ClientTeamHudData.getPageCount() > 1
+                && ClientTeamHudData.getHudMode()
+                        == ClientTeamHudData.HudMode.MANUAL
+        ) {
+        teamHudHeight +=
+                Minecraft.getInstance().font.lineHeight
+                        + 4;
+        }
+
+        FloodHudPositioning.Position teamPosition =
+                FloodHudPositioning.resolveClamped(
+                        TheFloodClientConfig
+                                .TEAM_HUD_ANCHOR
+                                .get(),
+                        screenWidth,
+                        screenHeight,
+                        scaledCardWidth,
+                        teamHudHeight,
+                        TheFloodClientConfig
+                                .TEAM_HUD_ANCHOR_X_OFFSET
+                                .get(),
+                        TheFloodClientConfig
+                                .TEAM_HUD_ANCHOR_Y_OFFSET
+                                .get()
+                );
+
+        int startX =
+                teamPosition.x();
+
+        int startY =
+                teamPosition.y();
 
         int index = 0;
 
@@ -168,21 +273,21 @@ public final class TeamHudOverlay {
                 teammates) {
 
             int y =
-                    startY
-                            + index
-                            * (
-                            CARD_HEIGHT
-                                    + CARD_SPACING
-                    );
+                        startY
+                                + index
+                                * (
+                                scaledCardHeight
+                                        + scaledCardSpacing
+                        );
 
-            renderTeammate(
-                    graphics,
-                    minecraft,
-                    teammate,
-                    startX,
-                    y,
-                    false
-            );
+                renderScaledTeammate(
+                        graphics,
+                        minecraft,
+                        teammate,
+                        startX,
+                        y,
+                        hudScale
+                );
 
             index++;
         }
@@ -192,33 +297,112 @@ public final class TeamHudOverlay {
                 && ClientTeamHudData.getHudMode()
                         == ClientTeamHudData.HudMode.MANUAL
         ) {
-            int pageTextY =
-                    startY
-                            + teammates.size()
-                            * (
-                            CARD_HEIGHT
-                                    + CARD_SPACING
-                    )
-                            + 2;
+        int pageTextY =
+                startY
+                        + teammates.size()
+                        * (
+                        scaledCardHeight
+                                + scaledCardSpacing
+                )
+                        + scale(
+                        2,
+                        hudScale
+                );
 
-            String pageText =
-                    "Page "
-                            + (
-                            ClientTeamHudData.getCurrentPage()
-                                    + 1
-                    )
-                            + " / "
-                            + ClientTeamHudData.getPageCount();
+        String pageText =
+                "Page "
+                        + (
+                        ClientTeamHudData.getCurrentPage()
+                                + 1
+                )
+                        + " / "
+                        + ClientTeamHudData.getPageCount();
 
-            graphics.drawCenteredString(
-                    minecraft.font,
-                    pageText,
-                    startX + CARD_WIDTH / 2,
-                    pageTextY,
-                    0xFFAAAAAA
-            );
+        drawScaledCenteredString(
+                graphics,
+                minecraft,
+                pageText,
+                startX
+                        + scaledCardWidth / 2,
+                pageTextY,
+                0xFFAAAAAA,
+                hudScale
+        );
         }
     }
+
+    private static void drawScaledCenteredString(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        String text,
+        int centerX,
+        int y,
+        int color,
+        float scale
+) {
+    float textWidth =
+            minecraft.font.width(text)
+                    * scale;
+
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            centerX - textWidth / 2.0F,
+            y,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
+
+    graphics.drawString(
+            minecraft.font,
+            text,
+            0,
+            0,
+            color,
+            true
+    );
+
+    graphics.pose().popPose();
+}
+
+    private static void renderScaledTeammate(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        ClientTeamHudData.Teammate teammate,
+        int x,
+        int y,
+        float scale
+) {
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            x,
+            y,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
+
+    renderTeammate(
+            graphics,
+            minecraft,
+            teammate,
+            0,
+            0,
+            false
+    );
+
+    graphics.pose().popPose();
+}
 
     public static void renderTeammate(
             GuiGraphics graphics,

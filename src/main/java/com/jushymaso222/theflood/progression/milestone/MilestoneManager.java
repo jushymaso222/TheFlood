@@ -7,6 +7,10 @@ import com.jushymaso222.theflood.network.FloodNetwork;
 import net.minecraftforge.network.PacketDistributor;
 import com.jushymaso222.theflood.milestone.network.MilestoneUnlockedPacket;
 
+import com.jushymaso222.theflood.team.FloodTeam;
+import com.jushymaso222.theflood.team.FloodTeamSavedData;
+import com.jushymaso222.theflood.team.TeamManager;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,26 +50,48 @@ public final class MilestoneManager {
                             player
                     )
             ) {
-                /*
-                * Mark FIRST.
-                *
-                * This prevents any possibility of the
-                * reward/notification path causing this
-                * milestone to trigger twice.
-                */
                 MilestoneData.markAchieved(
                         player,
                         milestone.id()
                 );
 
+                FloodTeam team =
+                        TeamManager.getTeamForPlayer(
+                                player
+                        );
 
                 /*
-                * Reward.
+                * Every player receives the personal milestone
+                * reward into their Solo progression.
                 */
-                MilestoneRewards.award(
+                MilestoneRewards.awardPersonal(
                         player,
                         milestone
                 );
+
+                /*
+                * If currently teamed, the TEAM also receives
+                * this milestone reward once.
+                */
+                if (team != null) {
+
+                    boolean firstTeamCompletion =
+                            team.completeMilestone(
+                                    milestone.id()
+                            );
+
+                    if (firstTeamCompletion) {
+
+                        FloodTeamSavedData
+                                .get(player.server)
+                                .setDirty();
+
+                        MilestoneRewards.awardTeam(
+                                player,
+                                milestone
+                        );
+                    }
+                }
 
 
                 /*
@@ -76,6 +102,7 @@ public final class MilestoneManager {
                                 () -> player
                         ),
                         new MilestoneUnlockedPacket(
+                                milestone.id(),
                                 milestone.title(),
                                 milestone.description(),
                                 milestone.progressionValue(),
@@ -123,8 +150,12 @@ public final class MilestoneManager {
                 progressionValue,
                 List.copyOf(
                         achieved
+                ),
+                MilestoneData.getCompletionHistory(
+                        player
                 )
         );
+
     }
 
     public static int getProgressionValue(

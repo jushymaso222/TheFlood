@@ -12,6 +12,8 @@ import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
 import com.jushymaso222.theflood.progression.network.FloodXpGainPacket;
 import com.jushymaso222.theflood.milestone.network.MilestoneUnlockedPacket;
 import com.jushymaso222.theflood.progression.capability.network.SyncCapabilityStatsPacket;
+import com.jushymaso222.theflood.milestone.network.RequestMilestoneSnapshotPacket;
+import com.jushymaso222.theflood.milestone.network.SyncMilestoneSnapshotPacket;
 
 public final class FloodNetwork {
 
@@ -49,6 +51,22 @@ public final class FloodNetwork {
                 MilestoneUnlockedPacket::encode,
                 MilestoneUnlockedPacket::decode,
                 MilestoneUnlockedPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                RequestMilestoneSnapshotPacket.class,
+                RequestMilestoneSnapshotPacket::encode,
+                RequestMilestoneSnapshotPacket::decode,
+                RequestMilestoneSnapshotPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                SyncMilestoneSnapshotPacket.class,
+                SyncMilestoneSnapshotPacket::encode,
+                SyncMilestoneSnapshotPacket::decode,
+                SyncMilestoneSnapshotPacket::handle
         );
 
         CHANNEL.registerMessage(

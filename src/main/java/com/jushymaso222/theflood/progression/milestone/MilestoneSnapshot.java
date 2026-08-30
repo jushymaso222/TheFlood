@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 
 public record MilestoneSnapshot(
         int progressionValue,
-        List<ResourceLocation> achieved
+        List<ResourceLocation> achieved,
+        List<ResourceLocation> completionHistory
 ) {
 }

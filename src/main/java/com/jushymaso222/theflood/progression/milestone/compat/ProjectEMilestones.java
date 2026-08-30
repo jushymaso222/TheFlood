@@ -1,18 +1,36 @@
 package com.jushymaso222.theflood.progression.milestone.compat;
 
 import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
+import net.minecraft.network.chat.Component;
 
 import static com.jushymaso222.theflood.progression.milestone.MilestoneConditions.*;
 
 public final class ProjectEMilestones {
+
+    public static final String MOD_ID =
+            "projecte";
+
+    public static final String CATEGORY_ID =
+            "projecte";
 
     private ProjectEMilestones() {
     }
 
     public static void register() {
 
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        CATEGORY_ID,
+                        MOD_ID,
+                        Component.literal(
+                                "ProjectE"
+                        ),
+                        60
+                )
+        );
+
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "philosophers_stone",
                 "Equivalent Exchange",
                 "You've discovered the principles of transmutation.",
@@ -24,7 +42,7 @@ public final class ProjectEMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "transmutation",
                 "Transmutation",
                 "Matter itself has become interchangeable.",
@@ -37,7 +55,7 @@ public final class ProjectEMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "energy_condenser",
                 "Condensed Matter",
                 "You've learned to manufacture matter from energy.",
@@ -50,7 +68,7 @@ public final class ProjectEMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "klein_star",
                 "Stored Energy",
                 "You've concentrated immense energy into a single object.",
@@ -67,7 +85,7 @@ public final class ProjectEMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "red_matter",
                 "Red Matter",
                 "You've reached the upper limits of transmutation.",
@@ -84,7 +102,7 @@ public final class ProjectEMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "projecte",
+                CATEGORY_ID,
                 "gem_armor",
                 "Gem Armor",
                 "You've assembled ProjectE's ultimate protection.",

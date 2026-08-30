@@ -10,7 +10,7 @@ public final class MilestoneRewards {
     }
 
 
-    public static long award(
+    public static long awardPersonal(
             ServerPlayer player,
             MilestoneDefinition milestone
     ) {
@@ -21,6 +21,54 @@ public final class MilestoneRewards {
             return 0L;
         }
 
+        double rewardFraction =
+                milestone.floodXpReward();
+
+        if (rewardFraction <= 0.0D) {
+            return 0L;
+        }
+
+        /*
+         * Personal milestone rewards are based on the
+         * player's Solo Heat, even if they are currently
+         * part of a team.
+         */
+        long requiredXp =
+                HeatManager.getBaseFloodXpRequired(
+                        HeatManager.getSoloHeat(
+                                player
+                        )
+                );
+
+        long rewardXp =
+                calculateReward(
+                        requiredXp,
+                        rewardFraction
+                );
+
+        /*
+         * Always writes directly into the player's
+         * personal Solo progression.
+         */
+        HeatManager.addSoloFloodXp(
+                player,
+                rewardXp
+        );
+
+        return rewardXp;
+    }
+
+
+    public static long awardTeam(
+            ServerPlayer player,
+            MilestoneDefinition milestone
+    ) {
+        if (
+                player == null
+                || milestone == null
+        ) {
+            return 0L;
+        }
 
         double rewardFraction =
                 milestone.floodXpReward();
@@ -29,47 +77,46 @@ public final class MilestoneRewards {
             return 0L;
         }
 
-
         /*
-         * Use the player's CURRENT Flood XP
-         * requirement as the basis for the reward.
-         *
-         * Example:
-         *
-         * requirement = 10,000 XP
-         * reward      = 0.04
-         *
-         * awarded XP  = 400
+         * Team milestone rewards are based on the
+         * currently active/team Heat requirement.
          */
         long requiredXp =
                 HeatManager.getFloodXpRequired(
                         player
                 );
 
-
         long rewardXp =
-                Math.max(
-                        1L,
-                        Math.round(
-                                requiredXp
-                                        * rewardFraction
-                        )
+                calculateReward(
+                        requiredXp,
+                        rewardFraction
                 );
 
-
         /*
-         * Silent addition.
+         * Normal Flood XP path.
          *
-         * The milestone notification itself
-         * communicates the reward, so we don't
-         * also want the normal +XP popup.
+         * Since the player is on a team here,
+         * this goes into shared Team Flood XP.
          */
         HeatManager.addFloodXp(
                 player,
                 rewardXp
         );
 
-
         return rewardXp;
+    }
+
+
+    private static long calculateReward(
+            long requiredXp,
+            double rewardFraction
+    ) {
+        return Math.max(
+                1L,
+                Math.round(
+                        requiredXp
+                                * rewardFraction
+                )
+        );
     }
 }

@@ -11,6 +11,10 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.jushymaso222.theflood.time.BloodMoonState;
+import com.jushymaso222.theflood.hud.FloodTabOverlay;
+import com.jushymaso222.theflood.progression.HeatTier;
+
+import com.jushymaso222.theflood.hud.FloodHudPositioning;
 
 import com.jushymaso222.theflood.progression.milestone.client.ClientMilestoneNotifications;
 
@@ -75,30 +79,13 @@ public final class HeatHudOverlay {
         private static final int SEGMENT_COUNT =
                 7;
 
-        private static int getHeatNumberOutlineColor(int heat) {
-    if (heat >= 80) {
-        // Vibrant purple
-        return 0xFFA94FD1;
-    }
-
-    if (heat >= 60) {
-        // Vibrant red
-        return 0xFFD94A4A;
-    }
-
-    if (heat >= 40) {
-        // Vibrant orange
-        return 0xFFE58A32;
-    }
-
-    if (heat >= 20) {
-        // Vibrant cyan
-        return 0xFF3AADD1;
-    }
-
-    // Vibrant emerald
-    return 0xFF3BC978;
-}
+        private static int getHeatNumberOutlineColor(
+                int heat
+        ) {
+        return HeatTier.getColor(
+                heat
+        );
+        }
 
         private static final int SEGMENT_SOURCE_X =
                 128;
@@ -350,13 +337,14 @@ private static float[] getFillColor(int heat) {
             Minecraft.getInstance();
 
     if (
-            minecraft.player == null
-            || minecraft.level == null
-            || minecraft.options.hideGui
-            || !TheFloodClientConfig.SHOW_HEAT_HUD.get()
-    ) {
+                minecraft.player == null
+                || minecraft.level == null
+                || minecraft.options.hideGui
+                || !TheFloodClientConfig.SHOW_HEAT_HUD.get()
+                || FloodTabOverlay.isTabOpen()
+        ) {
         return;
-    }
+        }
 
     int hudWidth =
                 getHudWidth(screenWidth);
@@ -393,41 +381,35 @@ private static float[] getFillColor(int heat) {
      * =================================================
      */
 
-    int xOffset =
-            TheFloodClientConfig
-                    .HEAT_HUD_X_OFFSET
-                    .get();
+        FloodHudPositioning.Position hudPosition =
+                FloodHudPositioning.resolveClamped(
+                        TheFloodClientConfig
+                                .HEAT_HUD_ANCHOR
+                                .get(),
+                        screenWidth,
+                        screenHeight,
+                        hudWidth,
+                        hudHeight,
+                        TheFloodClientConfig
+                                .HEAT_HUD_ANCHOR_X_OFFSET
+                                .get(),
+                        TheFloodClientConfig
+                                .HEAT_HUD_ANCHOR_Y_OFFSET
+                                .get()
+                );
 
-    int yOffset =
-            TheFloodClientConfig
-                    .HEAT_HUD_Y_OFFSET
-                    .get();
+        int barX =
+                hudPosition.x();
 
-    int centerX =
-            (int) Math.round(
-                    screenWidth
-                            * TheFloodClientConfig
-                            .HEAT_HUD_X
-                            .get()
-            )
-            + xOffset;
+        int barY =
+                hudPosition.y();
 
-    int centerY =
-            (int) Math.round(
-                    screenHeight
-                            * TheFloodClientConfig
-                            .HEAT_HUD_Y
-                            .get()
-            )
-            + yOffset;
+        int centerX =
+                barX
+                        + hudWidth / 2;
 
-
-    int barX =
-        centerX
-                - hudWidth / 2;
-
-    int barY =
-            centerY;
+        int centerY =
+                barY;
 
 
     drawFloodHud(
@@ -1156,29 +1138,37 @@ int dayTimeX =
     int diamondCenterX =
                 barX
                         + scaleX(
-                                72, hudWidth
+                                72,
+                                hudWidth
                         );
 
         int diamondCenterY =
                 barY
-                        + 2
-                        + hudHeight / 2;
+                        + hudHeight / 2
+                        + scaleX(
+                                2,
+                                hudWidth
+                        );
+
+        float scaledTextWidth =
+                minecraft.font.width(heatText)
+                        * textScale;
+
+        float scaledTextHeight =
+                minecraft.font.lineHeight
+                        * textScale;
 
         int heatX =
-                diamondCenterX
-                        - Math.round(
-                                minecraft.font.width(heatText)
-                                        * textScale
-                                        / 2.0F
-                        );
+                Math.round(
+                        diamondCenterX
+                                - scaledTextWidth / 2.0F
+                );
 
         int heatY =
-                diamondCenterY
-                        - Math.round(
-                                minecraft.font.lineHeight
-                                        * textScale
-                                        / 2.0F
-                        );
+                Math.round(
+                        diamondCenterY
+                                - scaledTextHeight / 2.0F
+                );
 
 
     drawOutlinedText(
@@ -1251,29 +1241,12 @@ private static int getHeatNumberColor(int heat) {
     return 0xFFE6FFEE;     // pale green-white
 }
 
-private static int getHeatNeonColor(int heat) {
-    if (heat >= 80) {
-        // Neon purple
-        return 0xFFD94CFF;
-    }
-
-    if (heat >= 60) {
-        // Neon red
-        return 0xFFFF4040;
-    }
-
-    if (heat >= 40) {
-        // Neon orange
-        return 0xFFFF9A24;
-    }
-
-    if (heat >= 20) {
-        // Neon cyan/blue
-        return 0xFF28D7FF;
-    }
-
-    // Neon green
-    return 0xFF35FF8A;
+private static int getHeatNeonColor(
+        int heat
+) {
+    return HeatTier.getColor(
+            heat
+    );
 }
 
 private static void drawOutlinedText(

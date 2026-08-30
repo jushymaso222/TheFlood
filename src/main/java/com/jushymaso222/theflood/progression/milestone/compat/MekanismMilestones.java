@@ -1,6 +1,7 @@
 package com.jushymaso222.theflood.progression.milestone.compat;
 
 import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
+import net.minecraft.network.chat.Component;
 
 import static com.jushymaso222.theflood.progression.milestone.MilestoneConditions.*;
 
@@ -9,10 +10,27 @@ public final class MekanismMilestones {
     private MekanismMilestones() {
     }
 
+    public static final String MOD_ID =
+            "mekanism";
+
+    public static final String CATEGORY_ID =
+            "mekanism";
+
     public static void register() {
 
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        CATEGORY_ID,
+                        MOD_ID,
+                        Component.literal(
+                                "Mekanism"
+                        ),
+                        30
+                )
+        );
+
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "basic_technology",
                 "Basic Technology",
                 "You've begun harnessing advanced machinery.",
@@ -24,7 +42,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "factory",
                 "Industrialization",
                 "Your machines are becoming an industry.",
@@ -39,7 +57,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "digital_miner",
                 "Automated Extraction",
                 "The earth now gives up its resources automatically.",
@@ -51,7 +69,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "atomic_disassembler",
                 "Atomic Tools",
                 "You've harnessed atomic power in your hands.",
@@ -63,7 +81,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "fission",
                 "Fission Power",
                 "You've begun harnessing nuclear energy.",
@@ -77,7 +95,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "fusion",
                 "Fusion Power",
                 "You've brought the power of the stars under control.",
@@ -91,7 +109,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "antimatter",
                 "Antimatter",
                 "You've reached the frontier of matter itself.",
@@ -103,7 +121,7 @@ public final class MekanismMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "mekanism",
+                CATEGORY_ID,
                 "mekasuit",
                 "MekaSuit",
                 "You've assembled Mekanism's ultimate armor.",

@@ -2,6 +2,7 @@ package com.jushymaso222.theflood.config;
 
 import net.minecraftforge.common.ForgeConfigSpec;
 import java.util.List;
+import com.jushymaso222.theflood.hud.HudAnchor;
 
 public final class TheFloodClientConfig {
 
@@ -25,6 +26,25 @@ public final class TheFloodClientConfig {
         public static final ForgeConfigSpec.DoubleValue TEAM_HUD_Y;
 
         public static final ForgeConfigSpec.BooleanValue TEAM_HUD_VISIBLE;
+
+        public static final ForgeConfigSpec.EnumValue<HudAnchor>
+                HEAT_HUD_ANCHOR;
+
+        public static final ForgeConfigSpec.IntValue
+                HEAT_HUD_ANCHOR_X_OFFSET;
+
+        public static final ForgeConfigSpec.IntValue
+                HEAT_HUD_ANCHOR_Y_OFFSET;
+
+
+        public static final ForgeConfigSpec.EnumValue<HudAnchor>
+                TEAM_HUD_ANCHOR;
+
+        public static final ForgeConfigSpec.IntValue
+                TEAM_HUD_ANCHOR_X_OFFSET;
+
+        public static final ForgeConfigSpec.IntValue
+                TEAM_HUD_ANCHOR_Y_OFFSET;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -84,6 +104,40 @@ public final class TheFloodClientConfig {
                 )
                 .defineInRange("yOffset", 10, 0, 1000);
 
+           HEAT_HUD_ANCHOR =
+                builder
+                        .comment(
+                                "Anchor used by the Heat HUD."
+                        )
+                        .defineEnum(
+                                "heatAnchor",
+                                HudAnchor.TOP_CENTER
+                        );
+
+        HEAT_HUD_ANCHOR_X_OFFSET =
+                builder
+                        .comment(
+                                "Horizontal offset from the Heat HUD anchor."
+                        )
+                        .defineInRange(
+                                "heatAnchorXOffset",
+                                0,
+                                -10000,
+                                10000
+                        );
+
+        HEAT_HUD_ANCHOR_Y_OFFSET =
+                builder
+                        .comment(
+                                "Vertical offset from the Heat HUD anchor."
+                        )
+                        .defineInRange(
+                                "heatAnchorYOffset",
+                                10,
+                                -10000,
+                                10000
+                        );
+
         TEAM_HUD_X =
         builder
                 .comment(
@@ -116,6 +170,40 @@ public final class TheFloodClientConfig {
                         .define(
                                 "teamHudVisible",
                                 true
+                        );
+
+        TEAM_HUD_ANCHOR =
+                builder
+                        .comment(
+                                "Anchor used by the Team HUD."
+                        )
+                        .defineEnum(
+                                "teamHudAnchor",
+                                HudAnchor.TOP_LEFT
+                        );
+
+        TEAM_HUD_ANCHOR_X_OFFSET =
+                builder
+                        .comment(
+                                "Horizontal offset from the Team HUD anchor."
+                        )
+                        .defineInRange(
+                                "teamHudAnchorXOffset",
+                                10,
+                                -10000,
+                                10000
+                        );
+
+        TEAM_HUD_ANCHOR_Y_OFFSET =
+                builder
+                        .comment(
+                                "Vertical offset from the Team HUD anchor."
+                        )
+                        .defineInRange(
+                                "teamHudAnchorYOffset",
+                                75,
+                                -10000,
+                                10000
                         );
 
         builder.pop();

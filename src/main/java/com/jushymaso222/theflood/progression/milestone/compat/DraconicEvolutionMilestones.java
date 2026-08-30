@@ -1,18 +1,36 @@
 package com.jushymaso222.theflood.progression.milestone.compat;
 
 import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
+import net.minecraft.network.chat.Component;
 
 import static com.jushymaso222.theflood.progression.milestone.MilestoneConditions.*;
 
 public final class DraconicEvolutionMilestones {
+
+    public static final String MOD_ID =
+            "draconicevolution";
+
+    public static final String CATEGORY_ID =
+            "draconicevolution";
 
     private DraconicEvolutionMilestones() {
     }
 
     public static void register() {
 
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        CATEGORY_ID,
+                        MOD_ID,
+                        Component.literal(
+                                "Draconic Evolution"
+                        ),
+                        70
+                )
+        );
+
         MilestoneRegistry.registerCompat(
-                "draconicevolution",
+                CATEGORY_ID,
                 "draconium",
                 "Draconium",
                 "You've begun working with draconic energy.",
@@ -25,7 +43,7 @@ public final class DraconicEvolutionMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "draconicevolution",
+                CATEGORY_ID,
                 "wyvern",
                 "Wyvern Technology",
                 "Draconic power is becoming a serious weapon.",
@@ -40,7 +58,7 @@ public final class DraconicEvolutionMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "draconicevolution",
+                CATEGORY_ID,
                 "awakened_draconium",
                 "Awakened Draconium",
                 "You've awakened the true potential of draconium.",
@@ -53,7 +71,7 @@ public final class DraconicEvolutionMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "draconicevolution",
+                CATEGORY_ID,
                 "draconic",
                 "Draconic Power",
                 "You've reached an extraordinary level of power.",
@@ -68,7 +86,7 @@ public final class DraconicEvolutionMilestones {
         );
 
         MilestoneRegistry.registerCompat(
-                "draconicevolution",
+                CATEGORY_ID,
                 "chaotic",
                 "Chaotic Power",
                 "You've reached the limits of draconic technology.",

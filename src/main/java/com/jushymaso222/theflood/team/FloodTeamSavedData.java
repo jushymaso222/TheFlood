@@ -7,6 +7,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.saveddata.SavedData;
 
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -70,6 +74,29 @@ public class FloodTeamSavedData extends SavedData {
                     "TeamHeat",
                     team.getTeamHeat()
             );
+
+            teamTag.putLong(
+                        "FloodXp",
+                        team.getFloodXp()
+                );
+            ListTag milestoneList =
+                        new ListTag();
+
+                for (
+                        String milestoneId :
+                        team.getCompletedMilestones()
+                ) {
+                milestoneList.add(
+                        StringTag.valueOf(
+                                milestoneId
+                        )
+                );
+                }
+
+                teamTag.put(
+                        "CompletedMilestones",
+                        milestoneList
+                );
 
             ListTag members = new ListTag();
 
@@ -139,6 +166,33 @@ public class FloodTeamSavedData extends SavedData {
             team.setTeamHeat(
                     teamTag.getInt("TeamHeat")
             );
+
+            team.setFloodXp(
+                        teamTag.getLong("FloodXp")
+                );
+
+            if (
+                        teamTag.contains(
+                                "CompletedMilestones",
+                                Tag.TAG_LIST
+                        )
+                ) {
+                ListTag milestoneList =
+                        teamTag.getList(
+                                "CompletedMilestones",
+                                Tag.TAG_STRING
+                        );
+
+                for (
+                        int z = 0;
+                        z < milestoneList.size();
+                        z++
+                ) {
+                        team.loadCompletedMilestone(
+                                milestoneList.getString(i)
+                        );
+                }
+                }
 
             /*
              * Constructor already added the owner.

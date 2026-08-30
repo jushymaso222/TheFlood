@@ -9,6 +9,7 @@ import com.jushymaso222.theflood.debug.DummyPlayerManager;
 import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.progression.network.SyncHeatPacket;
 import com.jushymaso222.theflood.progression.network.FloodXpGainPacket;
+import com.jushymaso222.theflood.team.FloodTeamSavedData;
 import com.jushymaso222.theflood.team.FloodTeam;
 import com.jushymaso222.theflood.team.TeamManager;
 
@@ -408,6 +409,15 @@ private static void checkMobUnlock(
     public static long getFloodXp(
         ServerPlayer player
 ) {
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    player
+            );
+
+    if (team != null) {
+        return team.getFloodXp();
+    }
+
     return PlayerFloodData.getHeatProgressTicks(
             player
     );
@@ -416,8 +426,15 @@ private static void checkMobUnlock(
 public static long getFloodXpRequired(
         ServerPlayer player
 ) {
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    player
+            );
+
     int heat =
-            getSoloHeat(player);
+            team != null
+                    ? team.getTeamHeat()
+                    : getSoloHeat(player);
 
     return getBaseFloodXpRequired(
             heat
@@ -500,25 +517,55 @@ public static float getFloodXpProgress(
         long amount
 ) {
     if (
-                player == null
-                || amount <= 0L
-        ) {
+            player == null
+            || amount <= 0L
+    ) {
         return false;
+    }
+
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    player
+            );
+
+    /*
+     * =====================================================
+     * SOLO PROGRESSION
+     * =====================================================
+     */
+    if (team == null) {
+        return addSoloFloodXp(
+                player,
+                amount
+        );
         }
 
+
+    /*
+     * =====================================================
+     * TEAM PROGRESSION
+     * =====================================================
+     *
+     * The team itself owns both:
+     *
+     * teamHeat
+     * floodXp
+     *
+     * Individual Solo Heat is NOT touched here.
+     */
     long progress =
-            getFloodXp(player)
+            team.getFloodXp()
                     + amount;
 
     boolean leveledUp = false;
 
     while (
-            getSoloHeat(player)
+            team.getTeamHeat()
                     < PlayerFloodData.MAX_HEAT
     ) {
         long required =
-                getFloodXpRequired(
-                        player
+                getBaseFloodXpRequired(
+                        team.getTeamHeat()
                 );
 
         if (progress < required) {
@@ -527,33 +574,61 @@ public static float getFloodXpProgress(
 
         progress -= required;
 
-        PlayerFloodData.setSoloHeat(
-                player,
-                getSoloHeat(player) + 1
+        team.setTeamHeat(
+                team.getTeamHeat() + 1
         );
 
         leveledUp = true;
     }
 
-    /*
-     * At max Heat there is no next level,
-     * so don't leave a nonsensical overflowing bar.
-     */
     if (
-            getSoloHeat(player)
+            team.getTeamHeat()
                     >= PlayerFloodData.MAX_HEAT
     ) {
         progress = 0L;
     }
 
-    PlayerFloodData.setHeatProgressTicks(
-            player,
+    team.setFloodXp(
             progress
     );
 
-    syncHeatToPlayer(
-            player
-    );
+    /*
+     * Mark team data dirty for persistence.
+     */
+    FloodTeamSavedData
+            .get(player.server)
+            .setDirty();
+
+
+    /*
+     * Send the new shared Heat + XP state
+     * to every online team member.
+     */
+    for (UUID memberId : team.getMembers()) {
+
+        ServerPlayer member =
+                player.server
+                        .getPlayerList()
+                        .getPlayer(
+                                memberId
+                        );
+
+        if (member == null) {
+            continue;
+        }
+
+        syncHeatToPlayer(
+                member
+        );
+
+        /*
+         * Also refresh the team HUD packet,
+         * since ClientTeamData contains teamHeat.
+         */
+        TeamManager.syncTeamStateToPlayer(
+                member
+        );
+    }
 
     return leveledUp;
 }
@@ -588,13 +663,181 @@ public static boolean addRewardFloodXp(
 }
 
     public static boolean advanceSoloHeat(
-            ServerPlayer player
-    ) {
+        ServerPlayer player
+) {
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    player
+            );
+
+    /*
+     * Solo player:
+     * normal +1 passive progression.
+     */
+    if (team == null) {
         return addFloodXp(
                 player,
                 1L
         );
     }
+
+    UUID authorityId = null;
+    int onlineMembers = 0;
+
+    /*
+     * Find every real connected member of the team.
+     *
+     * One of them becomes the deterministic authority
+     * responsible for applying this tick's shared XP.
+     */
+    for (UUID memberId : team.getMembers()) {
+
+        ServerPlayer member =
+                player.server
+                        .getPlayerList()
+                        .getPlayer(
+                                memberId
+                        );
+
+        if (member == null) {
+            continue;
+        }
+
+        /*
+         * Development dummies should not cause a real
+         * team's passive progression rate to increase.
+         */
+        if (DummyPlayerManager.isDummy(member)) {
+            continue;
+        }
+
+        onlineMembers++;
+
+        /*
+         * Lowest UUID wins.
+         *
+         * This gives us a deterministic authority without
+         * caring who owns the team.
+         */
+        if (
+                authorityId == null
+                || memberId.compareTo(authorityId) < 0
+        ) {
+            authorityId =
+                    memberId;
+        }
+    }
+
+    /*
+     * Nobody online should be impossible here because
+     * this method is being called from an online player,
+     * but guard against it anyway.
+     */
+    if (
+            authorityId == null
+            || onlineMembers <= 0
+    ) {
+        return false;
+    }
+
+    /*
+     * Only one member performs the shared progression
+     * update this tick.
+     */
+    if (
+            !player.getUUID()
+                    .equals(authorityId)
+    ) {
+        return false;
+    }
+
+    /*
+     * Scale passive progression by the number of members
+     * who are actually online.
+     *
+     * 1 online -> +1
+     * 2 online -> +2
+     * 3 online -> +3
+     * etc.
+     */
+    return addFloodXp(
+            player,
+            onlineMembers
+    );
+}
+
+        public static boolean addSoloFloodXp(
+        ServerPlayer player,
+        long amount
+) {
+    if (
+            player == null
+            || amount <= 0L
+    ) {
+        return false;
+    }
+
+    long progress =
+            PlayerFloodData.getHeatProgressTicks(
+                    player
+            ) + amount;
+
+    boolean leveledUp = false;
+
+    /*
+     * This deliberately operates ONLY on the player's
+     * personal Solo Heat.
+     *
+     * Team membership is completely ignored.
+     */
+    while (
+            getSoloHeat(player)
+                    < PlayerFloodData.MAX_HEAT
+    ) {
+        long required =
+                getBaseFloodXpRequired(
+                        getSoloHeat(player)
+                );
+
+        if (progress < required) {
+            break;
+        }
+
+        progress -= required;
+
+        PlayerFloodData.setSoloHeat(
+                player,
+                getSoloHeat(player) + 1
+        );
+
+        leveledUp = true;
+    }
+
+    if (
+            getSoloHeat(player)
+                    >= PlayerFloodData.MAX_HEAT
+    ) {
+        progress = 0L;
+    }
+
+    PlayerFloodData.setHeatProgressTicks(
+            player,
+            progress
+    );
+
+    /*
+     * Still sync the player.
+     *
+     * If they're teamed, their effective/base Heat
+     * remains the team's Heat, but their hidden personal
+     * Solo progression is now up to date as well.
+     */
+    syncHeatToPlayer(
+            player
+    );
+
+    return leveledUp;
+}
 
     public static void syncHeatToPlayer(
                 ServerPlayer player
