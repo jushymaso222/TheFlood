@@ -27,6 +27,10 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import com.jushymaso222.theflood.TheFlood;
 
+import com.jushymaso222.theflood.progression.capability.CapabilityManager;
+import com.jushymaso222.theflood.progression.capability.CapabilityProfile;
+import com.jushymaso222.theflood.progression.milestone.MilestoneManager;
+
 import com.jushymaso222.theflood.elite.debug.EliteStatsWatch;
 import com.jushymaso222.theflood.elite.debug.network.SyncMobStatsPacket;
 
@@ -54,6 +58,8 @@ import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.team.network.TeamNetworkingPackets;
 
 import net.minecraftforge.network.PacketDistributor;
+import com.jushymaso222.theflood.progression.capability.debug.CapabilityStatsWatch;
+import com.jushymaso222.theflood.progression.capability.network.SyncCapabilityStatsPacket;
 
 import com.jushymaso222.theflood.team.TeamManager;
 
@@ -961,11 +967,71 @@ public final class FloodCommands {
                 )
         );
 
+        flood.then(
+                Commands.literal(
+                        "capability"
+                )
+                        .requires(
+                                source ->
+                                        source.hasPermission(
+                                                2
+                                        )
+                        )
+                        .executes(
+                                context ->
+                                        toggleCapability(
+                                                context.getSource()
+                                        )
+                        )
+        );
+
         event.getDispatcher()
                 .register(
                         flood
                 );
     }
+
+    private static int toggleCapability(
+                CommandSourceStack source
+        ) throws CommandSyntaxException {
+
+        ServerPlayer player =
+                source.getPlayerOrException();
+
+
+        /*
+        * Already open -> close it.
+        */
+        if (
+                CapabilityStatsWatch.isWatching(
+                        player
+                )
+        ) {
+                CapabilityStatsWatch.clear(
+                        player
+                );
+
+                SyncCapabilityStatsPacket.sendClosed(
+                        player
+                );
+
+                return 1;
+        }
+
+
+        /*
+        * Otherwise open the inspector.
+        */
+        CapabilityStatsWatch.watch(
+                player
+        );
+
+        SyncCapabilityStatsPacket.sendSnapshot(
+                player
+        );
+
+        return 1;
+        }
 
     private static int toggleStats(
                 CommandSourceStack source

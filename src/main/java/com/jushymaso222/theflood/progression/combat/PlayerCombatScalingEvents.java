@@ -25,6 +25,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.jushymaso222.theflood.elite.drops.boon.BoonData;
 import com.jushymaso222.theflood.elite.drops.boon.BoonType;
 
+import com.jushymaso222.theflood.progression.capability.CapabilityManager;
+
 import com.jushymaso222.theflood.elite.EliteManager;
 
 @Mod.EventBusSubscriber(
@@ -334,6 +336,30 @@ long fixedDrain =
          */
         else {
             return;
+        }
+
+        /*
+        * ============================================
+        * CAPABILITY OBSERVATION
+        * ============================================
+        *
+        * Record the player's damage BEFORE The Flood
+        * modifies it.
+        *
+        * This is important because Capability should
+        * measure the player's actual offensive power,
+        * not the consequences of our own adaptive
+        * scaling.
+        *
+        * Automated turrets are intentionally excluded
+        * for now because there is no direct player
+        * DamageSource associated with them.
+        */
+        if (player != null) {
+        CapabilityManager.recordOffensiveDamage(
+                player,
+                event.getAmount()
+        );
         }
 
         int scalingHeat =

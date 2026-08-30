@@ -12,6 +12,8 @@ import net.minecraftforge.fml.common.Mod;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.jushymaso222.theflood.time.BloodMoonState;
 
+import com.jushymaso222.theflood.progression.milestone.client.ClientMilestoneNotifications;
+
 import net.minecraft.resources.ResourceLocation;
 
 @Mod.EventBusSubscriber(
@@ -440,6 +442,17 @@ private static float[] getFillColor(int heat) {
                 hudHeight
         );
 
+        renderMilestoneNotification(
+                graphics,
+                minecraft,
+                heat,
+                barX,
+                barY,
+                hudWidth,
+                hudHeight,
+                screenHeight
+        );
+
         if (
         ClientFloodXpGain.isVisible()
 ) {
@@ -485,6 +498,468 @@ private static float[] getFillColor(int heat) {
             true
     );
 }
+}
+
+        private static void renderMilestoneNotification(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        int heat,
+        int barX,
+        int barY,
+        int hudWidth,
+        int hudHeight,
+        int screenHeight
+) {
+    ClientMilestoneNotifications.Notification notification =
+            ClientMilestoneNotifications.getCurrent();
+
+    if (notification == null) {
+        return;
+    }
+
+
+    /*
+     * ============================================
+     * ANIMATION
+     * ============================================
+     */
+
+    float progress =
+            ClientMilestoneNotifications.getProgress();
+
+    float alpha;
+
+    if (progress < 0.15F) {
+        /*
+         * Fade in.
+         */
+        alpha =
+                progress
+                        / 0.15F;
+    }
+    else if (progress > 0.80F) {
+        /*
+         * Fade out.
+         */
+        alpha =
+                1.0F
+                        - (
+                                (progress - 0.80F)
+                                        / 0.20F
+                        );
+    }
+    else {
+        alpha =
+                1.0F;
+    }
+
+    alpha =
+            Math.max(
+                    0.0F,
+                    Math.min(
+                            1.0F,
+                            alpha
+                    )
+            );
+
+
+    /*
+     * ============================================
+     * SCALE
+     * ============================================
+     *
+     * Same scaling system as the Flood HUD.
+     */
+
+    float textScale =
+            hudWidth
+                    / 220.0F;
+
+
+    /*
+     * ============================================
+     * TEXT
+     * ============================================
+     */
+
+    String header =
+            "MILESTONE REACHED";
+
+    String title =
+            notification.title()
+                    .getString();
+
+    String description =
+            notification.description()
+                    .getString();
+
+    String reward =
+            "+"
+                    + Math.round(
+                            notification.floodXpReward()
+                                    * 100.0D
+                    )
+                    + "% FLOOD XP";
+
+
+    /*
+     * ============================================
+     * DIMENSIONS
+     * ============================================
+     */
+
+    int padding =
+            Math.max(
+                    4,
+                    Math.round(
+                            5.0F
+                                    * textScale
+                    )
+            );
+
+    int lineSpacing =
+            Math.max(
+                    1,
+                    Math.round(
+                            2.0F
+                                    * textScale
+                    )
+            );
+
+    int lineHeight =
+            Math.round(
+                    minecraft.font.lineHeight
+                            * textScale
+            );
+
+    int contentWidth =
+            Math.max(
+                    Math.max(
+                            minecraft.font.width(
+                                    header
+                            ),
+                            minecraft.font.width(
+                                    title
+                            )
+                    ),
+                    Math.max(
+                            minecraft.font.width(
+                                    description
+                            ),
+                            minecraft.font.width(
+                                    reward
+                            )
+                    )
+            );
+
+    contentWidth =
+            Math.round(
+                    contentWidth
+                            * textScale
+            );
+
+    int notificationWidth =
+            Math.max(
+                    Math.round(
+                            hudWidth
+                                    * 0.75F
+                    ),
+                    contentWidth
+                            + padding * 2
+            );
+
+    /*
+     * Four lines.
+     */
+    int notificationHeight =
+            padding * 2
+                    + lineHeight * 4
+                    + lineSpacing * 3;
+
+
+    /*
+     * ============================================
+     * POSITION
+     * ============================================
+     */
+
+    int centerX =
+            barX
+                    + hudWidth / 2;
+
+    int notificationX =
+            centerX
+                    - notificationWidth / 2;
+
+    int gap =
+            Math.max(
+                    3,
+                    Math.round(
+                            4.0F
+                                    * textScale
+                    )
+            );
+
+    int notificationY =
+            barY
+                    + hudHeight
+                    + gap;
+
+
+    /*
+     * If the player has positioned the Flood HUD
+     * near the bottom of the screen, put the
+     * milestone above it instead.
+     */
+
+    if (
+            notificationY
+                    + notificationHeight
+                    > screenHeight - 2
+    ) {
+        notificationY =
+                barY
+                        - notificationHeight
+                        - gap;
+    }
+
+
+    /*
+     * ============================================
+     * SLIDE
+     * ============================================
+     */
+
+    int slideDistance =
+            Math.max(
+                    2,
+                    Math.round(
+                            5.0F
+                                    * textScale
+                    )
+            );
+
+    int slideOffset =
+            Math.round(
+                    (1.0F - alpha)
+                            * slideDistance
+            );
+
+    /*
+     * Below HUD = slide downward/up into place.
+     * Above HUD = opposite direction.
+     */
+
+    if (notificationY > barY) {
+        notificationY +=
+                slideOffset;
+    }
+    else {
+        notificationY -=
+                slideOffset;
+    }
+
+
+    /*
+     * ============================================
+     * COLORS
+     * ============================================
+     */
+
+    int alphaByte =
+            Math.round(
+                    alpha
+                            * 255.0F
+            );
+
+    int backgroundAlpha =
+            Math.round(
+                    alpha
+                            * 145.0F
+            );
+
+    int backgroundColor =
+            backgroundAlpha
+                    << 24;
+
+    int heatColor =
+            getHeatNeonColor(
+                    heat
+            );
+
+    int heatRgb =
+            heatColor
+                    & 0x00FFFFFF;
+
+    int coloredText =
+            (alphaByte << 24)
+                    | heatRgb;
+
+    int whiteText =
+            (alphaByte << 24)
+                    | 0x00FFFFFF;
+
+
+    /*
+     * ============================================
+     * BACKGROUND
+     * ============================================
+     */
+
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+
+    graphics.fill(
+            notificationX,
+            notificationY,
+            notificationX
+                    + notificationWidth,
+            notificationY
+                    + notificationHeight,
+            backgroundColor
+    );
+
+
+    /*
+     * Thin Heat-colored accents.
+     *
+     * This ties it visually to the existing
+     * Flood HUD without creating another giant
+     * framed Minecraft panel.
+     */
+
+    graphics.fill(
+            notificationX,
+            notificationY,
+            notificationX
+                    + notificationWidth,
+            notificationY + 1,
+            coloredText
+    );
+
+    graphics.fill(
+            notificationX,
+            notificationY
+                    + notificationHeight
+                    - 1,
+            notificationX
+                    + notificationWidth,
+            notificationY
+                    + notificationHeight,
+            coloredText
+    );
+
+
+    /*
+     * ============================================
+     * TEXT
+     * ============================================
+     */
+
+    int textY =
+            notificationY
+                    + padding;
+
+    drawCenteredScaledText(
+            graphics,
+            minecraft,
+            header,
+            centerX,
+            textY,
+            coloredText,
+            textScale
+    );
+
+    textY +=
+            lineHeight
+                    + lineSpacing;
+
+    drawCenteredScaledText(
+            graphics,
+            minecraft,
+            title,
+            centerX,
+            textY,
+            whiteText,
+            textScale
+    );
+
+    textY +=
+            lineHeight
+                    + lineSpacing;
+
+    drawCenteredScaledText(
+            graphics,
+            minecraft,
+            description,
+            centerX,
+            textY,
+            whiteText,
+            textScale
+    );
+
+    textY +=
+            lineHeight
+                    + lineSpacing;
+
+    drawCenteredScaledText(
+            graphics,
+            minecraft,
+            reward,
+            centerX,
+            textY,
+            coloredText,
+            textScale
+    );
+
+    RenderSystem.disableBlend();
+}
+
+        private static void drawCenteredScaledText(
+        GuiGraphics graphics,
+        Minecraft minecraft,
+        String text,
+        int centerX,
+        int y,
+        int color,
+        float scale
+) {
+    int width =
+            Math.round(
+                    minecraft.font.width(
+                            text
+                    )
+                            * scale
+            );
+
+    int x =
+            centerX
+                    - width / 2;
+
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            x,
+            y,
+            0.0F
+    );
+
+    graphics.pose().scale(
+            scale,
+            scale,
+            1.0F
+    );
+
+    graphics.drawString(
+            minecraft.font,
+            text,
+            0,
+            0,
+            color,
+            true
+    );
+
+    graphics.pose().popPose();
 }
 
     private static void drawFloodHud(

@@ -12,6 +12,7 @@ import com.jushymaso222.theflood.compat.mekanism.TurretPlacementEvents;
 import com.jushymaso222.theflood.elite.presentation.particle.EliteParticles;
 import net.minecraftforge.common.MinecraftForge;
 import com.jushymaso222.theflood.sound.FloodSounds;
+import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
 
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -60,6 +61,8 @@ public class TheFlood {
         BoonEffects.register(
                 modEventBus
         );
+
+        MilestoneRegistry.bootstrap();
 
         MinecraftForge.EVENT_BUS.register(
                 new TurretPlacementEvents()
