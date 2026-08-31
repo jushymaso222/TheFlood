@@ -17,18 +17,41 @@ public final class CapabilityProfile {
     private double offenseScore;
     private double defenseScore;
     private double survivalScore;
+    private double mobilityScore;
+
 
     /*
-    * ============================================
-    * OFFENSE DIAGNOSTICS
-    * ============================================
-    */
+     * ============================================
+     * OBSERVATION DIAGNOSTICS
+     * ============================================
+     *
+     * Every capability dimension tracks:
+     *
+     * - number of useful observations
+     * - most recent 0-100 observation
+     *
+     * Offense additionally retains raw damage
+     * diagnostics because that sensor already exists.
+     */
 
     private long offenseSamples;
+    private long defenseSamples;
+    private long survivalSamples;
+    private long mobilitySamples;
+
+    private double lastOffenseObservation;
+    private double lastDefenseObservation;
+    private double lastSurvivalObservation;
+    private double lastMobilityObservation;
+
+
+    /*
+     * ============================================
+     * OFFENSE-SPECIFIC DIAGNOSTICS
+     * ============================================
+     */
 
     private double lastOffensiveDamage;
-    private double lastOffenseObservation;
-
     private double averageOffensiveDamage;
     private double peakObservedOffensiveDamage;
 
@@ -39,15 +62,15 @@ public final class CapabilityProfile {
      * ============================================
      *
      * A score based on one observation should not
-     * be trusted as much as a score based on 100.
+     * be trusted as much as a score based on many.
      *
-     * Confidence is stored independently for each
-     * dimension.
+     * Confidence is independent for each dimension.
      */
 
     private double offenseConfidence;
     private double defenseConfidence;
     private double survivalConfidence;
+    private double mobilityConfidence;
 
 
     /*
@@ -55,40 +78,82 @@ public final class CapabilityProfile {
      * PEAK MEMORY
      * ============================================
      *
-     * The Flood remembers what it has seen.
+     * The Flood remembers demonstrated capability.
      *
-     * Taking off powerful armor should not
-     * instantly convince it that the player is
+     * Temporarily becoming weaker should not
+     * immediately convince it that the player is
      * harmless.
      */
 
     private double peakOffense;
     private double peakDefense;
     private double peakSurvival;
+    private double peakMobility;
 
 
     public CapabilityProfile() {
     }
 
+
+    /*
+     * ============================================
+     * SAMPLE COUNTS
+     * ============================================
+     */
+
     public long getOffenseSamples() {
         return offenseSamples;
     }
 
-
-    public double getLastOffensiveDamage() {
-        return lastOffensiveDamage;
+    public long getDefenseSamples() {
+        return defenseSamples;
     }
 
+    public long getSurvivalSamples() {
+        return survivalSamples;
+    }
+
+    public long getMobilitySamples() {
+        return mobilitySamples;
+    }
+
+
+    /*
+     * ============================================
+     * LAST OBSERVATIONS
+     * ============================================
+     */
 
     public double getLastOffenseObservation() {
         return lastOffenseObservation;
     }
 
+    public double getLastDefenseObservation() {
+        return lastDefenseObservation;
+    }
+
+    public double getLastSurvivalObservation() {
+        return lastSurvivalObservation;
+    }
+
+    public double getLastMobilityObservation() {
+        return lastMobilityObservation;
+    }
+
+
+    /*
+     * ============================================
+     * OFFENSE DIAGNOSTICS
+     * ============================================
+     */
+
+    public double getLastOffensiveDamage() {
+        return lastOffensiveDamage;
+    }
 
     public double getAverageOffensiveDamage() {
         return averageOffensiveDamage;
     }
-
 
     public double getPeakObservedOffensiveDamage() {
         return peakObservedOffensiveDamage;
@@ -160,6 +225,33 @@ public final class CapabilityProfile {
                 );
     }
 
+
+    public double getMobilityScore() {
+        return mobilityScore;
+    }
+
+    public void setMobilityScore(
+            double mobilityScore
+    ) {
+        this.mobilityScore =
+                clampScore(
+                        mobilityScore
+                );
+
+        peakMobility =
+                Math.max(
+                        peakMobility,
+                        this.mobilityScore
+                );
+    }
+
+
+    /*
+     * ============================================
+     * RECORD OBSERVATIONS
+     * ============================================
+     */
+
     public void recordOffenseObservation(
             double rawDamage,
             double observation
@@ -172,11 +264,6 @@ public final class CapabilityProfile {
             return;
         }
 
-
-        /*
-        * Update running average without needing to
-        * retain every individual damage sample.
-        */
         double totalDamage =
                 averageOffensiveDamage
                         * offenseSamples;
@@ -187,10 +274,6 @@ public final class CapabilityProfile {
                 (totalDamage + rawDamage)
                         / offenseSamples;
 
-
-        /*
-        * Most recent observation.
-        */
         lastOffensiveDamage =
                 rawDamage;
 
@@ -199,16 +282,67 @@ public final class CapabilityProfile {
                         observation
                 );
 
-
-        /*
-        * Historical raw damage peak.
-        */
         peakObservedOffensiveDamage =
                 Math.max(
                         peakObservedOffensiveDamage,
                         rawDamage
                 );
     }
+
+
+    public void recordDefenseObservation(
+            double observation
+    ) {
+        if (!Double.isFinite(observation)) {
+            return;
+        }
+
+        defenseSamples++;
+
+        lastDefenseObservation =
+                clampScore(
+                        observation
+                );
+    }
+
+
+    public void recordSurvivalObservation(
+            double observation
+    ) {
+        if (!Double.isFinite(observation)) {
+            return;
+        }
+
+        survivalSamples++;
+
+        lastSurvivalObservation =
+                clampScore(
+                        observation
+                );
+    }
+
+
+    public void recordMobilityObservation(
+            double observation
+    ) {
+        if (!Double.isFinite(observation)) {
+            return;
+        }
+
+        mobilitySamples++;
+
+        lastMobilityObservation =
+                clampScore(
+                        observation
+                );
+    }
+
+
+    /*
+     * ============================================
+     * RESTORE DIAGNOSTICS
+     * ============================================
+     */
 
     public void restoreOffenseDiagnostics(
             long samples,
@@ -247,6 +381,57 @@ public final class CapabilityProfile {
                                 lastOffensiveDamage,
                                 averageOffensiveDamage
                         )
+                );
+    }
+
+
+    public void restoreDefenseDiagnostics(
+            long samples,
+            double lastObservation
+    ) {
+        defenseSamples =
+                Math.max(
+                        0L,
+                        samples
+                );
+
+        lastDefenseObservation =
+                clampScore(
+                        lastObservation
+                );
+    }
+
+
+    public void restoreSurvivalDiagnostics(
+            long samples,
+            double lastObservation
+    ) {
+        survivalSamples =
+                Math.max(
+                        0L,
+                        samples
+                );
+
+        lastSurvivalObservation =
+                clampScore(
+                        lastObservation
+                );
+    }
+
+
+    public void restoreMobilityDiagnostics(
+            long samples,
+            double lastObservation
+    ) {
+        mobilitySamples =
+                Math.max(
+                        0L,
+                        samples
+                );
+
+        lastMobilityObservation =
+                clampScore(
+                        lastObservation
                 );
     }
 
@@ -299,6 +484,20 @@ public final class CapabilityProfile {
     }
 
 
+    public double getMobilityConfidence() {
+        return mobilityConfidence;
+    }
+
+    public void setMobilityConfidence(
+            double confidence
+    ) {
+        mobilityConfidence =
+                clamp01(
+                        confidence
+                );
+    }
+
+
     /*
      * ============================================
      * PEAKS
@@ -317,10 +516,16 @@ public final class CapabilityProfile {
         return peakSurvival;
     }
 
+    public double getPeakMobility() {
+        return peakMobility;
+    }
+
+
     public void restorePeaks(
             double offense,
             double defense,
-            double survival
+            double survival,
+            double mobility
     ) {
         peakOffense =
                 clampScore(
@@ -336,6 +541,11 @@ public final class CapabilityProfile {
                 clampScore(
                         survival
                 );
+
+        peakMobility =
+                clampScore(
+                        mobility
+                );
     }
 
 
@@ -348,35 +558,30 @@ public final class CapabilityProfile {
      * Flood retains some memory of demonstrated
      * capability.
      *
-     * For now:
-     *
      * effective >= 65% of historical peak.
-     *
-     * We can tune this once we're gathering real
-     * combat data.
      */
 
     public double getEffectiveOffense() {
-        return Math.max(
+        return getEffectiveScore(
                 offenseScore,
-                peakOffense * 0.65D
+                peakOffense
         );
     }
 
     public double getEffectiveDefense() {
-        return Math.max(
-                defenseScore,
-                peakDefense * 0.65D
-        );
-    }
+        return defenseScore;
+        }
 
     public double getEffectiveSurvival() {
-        return Math.max(
-                survivalScore,
-                peakSurvival * 0.65D
+        return survivalScore;
+        }
+
+    public double getEffectiveMobility() {
+        return getEffectiveScore(
+                mobilityScore,
+                peakMobility
         );
     }
-
 
 
     /*
@@ -385,9 +590,24 @@ public final class CapabilityProfile {
      * ============================================
      */
 
+    private static double getEffectiveScore(
+            double current,
+            double peak
+    ) {
+        return Math.max(
+                current,
+                peak * 0.65D
+        );
+    }
+
+
     private static double clampScore(
             double value
     ) {
+        if (!Double.isFinite(value)) {
+            return 0.0D;
+        }
+
         return Math.max(
                 0.0D,
                 Math.min(
@@ -396,6 +616,7 @@ public final class CapabilityProfile {
                 )
         );
     }
+
 
     private static double sanitizeNonNegative(
             double value
@@ -410,9 +631,14 @@ public final class CapabilityProfile {
         return value;
     }
 
+
     private static double clamp01(
             double value
     ) {
+        if (!Double.isFinite(value)) {
+            return 0.0D;
+        }
+
         return Math.max(
                 0.0D,
                 Math.min(

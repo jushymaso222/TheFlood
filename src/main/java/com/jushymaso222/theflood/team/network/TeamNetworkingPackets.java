@@ -20,6 +20,7 @@ import net.minecraft.network.chat.Component;
 
 import com.jushymaso222.theflood.team.FloodTeam;
 import com.jushymaso222.theflood.team.TeamChatManager;
+import com.jushymaso222.theflood.progression.HeatManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -786,10 +787,23 @@ public final class TeamNetworkingPackets {
                     continue;
                 }
 
+                int currentHeat =
+                        HeatManager.getEffectiveHeat(
+                                player
+                        );
+
+                int projectedHeat =
+                        TeamManager.getProjectedJoinHeat(
+                                player,
+                                teamId
+                        );
+
                 entries.add(
                         new SyncPendingTeamInvitesPacket.Entry(
                                 team.getTeamId(),
-                                team.getName()
+                                team.getName(),
+                                currentHeat,
+                                projectedHeat
                         )
                 );
             }
@@ -856,6 +870,62 @@ public final class TeamNetworkingPackets {
                         message.heat
                 )
         );
+
+        context.setPacketHandled(
+                true
+        );
+    }
+}
+
+        public static class ConfirmTeamInvitePacket {
+
+    private final UUID teamId;
+
+    public ConfirmTeamInvitePacket(
+            UUID teamId
+    ) {
+        this.teamId =
+                teamId;
+    }
+
+    public static void encode(
+            ConfirmTeamInvitePacket message,
+            FriendlyByteBuf buffer
+    ) {
+        buffer.writeUUID(
+                message.teamId
+        );
+    }
+
+    public static ConfirmTeamInvitePacket decode(
+            FriendlyByteBuf buffer
+    ) {
+        return new ConfirmTeamInvitePacket(
+                buffer.readUUID()
+        );
+    }
+
+    public static void handle(
+            ConfirmTeamInvitePacket message,
+            Supplier<NetworkEvent.Context> contextSupplier
+    ) {
+        NetworkEvent.Context context =
+                contextSupplier.get();
+
+        context.enqueueWork(() -> {
+
+            ServerPlayer player =
+                    context.getSender();
+
+            if (player == null) {
+                return;
+            }
+
+            TeamManager.confirmHeatInvite(
+                    player,
+                    message.teamId
+            );
+        });
 
         context.setPacketHandled(
                 true
@@ -980,11 +1050,13 @@ public final class TeamNetworkingPackets {
 
     public static class SyncPendingTeamInvitesPacket {
 
-    public record Entry(
-            UUID teamId,
-            String teamName
-    ) {
-    }
+        public record Entry(
+                UUID teamId,
+                String teamName,
+                int currentHeat,
+                int projectedHeat
+        ) {
+        }
 
     private final List<Entry> entries;
 
@@ -1006,13 +1078,21 @@ public final class TeamNetworkingPackets {
                 message.entries) {
 
             buffer.writeUUID(
-                    entry.teamId()
-            );
+                        entry.teamId()
+                );
 
-            buffer.writeUtf(
-                    entry.teamName(),
-                    24
-            );
+                buffer.writeUtf(
+                        entry.teamName(),
+                        24
+                );
+
+                buffer.writeInt(
+                        entry.currentHeat()
+                );
+
+                buffer.writeInt(
+                        entry.projectedHeat()
+                );
         }
     }
 
@@ -1026,12 +1106,15 @@ public final class TeamNetworkingPackets {
                 new ArrayList<>();
 
         for (int i = 0; i < size; i++) {
+
             entries.add(
-                    new Entry(
-                            buffer.readUUID(),
-                            buffer.readUtf(24)
-                    )
-            );
+                        new Entry(
+                                buffer.readUUID(),
+                                buffer.readUtf(24),
+                                buffer.readInt(),
+                                buffer.readInt()
+                        )
+                );
         }
 
         return new SyncPendingTeamInvitesPacket(
@@ -1057,7 +1140,9 @@ public final class TeamNetworkingPackets {
                 invites.add(
                         new ClientTeamInviteData.Invite(
                                 entry.teamId(),
-                                entry.teamName()
+                                entry.teamName(),
+                                entry.currentHeat(),
+                                entry.projectedHeat()
                         )
                 );
             }

@@ -57,6 +57,9 @@ public final class ClientCapabilityStatsData {
             double peakDefense,
             double defenseConfidence,
 
+            long defenseSamples,
+            double lastDefenseObservation,
+
 
             /*
              * SURVIVAL
@@ -65,6 +68,21 @@ public final class ClientCapabilityStatsData {
             double effectiveSurvival,
             double peakSurvival,
             double survivalConfidence,
+
+            long survivalSamples,
+            double lastSurvivalObservation,
+
+
+            /*
+             * MOBILITY
+             */
+            double mobilityScore,
+            double effectiveMobility,
+            double peakMobility,
+            double mobilityConfidence,
+
+            long mobilitySamples,
+            double lastMobilityObservation,
 
 
             /*

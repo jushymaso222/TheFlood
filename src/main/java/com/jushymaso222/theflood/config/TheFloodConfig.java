@@ -532,6 +532,13 @@ public final class TheFloodConfig {
     }
 
     public static final class MobSettings {
+        public final ForgeConfigSpec.IntValue overworldProgressionEndHeat;
+        public final ForgeConfigSpec.IntValue netherProgressionEndHeat;
+        public final ForgeConfigSpec.IntValue endProgressionEndHeat;
+
+        public final ForgeConfigSpec.DoubleValue vanillaHeatCurveExponent;
+        public final ForgeConfigSpec.DoubleValue residualHeatCurveExponent;
+
         public final StandardMob zombie;
         public final StandardMob skeleton;
         public final StandardMob spider;
@@ -542,196 +549,237 @@ public final class TheFloodConfig {
         private MobSettings(ForgeConfigSpec.Builder builder) {
             builder.push("mobs");
 
+            builder.push("progressionBands");
+
+            overworldProgressionEndHeat = builder
+                    .comment(
+                            "Heat at which the Overworld stops being the player's primary progression region.",
+                            "Overworld mobs continue residual growth after this point."
+                    )
+                    .defineInRange("overworldEndHeat", 35, 1, 100);
+
+            netherProgressionEndHeat = builder
+                    .comment(
+                            "Heat at which the Nether stops being the player's primary progression region.",
+                            "Future Nether mobs will continue residual growth after this point."
+                    )
+                    .defineInRange("netherEndHeat", 70, 1, 100);
+
+            endProgressionEndHeat = builder
+                    .comment(
+                            "Heat at which the End primary progression region finishes.",
+                            "The vanilla baseline currently ends at Heat 100."
+                    )
+                    .defineInRange("endEndHeat", 100, 1, 100);
+
+            builder.pop();
+
+            vanillaHeatCurveExponent = builder
+                    .comment(
+                            "Exponent used while a mob is progressing through its home dimension.",
+                            "1.0 = linear scaling.",
+                            "2.0 = gentle early scaling that accelerates toward the end of the region."
+                    )
+                    .defineInRange("vanillaHeatCurveExponent", 2.0D, 1.0D, 5.0D);
+
+            residualHeatCurveExponent = builder
+                    .comment(
+                            "Exponent used after a mob's home-dimension progression ends.",
+                            "Residual scaling keeps old areas getting slightly harder without letting them keep pace with the current frontier."
+                    )
+                    .defineInRange("residualHeatCurveExponent", 2.0D, 1.0D, 5.0D);
+
             zombie = new StandardMob(
-                builder,
-                "zombie",
-                2, //Unlock day
-                10, //Base spawn weight
-                20.0, //Base health
-                3.0, //Base damage
-                1.5, //Health increase per day
-                0.20, //Damage increase per day
-                60.0, //Maximum health
-                40.0 //Maximum damage
-        );
+                    builder,
+                    "zombie",
+                    2,
+                    10,
+                    20.0D,
+                    32.0D,
+                    45.0D,
+                    3.0D,
+                    6.0D,
+                    12.0D
+            );
 
-        skeleton = new StandardMob(
-                builder,
-                "skeleton",
-                8,
-                8,
-                20.0,
-                2.0,
-                1.25,
-                0.15,
-                100.0,
-                40.0
-        );
+            skeleton = new StandardMob(
+                    builder,
+                    "skeleton",
+                    8,
+                    8,
+                    20.0D,
+                    34.0D,
+                    50.0D,
+                    2.0D,
+                    5.0D,
+                    10.0D
+            );
 
-        spider = new StandardMob(
-                builder,
-                "spider",
-                12,
-                8,
-                16.0,
-                2.0,
-                1.25,
-                0.20,
-                40.0,
-                40.0
-        );
+            spider = new StandardMob(
+                    builder,
+                    "spider",
+                    12,
+                    8,
+                    16.0D,
+                    24.0D,
+                    36.0D,
+                    2.0D,
+                    5.0D,
+                    10.0D
+            );
 
-        creeper = new StandardMob(
-                builder,
-                "creeper",
-                16,
-                5,
-                20.0,
-                0.0,
-                1.5,
-                0.0,
-                60.0,
-                0.0
-        );
+            /*
+             * Creeper explosion damage is handled by Minecraft's explosion
+             * mechanics rather than the StandardMob melee-damage multiplier,
+             * so its configured damage remains zero here.
+             */
+            creeper = new StandardMob(
+                    builder,
+                    "creeper",
+                    16,
+                    5,
+                    20.0D,
+                    30.0D,
+                    45.0D,
+                    0.0D,
+                    0.0D,
+                    0.0D
+            );
 
-        enderman = new StandardMob(
-                builder,
-                "enderman",
-                20,
-                4,
-                40.0,
-                7.0,
-                2.0,
-                0.30,
-                200.0,
-                50.0
-        );
+            enderman = new StandardMob(
+                    builder,
+                    "enderman",
+                    20,
+                    4,
+                    40.0D,
+                    70.0D,
+                    120.0D,
+                    7.0D,
+                    11.0D,
+                    18.0D
+            );
 
-        warden = new StandardMob(
-                builder,
-                "warden",
-                35, //Unlock day
-                1, //Default spawn weight
-                80.0, //Base health
-                10.0, //Base damage
-                0.0,
-                0.0,
-                80.0,
-                10.0
-
-        );
+            /*
+             * The Warden unlocks exactly at the Overworld progression boundary,
+             * making it the Overworld capstone threat. Because its unlock is at
+             * the primary endpoint, it begins at its base values and then uses
+             * only residual growth from Heat 35 to 100.
+             */
+            warden = new StandardMob(
+                    builder,
+                    "warden",
+                    35,
+                    1,
+                    160.0D,
+                    160.0D,
+                    300.0D,
+                    10.0D,
+                    10.0D,
+                    16.0D
+            );
 
             builder.pop();
         }
     }
 
     public static class StandardMob {
-    public final ForgeConfigSpec.IntValue unlockHeat;
-    public final ForgeConfigSpec.IntValue baseSpawnWeight;
-
-    public final ForgeConfigSpec.DoubleValue baseHealth;
-    public final ForgeConfigSpec.DoubleValue healthPerDay;
-    public final ForgeConfigSpec.DoubleValue maximumHealth;
-
-    public final ForgeConfigSpec.DoubleValue baseDamage;
-    public final ForgeConfigSpec.DoubleValue damagePerDay;
-    public final ForgeConfigSpec.DoubleValue maximumDamage;
-
-    protected StandardMob(
-            ForgeConfigSpec.Builder builder,
-            String mobName,
-            int defaultUnlockHeat,
-            int defaultSpawnWeight,
-            double defaultBaseHealth,
-            double defaultBaseDamage,
-            double defaultHealthPerDay,
-            double defaultDamagePerDay,
-            double defaultMaximumHealth,
-            double defaultMaximumDamage
-        ) {
-                builder.push(mobName);
-
-                unlockHeat = builder
-                        .comment("The first day this mob can spawn through The Flood.")
-                        .defineInRange("unlockHeat", defaultUnlockHeat, 1, 100_000);
-
-                baseSpawnWeight = builder
-                        .comment("The mob's initial selection weight when it unlocks.")
-                        .defineInRange("baseSpawnWeight", defaultSpawnWeight, 0, 10_000);
-
-                baseHealth = builder
-                        .comment("Health this mob has on its unlock day.")
-                        .defineInRange("baseHealth", defaultBaseHealth, 1.0, 10_000.0);
-
-                healthPerDay = builder
-                        .comment("Health added for every day after this mob unlocks.")
-                        .defineInRange("healthPerDay", defaultHealthPerDay, 0.0, 1_000.0);
-
-                maximumHealth = builder
-                        .comment(
-                                "Maximum health this mob can reach.",
-                                "Set very high if you do not want a practical cap."
-                        )
-                        .defineInRange("maximumHealth", defaultMaximumHealth, 1.0, 100_000.0);
-
-                baseDamage = builder
-                        .comment("Attack damage this mob has on its unlock day.")
-                        .defineInRange("baseDamage", defaultBaseDamage, 0.0, 1_000.0);
-
-                damagePerDay = builder
-                        .comment("Attack damage added for every day after this mob unlocks.")
-                        .defineInRange("damagePerDay", defaultDamagePerDay, 0.0, 100.0);
-
-                maximumDamage = builder
-                        .comment(
-                                "Maximum attack damage this mob can reach.",
-                                "Set very high if you do not want a practical cap."
-                        )
-                        .defineInRange("maximumDamage", defaultMaximumDamage, 0.0, 10_000.0);
-
-                builder.pop();
-        }
-        }
-
-    public static final class WardenMob {
         public final ForgeConfigSpec.IntValue unlockHeat;
         public final ForgeConfigSpec.IntValue baseSpawnWeight;
 
         public final ForgeConfigSpec.DoubleValue baseHealth;
-        public final ForgeConfigSpec.DoubleValue baseDamage;
-        public final ForgeConfigSpec.DoubleValue movementSpeed;
+        public final ForgeConfigSpec.DoubleValue primaryVanillaHealth;
+        public final ForgeConfigSpec.DoubleValue maximumVanillaHealth;
 
-        private WardenMob(
+        public final ForgeConfigSpec.DoubleValue baseDamage;
+        public final ForgeConfigSpec.DoubleValue primaryVanillaDamage;
+        public final ForgeConfigSpec.DoubleValue maximumVanillaDamage;
+
+        protected StandardMob(
                 ForgeConfigSpec.Builder builder,
+                String mobName,
                 int defaultUnlockHeat,
                 int defaultSpawnWeight,
                 double defaultBaseHealth,
+                double defaultPrimaryVanillaHealth,
+                double defaultMaximumVanillaHealth,
                 double defaultBaseDamage,
-                double defaultMovementSpeed
+                double defaultPrimaryVanillaDamage,
+                double defaultMaximumVanillaDamage
         ) {
-            builder.push("warden");
+            builder.push(mobName);
 
             unlockHeat = builder
-                    .comment("The first day Flood Wardens can spawn.")
+                    .comment("Heat level at which this mob first becomes available to The Flood.")
                     .defineInRange("unlockHeat", defaultUnlockHeat, 1, 100_000);
 
             baseSpawnWeight = builder
-                    .comment("The Flood Warden's initial selection weight.")
+                    .comment("The mob's selection weight when it first unlocks.")
                     .defineInRange("baseSpawnWeight", defaultSpawnWeight, 0, 10_000);
 
             baseHealth = builder
-                    .comment("Maximum health of Flood Wardens.")
-                    .defineInRange("health", defaultBaseHealth, 1.0, 1000.0);
+                    .comment(
+                            "Effective health this mob has when it first unlocks.",
+                            "This is the vanilla-baseline starting point."
+                    )
+                    .defineInRange("baseHealth", defaultBaseHealth, 1.0D, 10_000.0D);
+
+            primaryVanillaHealth = builder
+                    .comment(
+                            "Effective health this mob reaches at the end of its home-dimension progression.",
+                            "After this point, residual progression continues more slowly toward the Heat-100 value."
+                    )
+                    .defineInRange(
+                            "primaryVanillaHealth",
+                            defaultPrimaryVanillaHealth,
+                            1.0D,
+                            100_000.0D
+                    );
+
+            maximumVanillaHealth = builder
+                    .comment(
+                            "Effective health this mob reaches at Heat 100 on the vanilla difficulty curve.",
+                            "Capability scaling may later extend beyond this value for modded player power."
+                    )
+                    .defineInRange(
+                            "maximumVanillaHealth",
+                            defaultMaximumVanillaHealth,
+                            1.0D,
+                            100_000.0D
+                    );
 
             baseDamage = builder
-                    .comment("Attack damage of Flood Wardens.")
-                    .defineInRange("damage", defaultBaseDamage, 0.0, 100.0);
+                    .comment(
+                            "Effective attack damage this mob has when it first unlocks.",
+                            "This is the vanilla-baseline starting point."
+                    )
+                    .defineInRange("baseDamage", defaultBaseDamage, 0.0D, 1_000.0D);
 
-            movementSpeed = builder
-                    .comment("Movement speed of Flood Wardens.")
-                    .defineInRange("movementSpeed", defaultMovementSpeed, 0.05, 2.0);
+            primaryVanillaDamage = builder
+                    .comment(
+                            "Effective attack damage this mob reaches at the end of its home-dimension progression.",
+                            "After this point, residual progression continues more slowly toward the Heat-100 value."
+                    )
+                    .defineInRange(
+                            "primaryVanillaDamage",
+                            defaultPrimaryVanillaDamage,
+                            0.0D,
+                            10_000.0D
+                    );
+
+            maximumVanillaDamage = builder
+                    .comment(
+                            "Effective attack damage this mob reaches at Heat 100 on the vanilla difficulty curve.",
+                            "Capability scaling may later extend beyond this value for modded player power."
+                    )
+                    .defineInRange(
+                            "maximumVanillaDamage",
+                            defaultMaximumVanillaDamage,
+                            0.0D,
+                            10_000.0D
+                    );
 
             builder.pop();
         }
     }
+
 }

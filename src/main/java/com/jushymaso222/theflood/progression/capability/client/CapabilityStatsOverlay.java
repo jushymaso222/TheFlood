@@ -68,8 +68,11 @@ public final class CapabilityStatsOverlay {
     private static final int Y =
             8;
 
-    private static final int WIDTH =
+    private static final int COLUMN_WIDTH =
             245;
+
+    private static final int COLUMN_GAP =
+            8;
 
     private static final int PADDING =
             6;
@@ -111,79 +114,140 @@ public final class CapabilityStatsOverlay {
         Font font =
                 minecraft.font;
 
-        List<Line> lines =
-                buildLines(
+
+        List<Line> leftLines =
+                buildLeftColumn(
                         stats
                 );
 
+        List<Line> rightLines =
+                buildRightColumn(
+                        stats
+                );
+
+
+        int leftHeight =
+                PADDING * 2
+                        + leftLines.size()
+                        * LINE_HEIGHT;
+
+        int rightHeight =
+                PADDING * 2
+                        + rightLines.size()
+                        * LINE_HEIGHT;
+
+
+        int leftX =
+                X;
+
+        int rightX =
+                X
+                        + COLUMN_WIDTH
+                        + COLUMN_GAP;
+
+
+        drawPanel(
+                graphics,
+                font,
+                leftLines,
+                leftX,
+                Y,
+                COLUMN_WIDTH,
+                leftHeight
+        );
+
+
+        drawPanel(
+                graphics,
+                font,
+                rightLines,
+                rightX,
+                Y,
+                COLUMN_WIDTH,
+                rightHeight
+        );
+    }
+
+
+    /*
+     * =====================================================
+     * PANEL RENDERING
+     * =====================================================
+     */
+
+    private static void drawPanel(
+            GuiGraphics graphics,
+            Font font,
+            List<Line> lines,
+            int x,
+            int y,
+            int width,
+            int height
+    ) {
         if (lines.isEmpty()) {
             return;
         }
 
 
-        int height =
-                PADDING * 2
-                        + lines.size()
-                        * LINE_HEIGHT;
-
-
         /*
-         * Background.
+         * Background
          */
+
         graphics.fill(
-                X,
-                Y,
-                X + WIDTH,
-                Y + height,
+                x,
+                y,
+                x + width,
+                y + height,
                 BACKGROUND
         );
 
 
         /*
-         * Border.
+         * Border
          */
+
         graphics.fill(
-                X,
-                Y,
-                X + WIDTH,
-                Y + 1,
+                x,
+                y,
+                x + width,
+                y + 1,
                 BORDER
         );
 
         graphics.fill(
-                X,
-                Y + height - 1,
-                X + WIDTH,
-                Y + height,
+                x,
+                y + height - 1,
+                x + width,
+                y + height,
                 BORDER
         );
 
         graphics.fill(
-                X,
-                Y,
-                X + 1,
-                Y + height,
+                x,
+                y,
+                x + 1,
+                y + height,
                 BORDER
         );
 
         graphics.fill(
-                X + WIDTH - 1,
-                Y,
-                X + WIDTH,
-                Y + height,
+                x + width - 1,
+                y,
+                x + width,
+                y + height,
                 BORDER
         );
 
 
         int drawY =
-                Y + PADDING;
+                y + PADDING;
 
         for (Line line : lines) {
 
             graphics.drawString(
                     font,
                     line.text(),
-                    X + PADDING,
+                    x + PADDING,
                     drawY,
                     line.color(),
                     false
@@ -197,11 +261,11 @@ public final class CapabilityStatsOverlay {
 
     /*
      * =====================================================
-     * CONTENT
+     * LEFT COLUMN
      * =====================================================
      */
 
-    private static List<Line> buildLines(
+    private static List<Line> buildLeftColumn(
             ClientCapabilityStatsData.CapabilityStats stats
     ) {
         List<Line> lines =
@@ -232,7 +296,9 @@ public final class CapabilityStatsOverlay {
 
 
         /*
+         * =================================================
          * OFFENSE
+         * =================================================
          */
 
         section(
@@ -243,28 +309,36 @@ public final class CapabilityStatsOverlay {
         value(
                 lines,
                 "Current",
-                format(stats.offenseScore()),
+                format(
+                        stats.offenseScore()
+                ),
                 VALUE
         );
 
         value(
                 lines,
                 "Effective",
-                format(stats.effectiveOffense()),
+                format(
+                        stats.effectiveOffense()
+                ),
                 VALUE
         );
 
         value(
                 lines,
                 "Peak",
-                format(stats.peakOffense()),
+                format(
+                        stats.peakOffense()
+                ),
                 VALUE
         );
 
         value(
                 lines,
                 "Confidence",
-                percent(stats.offenseConfidence()),
+                percent(
+                        stats.offenseConfidence()
+                ),
                 confidenceColor(
                         stats.offenseConfidence()
                 )
@@ -279,13 +353,27 @@ public final class CapabilityStatsOverlay {
                 VALUE
         );
 
+        value(
+                lines,
+                "State",
+                capabilityState(
+                        stats.effectiveOffense(),
+                        stats.offenseConfidence()
+                ),
+                confidenceColor(
+                        stats.offenseConfidence()
+                )
+        );
+
         blank(
                 lines
         );
 
 
         /*
+         * =================================================
          * OFFENSE OBSERVATIONS
+         * =================================================
          */
 
         section(
@@ -335,7 +423,9 @@ public final class CapabilityStatsOverlay {
 
 
         /*
+         * =================================================
          * DEFENSE
+         * =================================================
          */
 
         section(
@@ -383,18 +473,56 @@ public final class CapabilityStatsOverlay {
 
         value(
                 lines,
-                "Sensor",
-                "NOT IMPLEMENTED",
-                NEGATIVE
+                "Samples",
+                Long.toString(
+                        stats.defenseSamples()
+                ),
+                VALUE
         );
 
-        blank(
-                lines
+        value(
+                lines,
+                "Last Observation",
+                format(
+                        stats.lastDefenseObservation()
+                ),
+                VALUE
         );
+
+        value(
+                lines,
+                "State",
+                capabilityState(
+                        stats.effectiveDefense(),
+                        stats.defenseConfidence()
+                ),
+                confidenceColor(
+                        stats.defenseConfidence()
+                )
+        );
+
+
+        return lines;
+    }
+
+
+    /*
+     * =====================================================
+     * RIGHT COLUMN
+     * =====================================================
+     */
+
+    private static List<Line> buildRightColumn(
+            ClientCapabilityStatsData.CapabilityStats stats
+    ) {
+        List<Line> lines =
+                new ArrayList<>();
 
 
         /*
+         * =================================================
          * SURVIVAL
+         * =================================================
          */
 
         section(
@@ -442,9 +570,32 @@ public final class CapabilityStatsOverlay {
 
         value(
                 lines,
-                "Sensor",
-                "NOT IMPLEMENTED",
-                NEGATIVE
+                "Samples",
+                Long.toString(
+                        stats.survivalSamples()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "Last Observation",
+                format(
+                        stats.lastSurvivalObservation()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "State",
+                capabilityState(
+                        stats.effectiveSurvival(),
+                        stats.survivalConfidence()
+                ),
+                confidenceColor(
+                        stats.survivalConfidence()
+                )
         );
 
         blank(
@@ -453,7 +604,93 @@ public final class CapabilityStatsOverlay {
 
 
         /*
+         * =================================================
+         * MOBILITY
+         * =================================================
+         */
+
+        section(
+                lines,
+                "MOBILITY"
+        );
+
+        value(
+                lines,
+                "Current",
+                format(
+                        stats.mobilityScore()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "Effective",
+                format(
+                        stats.effectiveMobility()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "Peak",
+                format(
+                        stats.peakMobility()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "Confidence",
+                percent(
+                        stats.mobilityConfidence()
+                ),
+                confidenceColor(
+                        stats.mobilityConfidence()
+                )
+        );
+
+        value(
+                lines,
+                "Samples",
+                Long.toString(
+                        stats.mobilitySamples()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "Last Observation",
+                format(
+                        stats.lastMobilityObservation()
+                ),
+                VALUE
+        );
+
+        value(
+                lines,
+                "State",
+                capabilityState(
+                        stats.effectiveMobility(),
+                        stats.mobilityConfidence()
+                ),
+                confidenceColor(
+                        stats.mobilityConfidence()
+                )
+        );
+
+        blank(
+                lines
+        );
+
+
+        /*
+         * =================================================
          * PROGRESSION
+         * =================================================
          */
 
         section(
@@ -476,10 +713,9 @@ public final class CapabilityStatsOverlay {
 
 
         /*
+         * =================================================
          * SYSTEM
-         *
-         * These are deliberately explicit because
-         * Capability does NOT affect Flood difficulty yet.
+         * =================================================
          */
 
         section(
@@ -510,6 +746,42 @@ public final class CapabilityStatsOverlay {
                 ),
                 confidenceColor(
                         stats.offenseConfidence()
+                )
+        );
+
+        value(
+                lines,
+                "Defense State",
+                capabilityState(
+                        stats.effectiveDefense(),
+                        stats.defenseConfidence()
+                ),
+                confidenceColor(
+                        stats.defenseConfidence()
+                )
+        );
+
+        value(
+                lines,
+                "Survival State",
+                capabilityState(
+                        stats.effectiveSurvival(),
+                        stats.survivalConfidence()
+                ),
+                confidenceColor(
+                        stats.survivalConfidence()
+                )
+        );
+
+        value(
+                lines,
+                "Mobility State",
+                capabilityState(
+                        stats.effectiveMobility(),
+                        stats.mobilityConfidence()
+                ),
+                confidenceColor(
+                        stats.mobilityConfidence()
                 )
         );
 

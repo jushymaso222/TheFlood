@@ -695,13 +695,6 @@ public final class TeamManager {
         )
 );
 
-    sendHeatJoinWarning(
-            player,
-            team,
-            currentHeat,
-            projectedHeat
-    );
-
     return true;
 }
 
@@ -1305,6 +1298,29 @@ public final class TeamManager {
             HeatManager.getSoloHeat(
                     joiningPlayer
             )
+    );
+}
+
+public static int getProjectedJoinHeat(
+        ServerPlayer player,
+        UUID teamId
+) {
+    FloodTeam team =
+            getTeam(
+                    player.server,
+                    teamId
+            );
+
+    if (team == null) {
+        return HeatManager.getEffectiveHeat(
+                player
+        );
+    }
+
+    return calculateProjectedTeamHeat(
+            player.server,
+            team,
+            player
     );
 }
 

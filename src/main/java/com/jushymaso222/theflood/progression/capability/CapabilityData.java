@@ -8,6 +8,13 @@ public final class CapabilityData {
     private static final String ROOT_KEY =
             "theflood_capability";
 
+
+    /*
+     * ============================================
+     * SCORES
+     * ============================================
+     */
+
     private static final String OFFENSE =
             "offense";
 
@@ -16,6 +23,16 @@ public final class CapabilityData {
 
     private static final String SURVIVAL =
             "survival";
+
+    private static final String MOBILITY =
+            "mobility";
+
+
+    /*
+     * ============================================
+     * CONFIDENCE
+     * ============================================
+     */
 
     private static final String OFFENSE_CONFIDENCE =
             "offense_confidence";
@@ -26,6 +43,16 @@ public final class CapabilityData {
     private static final String SURVIVAL_CONFIDENCE =
             "survival_confidence";
 
+    private static final String MOBILITY_CONFIDENCE =
+            "mobility_confidence";
+
+
+    /*
+     * ============================================
+     * PEAK MEMORY
+     * ============================================
+     */
+
     private static final String PEAK_OFFENSE =
             "peak_offense";
 
@@ -35,14 +62,56 @@ public final class CapabilityData {
     private static final String PEAK_SURVIVAL =
             "peak_survival";
 
+    private static final String PEAK_MOBILITY =
+            "peak_mobility";
+
+
+    /*
+     * ============================================
+     * SAMPLE COUNTS
+     * ============================================
+     */
+
     private static final String OFFENSE_SAMPLES =
             "offense_samples";
 
-    private static final String LAST_OFFENSIVE_DAMAGE =
-            "last_offensive_damage";
+    private static final String DEFENSE_SAMPLES =
+            "defense_samples";
+
+    private static final String SURVIVAL_SAMPLES =
+            "survival_samples";
+
+    private static final String MOBILITY_SAMPLES =
+            "mobility_samples";
+
+
+    /*
+     * ============================================
+     * LAST OBSERVATIONS
+     * ============================================
+     */
 
     private static final String LAST_OFFENSE_OBSERVATION =
             "last_offense_observation";
+
+    private static final String LAST_DEFENSE_OBSERVATION =
+            "last_defense_observation";
+
+    private static final String LAST_SURVIVAL_OBSERVATION =
+            "last_survival_observation";
+
+    private static final String LAST_MOBILITY_OBSERVATION =
+            "last_mobility_observation";
+
+
+    /*
+     * ============================================
+     * OFFENSE-SPECIFIC DIAGNOSTICS
+     * ============================================
+     */
+
+    private static final String LAST_OFFENSIVE_DAMAGE =
+            "last_offensive_damage";
 
     private static final String AVERAGE_OFFENSIVE_DAMAGE =
             "average_offensive_damage";
@@ -67,6 +136,10 @@ public final class CapabilityData {
         CapabilityProfile profile =
                 new CapabilityProfile();
 
+        if (player == null) {
+            return profile;
+        }
+
         CompoundTag persistent =
                 player.getPersistentData();
 
@@ -80,18 +153,38 @@ public final class CapabilityData {
                 );
 
 
+        /*
+         * SCORES
+         */
+
         profile.setOffenseScore(
-                tag.getDouble(OFFENSE)
+                tag.getDouble(
+                        OFFENSE
+                )
         );
 
         profile.setDefenseScore(
-                tag.getDouble(DEFENSE)
+                tag.getDouble(
+                        DEFENSE
+                )
         );
 
         profile.setSurvivalScore(
-                tag.getDouble(SURVIVAL)
+                tag.getDouble(
+                        SURVIVAL
+                )
         );
 
+        profile.setMobilityScore(
+                tag.getDouble(
+                        MOBILITY
+                )
+        );
+
+
+        /*
+         * CONFIDENCE
+         */
 
         profile.setOffenseConfidence(
                 tag.getDouble(
@@ -111,18 +204,36 @@ public final class CapabilityData {
                 )
         );
 
+        profile.setMobilityConfidence(
+                tag.getDouble(
+                        MOBILITY_CONFIDENCE
+                )
+        );
+
 
         /*
-         * Peaks need to be restored separately.
-         *
-         * We'll add direct restoration methods to
-         * CapabilityProfile below.
+         * PEAK MEMORY
          */
+
         profile.restorePeaks(
-                tag.getDouble(PEAK_OFFENSE),
-                tag.getDouble(PEAK_DEFENSE),
-                tag.getDouble(PEAK_SURVIVAL)
+                tag.getDouble(
+                        PEAK_OFFENSE
+                ),
+                tag.getDouble(
+                        PEAK_DEFENSE
+                ),
+                tag.getDouble(
+                        PEAK_SURVIVAL
+                ),
+                tag.getDouble(
+                        PEAK_MOBILITY
+                )
         );
+
+
+        /*
+         * OFFENSE DIAGNOSTICS
+         */
 
         profile.restoreOffenseDiagnostics(
                 tag.getLong(
@@ -139,6 +250,48 @@ public final class CapabilityData {
                 ),
                 tag.getDouble(
                         PEAK_OBSERVED_OFFENSIVE_DAMAGE
+                )
+        );
+
+
+        /*
+         * DEFENSE DIAGNOSTICS
+         */
+
+        profile.restoreDefenseDiagnostics(
+                tag.getLong(
+                        DEFENSE_SAMPLES
+                ),
+                tag.getDouble(
+                        LAST_DEFENSE_OBSERVATION
+                )
+        );
+
+
+        /*
+         * SURVIVAL DIAGNOSTICS
+         */
+
+        profile.restoreSurvivalDiagnostics(
+                tag.getLong(
+                        SURVIVAL_SAMPLES
+                ),
+                tag.getDouble(
+                        LAST_SURVIVAL_OBSERVATION
+                )
+        );
+
+
+        /*
+         * MOBILITY DIAGNOSTICS
+         */
+
+        profile.restoreMobilityDiagnostics(
+                tag.getLong(
+                        MOBILITY_SAMPLES
+                ),
+                tag.getDouble(
+                        LAST_MOBILITY_OBSERVATION
                 )
         );
 
@@ -167,6 +320,10 @@ public final class CapabilityData {
                 new CompoundTag();
 
 
+        /*
+         * SCORES
+         */
+
         tag.putDouble(
                 OFFENSE,
                 profile.getOffenseScore()
@@ -182,6 +339,15 @@ public final class CapabilityData {
                 profile.getSurvivalScore()
         );
 
+        tag.putDouble(
+                MOBILITY,
+                profile.getMobilityScore()
+        );
+
+
+        /*
+         * CONFIDENCE
+         */
 
         tag.putDouble(
                 OFFENSE_CONFIDENCE,
@@ -198,6 +364,15 @@ public final class CapabilityData {
                 profile.getSurvivalConfidence()
         );
 
+        tag.putDouble(
+                MOBILITY_CONFIDENCE,
+                profile.getMobilityConfidence()
+        );
+
+
+        /*
+         * PEAK MEMORY
+         */
 
         tag.putDouble(
                 PEAK_OFFENSE,
@@ -214,19 +389,69 @@ public final class CapabilityData {
                 profile.getPeakSurvival()
         );
 
+        tag.putDouble(
+                PEAK_MOBILITY,
+                profile.getPeakMobility()
+        );
+
+
+        /*
+         * SAMPLE COUNTS
+         */
+
         tag.putLong(
                 OFFENSE_SAMPLES,
                 profile.getOffenseSamples()
         );
 
-        tag.putDouble(
-                LAST_OFFENSIVE_DAMAGE,
-                profile.getLastOffensiveDamage()
+        tag.putLong(
+                DEFENSE_SAMPLES,
+                profile.getDefenseSamples()
         );
+
+        tag.putLong(
+                SURVIVAL_SAMPLES,
+                profile.getSurvivalSamples()
+        );
+
+        tag.putLong(
+                MOBILITY_SAMPLES,
+                profile.getMobilitySamples()
+        );
+
+
+        /*
+         * LAST OBSERVATIONS
+         */
 
         tag.putDouble(
                 LAST_OFFENSE_OBSERVATION,
                 profile.getLastOffenseObservation()
+        );
+
+        tag.putDouble(
+                LAST_DEFENSE_OBSERVATION,
+                profile.getLastDefenseObservation()
+        );
+
+        tag.putDouble(
+                LAST_SURVIVAL_OBSERVATION,
+                profile.getLastSurvivalObservation()
+        );
+
+        tag.putDouble(
+                LAST_MOBILITY_OBSERVATION,
+                profile.getLastMobilityObservation()
+        );
+
+
+        /*
+         * OFFENSE-SPECIFIC DIAGNOSTICS
+         */
+
+        tag.putDouble(
+                LAST_OFFENSIVE_DAMAGE,
+                profile.getLastOffensiveDamage()
         );
 
         tag.putDouble(
@@ -276,7 +501,9 @@ public final class CapabilityData {
 
         CompoundTag capability =
                 oldPersistent
-                        .getCompound(ROOT_KEY)
+                        .getCompound(
+                                ROOT_KEY
+                        )
                         .copy();
 
         newPlayer

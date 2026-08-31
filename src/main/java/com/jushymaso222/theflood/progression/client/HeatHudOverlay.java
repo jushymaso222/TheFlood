@@ -69,6 +69,67 @@ public final class HeatHudOverlay {
                 133;
 
         /*
+        * Maximum horizontal space reserved to the right
+        * of the Heat HUD for the temporary Flood XP gain.
+        *
+        * The actual XP value may technically grow beyond
+        * this, but this comfortably covers realistic
+        * accumulated values without making the HUD
+        * unnecessarily difficult to position.
+        */
+        private static final String XP_RESERVATION_TEXT =
+                "+999999";
+
+        private static int getXpReservedWidth(
+                Minecraft minecraft,
+                int hudWidth
+        ) {
+        int gap =
+                Math.max(
+                        0,
+                        -10
+                                + scaleX(
+                                        6,
+                                        hudWidth
+                                )
+                );
+
+        return gap
+                + minecraft.font.width(
+                        XP_RESERVATION_TEXT
+                );
+        }
+
+        public static int getHudReservedWidth(
+                Minecraft minecraft,
+                int screenWidth
+        ) {
+        int hudWidth =
+                getHudWidth(
+                        screenWidth
+                );
+
+        int xpStartOffset =
+                -10
+                        + hudWidth
+                        + scaleX(
+                                6,
+                                hudWidth
+                        );
+
+        int xpRight =
+                xpStartOffset
+                        + minecraft.font.width(
+                                XP_RESERVATION_TEXT
+                        );
+
+        return Math.max(
+                hudWidth,
+                xpRight
+        );
+        }
+
+        /*
         * Starting display size.
         *
         * We can tune this after seeing it at top-center.
@@ -108,13 +169,13 @@ public final class HeatHudOverlay {
     private HeatHudOverlay() {
     }
 
-        private static int getHudWidth(int screenWidth) {
+        public static int getHudWidth(int screenWidth) {
     return Math.round(
             screenWidth * HUD_WIDTH_RATIO
     );
 }
 
-private static int getHudHeight(int hudWidth) {
+public static int getHudHeight(int hudWidth) {
     return Math.round(
             hudWidth
                     * (
@@ -381,6 +442,12 @@ private static float[] getFillColor(int heat) {
      * =================================================
      */
 
+        int hudReservedWidth =
+        getHudReservedWidth(
+                minecraft,
+                screenWidth
+        );
+
         FloodHudPositioning.Position hudPosition =
                 FloodHudPositioning.resolveClamped(
                         TheFloodClientConfig
@@ -388,7 +455,7 @@ private static float[] getFillColor(int heat) {
                                 .get(),
                         screenWidth,
                         screenHeight,
-                        hudWidth,
+                        hudReservedWidth,
                         hudHeight,
                         TheFloodClientConfig
                                 .HEAT_HUD_ANCHOR_X_OFFSET

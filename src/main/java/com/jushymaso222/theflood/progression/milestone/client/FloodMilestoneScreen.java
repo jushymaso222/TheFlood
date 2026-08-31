@@ -45,6 +45,21 @@ public final class FloodMilestoneScreen extends Screen {
     private static final int TAB_MIN_WIDTH = 82;
     private static final int TAB_ARROW_WIDTH = 22;
 
+    private static final int TOOLTIP_BACKGROUND =
+                0xFF101010;
+
+        private static final int TOOLTIP_BORDER =
+                0xFF666666;
+
+        private static final int TOOLTIP_TITLE_COLOR =
+                0xFFFFFFFF;
+
+        private static final int TOOLTIP_TEXT_COLOR =
+                0xFFAAAAAA;
+
+        private static final int TOOLTIP_SECONDARY_TEXT_COLOR =
+                0xFFBBBBBB;
+
 
     /*
      * ============================================
@@ -1139,10 +1154,7 @@ public final class FloodMilestoneScreen extends Screen {
          */
 
         if (
-                Math.abs(
-                        startY - endY
-                )
-                        < NODE_HEIGHT
+                from.y() == to.y()
         ) {
 
             int horizontalStart =
@@ -1232,163 +1244,161 @@ public final class FloodMilestoneScreen extends Screen {
      */
 
     private void renderMilestoneTooltip(
-            GuiGraphics graphics,
-            MilestoneDefinition milestone,
-            int mouseX,
-            int mouseY,
-            int accentColor
-    ) {
+        GuiGraphics graphics,
+        MilestoneDefinition milestone,
+        int mouseX,
+        int mouseY,
+        int accentColor
+) {
 
-        int tooltipWidth = 190;
+    int tooltipWidth = 190;
 
-        List<FormattedCharSequence> description =
-                font.split(
-                        milestone.description(),
-                        tooltipWidth - 16
-                );
-
-
-        int tooltipHeight =
-                42
-                        + description.size()
-                        * font.lineHeight;
-
-
-        int tooltipX =
-                mouseX + 12;
-
-        int tooltipY =
-                mouseY + 12;
-
-
-        if (
-                tooltipX
-                        + tooltipWidth
-                        > width - 4
-        ) {
-
-            tooltipX =
-                    mouseX
-                            - tooltipWidth
-                            - 12;
-        }
-
-
-        if (
-                tooltipY
-                        + tooltipHeight
-                        > height - 4
-        ) {
-
-            tooltipY =
-                    height
-                            - tooltipHeight
-                            - 4;
-        }
-
-
-        graphics.fill(
-                tooltipX,
-                tooltipY,
-                tooltipX + tooltipWidth,
-                tooltipY + tooltipHeight,
-                0xF0101010
-        );
-
-
-        drawBorder(
-                graphics,
-                tooltipX,
-                tooltipY,
-                tooltipWidth,
-                tooltipHeight,
-                0xFF666666
-        );
-
-
-        graphics.drawString(
-                font,
-                milestone.title(),
-                tooltipX + 8,
-                tooltipY + 7,
-                0xFFFFFFFF,
-                true
-        );
-
-
-        int descriptionY =
-                tooltipY + 20;
-
-
-        for (
-                int i = 0;
-                i < description.size();
-                i++
-        ) {
-
-            graphics.drawString(
-                    font,
-                    description.get(i),
-                    tooltipX + 8,
-                    descriptionY
-                            + i
-                            * font.lineHeight,
-                    0xFFAAAAAA,
-                    false
+    List<FormattedCharSequence> description =
+            font.split(
+                    milestone.description(),
+                    tooltipWidth - 16
             );
-        }
+
+    int tooltipHeight =
+            42
+                    + description.size()
+                    * font.lineHeight;
+
+    int tooltipX =
+            mouseX + 12;
+
+    int tooltipY =
+            mouseY + 12;
+
+    if (
+            tooltipX
+                    + tooltipWidth
+                    > width - 4
+    ) {
+        tooltipX =
+                mouseX
+                        - tooltipWidth
+                        - 12;
+    }
+
+    if (
+            tooltipY
+                    + tooltipHeight
+                    > height - 4
+    ) {
+        tooltipY =
+                height
+                        - tooltipHeight
+                        - 4;
+    }
 
 
-        int rewardY =
-                descriptionY
-                        + description.size()
-                        * font.lineHeight
-                        + 4;
+    /*
+     * Render the tooltip above every milestone
+     * node, connector, and label.
+     */
+    graphics.pose().pushPose();
+
+    graphics.pose().translate(
+            0.0F,
+            0.0F,
+            400.0F
+    );
 
 
-        String progression =
-                "Progression: "
-                        + milestone.progressionValue()
-                        + "%";
+    graphics.fill(
+            tooltipX,
+            tooltipY,
+            tooltipX + tooltipWidth,
+            tooltipY + tooltipHeight,
+            TOOLTIP_BACKGROUND
+    );
 
+    drawBorder(
+            graphics,
+            tooltipX,
+            tooltipY,
+            tooltipWidth,
+            tooltipHeight,
+            TOOLTIP_BORDER
+    );
 
+    graphics.drawString(
+            font,
+            milestone.title(),
+            tooltipX + 8,
+            tooltipY + 7,
+            TOOLTIP_TITLE_COLOR,
+            true
+    );
+
+    int descriptionY =
+            tooltipY + 20;
+
+    for (
+            int i = 0;
+            i < description.size();
+            i++
+    ) {
         graphics.drawString(
                 font,
-                progression,
+                description.get(i),
                 tooltipX + 8,
-                rewardY,
-                0xFFBBBBBB,
-                false
-        );
-
-
-        String reward =
-                "+"
-                        + Math.round(
-                                milestone.floodXpReward()
-                                        * 100.0D
-                        )
-                        + "% Flood XP";
-
-
-        int rewardWidth =
-                font.width(
-                        reward
-                );
-
-
-        graphics.drawString(
-                font,
-                reward,
-                tooltipX
-                        + tooltipWidth
-                        - rewardWidth
-                        - 8,
-                rewardY,
-                accentColor,
+                descriptionY
+                        + i * font.lineHeight,
+                TOOLTIP_TEXT_COLOR,
                 false
         );
     }
+
+    int rewardY =
+            descriptionY
+                    + description.size()
+                    * font.lineHeight
+                    + 4;
+
+    String progression =
+            "Progression: "
+                    + milestone.progressionValue()
+                    + "%";
+
+    graphics.drawString(
+            font,
+            progression,
+            tooltipX + 8,
+            rewardY,
+            TOOLTIP_SECONDARY_TEXT_COLOR,
+            false
+    );
+
+    String reward =
+            "+"
+                    + Math.round(
+                            milestone.floodXpReward()
+                                    * 100.0D
+                    )
+                    + "% Flood XP";
+
+    int rewardWidth =
+            font.width(
+                    reward
+            );
+
+    graphics.drawString(
+            font,
+            reward,
+            tooltipX
+                    + tooltipWidth
+                    - rewardWidth
+                    - 8,
+            rewardY,
+            accentColor,
+            false
+    );
+
+
+    graphics.pose().popPose();
+}
 
 
     /*

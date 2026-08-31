@@ -39,6 +39,14 @@ public final class FloodNetwork {
 
         CHANNEL.registerMessage(
                 id++,
+                TeamNetworkingPackets.ConfirmTeamInvitePacket.class,
+                TeamNetworkingPackets.ConfirmTeamInvitePacket::encode,
+                TeamNetworkingPackets.ConfirmTeamInvitePacket::decode,
+                TeamNetworkingPackets.ConfirmTeamInvitePacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
                 SyncCapabilityStatsPacket.class,
                 SyncCapabilityStatsPacket::encode,
                 SyncCapabilityStatsPacket::decode,

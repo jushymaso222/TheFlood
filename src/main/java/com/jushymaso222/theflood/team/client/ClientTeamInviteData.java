@@ -10,16 +10,33 @@ import java.util.UUID;
 public final class ClientTeamInviteData {
 
     public record Invite(
-            UUID teamId,
-            String teamName
-    ) {
-    }
+                UUID teamId,
+                String teamName,
+                int currentHeat,
+                int projectedHeat
+        ) {
+
+        public boolean increasesHeat() {
+                return projectedHeat > currentHeat;
+        }
+        }
 
     private static final List<Invite> INVITES =
             new ArrayList<>();
 
     private ClientTeamInviteData() {
     }
+
+    public static void removeInvite(
+                UUID teamId
+        ) {
+        INVITES.removeIf(
+                invite ->
+                        invite.teamId().equals(
+                                teamId
+                        )
+        );
+        }
 
     public static void setInvites(
             List<Invite> invites

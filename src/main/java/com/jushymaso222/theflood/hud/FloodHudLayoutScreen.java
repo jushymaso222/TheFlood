@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import com.jushymaso222.theflood.team.client.TeamHudOverlay;
 import net.minecraft.resources.ResourceLocation;
+import com.jushymaso222.theflood.progression.client.HeatHudOverlay;
 
 public class FloodHudLayoutScreen extends Screen {
 
@@ -40,19 +41,21 @@ public class FloodHudLayoutScreen extends Screen {
         }
 
         private int getHeatPreviewWidth() {
-        return getHudScaleWidth(220);
+        return HeatHudOverlay.getHudWidth(
+                width
+        );
         }
 
         private int getHeatPreviewHeight() {
-        int previewWidth =
-                getHeatPreviewWidth();
+        return HeatHudOverlay.getHudHeight(
+                getHeatPreviewWidth()
+        );
+        }
 
-        return Math.round(
-                previewWidth
-                        * (
-                        FLOOD_HUD_TEXTURE_HEIGHT
-                                / (float) FLOOD_HUD_TEXTURE_WIDTH
-                )
+        private int getHeatReservedWidth() {
+        return HeatHudOverlay.getHudReservedWidth(
+                minecraft,
+                width
         );
         }
 
@@ -181,6 +184,7 @@ public class FloodHudLayoutScreen extends Screen {
                 27,
                 0xFFAAAAAA
         );
+        renderHudObstacles(graphics);
 
         renderHeatPreview(graphics);
         renderTeamPreview(
@@ -194,6 +198,165 @@ public class FloodHudLayoutScreen extends Screen {
                 partialTick
         );
     }
+
+    private void renderHudObstacles(
+        GuiGraphics graphics
+) {
+    /*
+     * =================================================
+     * VANILLA HUD
+     * =================================================
+     *
+     * Simple representative region for:
+     *
+     * health
+     * armor
+     * hunger
+     * air
+     * XP
+     * hotbar
+     */
+
+    int hudWidth =
+            Math.min(
+                    200,
+                    width - 20
+            );
+
+    int hudHeight =
+            46;
+
+    int hudX =
+            width / 2
+                    - hudWidth / 2;
+
+    int hudY =
+            height
+                    - hudHeight
+                    - 5;
+
+    drawObstacle(
+            graphics,
+            hudX,
+            hudY,
+            hudWidth,
+            hudHeight,
+            "VANILLA HUD"
+    );
+
+
+    /*
+     * =================================================
+     * MINIMAP
+     * =================================================
+     *
+     * Generic top-right minimap reservation.
+     *
+     * We don't care which minimap mod is installed.
+     * The player can use this as a placement guide
+     * or simply ignore it.
+     */
+
+    int minimapSize =
+            Math.min(
+                    110,
+                    Math.max(
+                            70,
+                            width / 7
+                    )
+            );
+
+    int minimapX =
+                8;
+
+        int minimapY =
+                8;
+
+    drawObstacle(
+            graphics,
+            minimapX,
+            minimapY,
+            minimapSize,
+            minimapSize,
+            "MINIMAP"
+    );
+}
+
+        private void drawObstacle(
+        GuiGraphics graphics,
+        int x,
+        int y,
+        int obstacleWidth,
+        int obstacleHeight,
+        String label
+) {
+    int background =
+            0x40202020;
+
+    int border =
+            0x80666666;
+
+    int textColor =
+            0xFF888888;
+
+    graphics.fill(
+            x,
+            y,
+            x + obstacleWidth,
+            y + obstacleHeight,
+            background
+    );
+
+    graphics.fill(
+            x,
+            y,
+            x + obstacleWidth,
+            y + 1,
+            border
+    );
+
+    graphics.fill(
+            x,
+            y + obstacleHeight - 1,
+            x + obstacleWidth,
+            y + obstacleHeight,
+            border
+    );
+
+    graphics.fill(
+            x,
+            y,
+            x + 1,
+            y + obstacleHeight,
+            border
+    );
+
+    graphics.fill(
+            x + obstacleWidth - 1,
+            y,
+            x + obstacleWidth,
+            y + obstacleHeight,
+            border
+    );
+
+    int labelWidth =
+            font.width(
+                    label
+            );
+
+    graphics.drawString(
+            font,
+            label,
+            x
+                    + obstacleWidth / 2
+                    - labelWidth / 2,
+            y
+                    + obstacleHeight / 2
+                    - font.lineHeight / 2,
+            textColor,
+            false
+    );
+}
 
     private void renderTeamPreview(
                 GuiGraphics graphics
@@ -503,16 +666,19 @@ private int getYOffsetForPosition(
     int previewHeight =
             getHeatPreviewHeight();
 
-    FloodHudPositioning.Position position =
-            FloodHudPositioning.resolveClamped(
-                    heatAnchor,
-                    width,
-                    height,
-                    previewWidth,
-                    previewHeight,
-                    heatXOffset,
-                    heatYOffset
-            );
+    int reservedWidth =
+                getHeatReservedWidth();
+
+        FloodHudPositioning.Position position =
+                FloodHudPositioning.resolveClamped(
+                        heatAnchor,
+                        width,
+                        height,
+                        reservedWidth,
+                        previewHeight,
+                        heatXOffset,
+                        heatYOffset
+                );
 
     int x =
             position.x();
@@ -784,16 +950,19 @@ private int getYOffsetForPosition(
     int previewHeight =
             getHeatPreviewHeight();
 
-    FloodHudPositioning.Position position =
-            FloodHudPositioning.resolveClamped(
-                    heatAnchor,
-                    width,
-                    height,
-                    previewWidth,
-                    previewHeight,
-                    heatXOffset,
-                    heatYOffset
-            );
+    int reservedWidth =
+                getHeatReservedWidth();
+
+        FloodHudPositioning.Position position =
+                FloodHudPositioning.resolveClamped(
+                        heatAnchor,
+                        width,
+                        height,
+                        reservedWidth,
+                        previewHeight,
+                        heatXOffset,
+                        heatYOffset
+                );
 
     return mouseX >= position.x()
             && mouseX <= position.x() + previewWidth

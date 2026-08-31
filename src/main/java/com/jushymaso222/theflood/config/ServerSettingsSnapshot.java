@@ -460,6 +460,56 @@ private static void addMobSettings(
         List<ServerSettingEntry> settings
 ) {
 
+    addInt(
+            settings,
+            "Mobs",
+            "Progression Bands",
+            "Overworld Progression End",
+            TheFloodConfig.MOBS.overworldProgressionEndHeat,
+            " Heat",
+            "End of the Overworld's primary difficulty-growth window. Overworld mobs continue slower residual growth afterward."
+    );
+
+    addInt(
+            settings,
+            "Mobs",
+            "Progression Bands",
+            "Nether Progression End",
+            TheFloodConfig.MOBS.netherProgressionEndHeat,
+            " Heat",
+            "End of the Nether's primary difficulty-growth window for future Nether Flood mobs."
+    );
+
+    addInt(
+            settings,
+            "Mobs",
+            "Progression Bands",
+            "End Progression End",
+            TheFloodConfig.MOBS.endProgressionEndHeat,
+            " Heat",
+            "End of the End's primary difficulty-growth window and the current vanilla Heat baseline."
+    );
+
+    addDouble(
+            settings,
+            "Mobs",
+            "Vanilla Heat Scaling",
+            "Primary Curve Exponent",
+            TheFloodConfig.MOBS.vanillaHeatCurveExponent,
+            "",
+            "Controls stat growth inside a mob's home-dimension progression window. 1.0 is linear; higher values push more growth toward the end of the region."
+    );
+
+    addDouble(
+            settings,
+            "Mobs",
+            "Vanilla Heat Scaling",
+            "Residual Curve Exponent",
+            TheFloodConfig.MOBS.residualHeatCurveExponent,
+            "",
+            "Controls slower stat growth after a mob's home-dimension progression ends."
+    );
+
     addStandardMob(
             settings,
             "Zombie",
@@ -572,20 +622,20 @@ private static void addStandardMob(
             settings,
             "Mobs",
             displayName,
-            "Health Growth",
-            mob.healthPerDay,
-            " HP/Heat",
-            "Additional effective health gained as Heat progresses."
+            "Health at Primary End",
+            mob.primaryVanillaHealth,
+            " HP",
+            "Effective health at the end of this mob's home-dimension progression window."
     );
 
     addDouble(
             settings,
             "Mobs",
             displayName,
-            "Maximum Health",
-            mob.maximumHealth,
+            "Health at Heat 100",
+            mob.maximumVanillaHealth,
             " HP",
-            "Maximum effective health this enemy can reach."
+            "Effective health after residual vanilla progression reaches Heat 100, before Capability extension."
     );
 
     addDouble(
@@ -602,20 +652,20 @@ private static void addStandardMob(
             settings,
             "Mobs",
             displayName,
-            "Damage Growth",
-            mob.damagePerDay,
-            " /Heat",
-            "Additional attack damage gained as Heat progresses."
+            "Damage at Primary End",
+            mob.primaryVanillaDamage,
+            "",
+            "Attack damage at the end of this mob's home-dimension progression window."
     );
 
     addDouble(
             settings,
             "Mobs",
             displayName,
-            "Maximum Damage",
-            mob.maximumDamage,
+            "Damage at Heat 100",
+            mob.maximumVanillaDamage,
             "",
-            "Maximum attack damage this enemy can reach."
+            "Attack damage after residual vanilla progression reaches Heat 100, before Capability extension."
     );
 }
 

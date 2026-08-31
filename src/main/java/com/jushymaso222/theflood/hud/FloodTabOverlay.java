@@ -309,9 +309,20 @@ private static void previousPlayerPage(
         );
 
         FloodNetwork.CHANNEL.sendToServer(
+                new TeamNetworkingPackets
+                        .RequestPendingTeamInvitesPacket()
+        );
+
+        FloodNetwork.CHANNEL.sendToServer(
                 new RequestMilestoneSnapshotPacket()
         );
     }
+        if (
+        !tabDown
+                && tabWasDown
+        ) {
+        FloodTabInvitePanel.resetConfirmation();
+        }
 
     tabWasDown = tabDown;
 
@@ -526,6 +537,21 @@ public static final class ForgeEvents {
     ) {
         return;
     }
+
+    /*
+        * =================================================
+        * TEAM INVITES
+        * =================================================
+        */
+
+        if (
+                FloodTabInvitePanel.handleClick(
+                        mouseX,
+                        mouseY
+                )
+        ) {
+        return;
+        }
 
 
     /*
@@ -2546,6 +2572,44 @@ private static int getTabHealthColor(
             ),
             isInteractionMode()
     );
+
+    /*
+        * =================================================
+        * TEAM INVITES
+        * =================================================
+        */
+
+        int rightPanelGap =
+                8;
+
+        int rightPanelX =
+                x
+                        + panelWidth
+                        + rightPanelGap;
+
+        FloodTabInvitePanel.render(
+                graphics,
+                minecraft,
+                rightPanelX,
+                y,
+                getTabMouseX(
+                        minecraft
+                ),
+                getTabMouseY(
+                        minecraft
+                ),
+                isInteractionMode()
+        );
+
+        /*
+        * =================================================
+        * CAPABILITY / THREAT ASSESSMENT
+        * =================================================
+        *
+        * Reserved for Capability Manager integration.
+        *
+        * FloodTabCapabilityPanel.render(...);
+        */
 
 
     /*

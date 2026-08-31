@@ -30,119 +30,59 @@ public final class CapabilityManager {
     }
 
     /*
-     * ============================================
-     * DAMAGE
-     * ============================================
-     * 
-    */
-    public static void recordOffensiveDamage(
-            ServerPlayer player,
-            double damage
+ * ============================================
+ * OFFENSE
+ * ============================================
+ */
+
+public static void recordOffenseObservation(
+        ServerPlayer player,
+        double rawDamage,
+        double observation
+) {
+    if (
+            player == null
+            || !Double.isFinite(rawDamage)
+            || rawDamage <= 0.0D
+            || !Double.isFinite(observation)
     ) {
-        if (
-                player == null
-                || damage <= 0.0D
-                || !Double.isFinite(damage)
-        ) {
-            return;
-        }
-
-        CapabilityProfile profile =
-                get(player);
-
-        if (profile == null) {
-            return;
-        }
-
-        /*
-        * Convert observed damage into a preliminary
-        * 0-100 capability observation.
-        *
-        * IMPORTANT:
-        * This curve is intentionally centralized here.
-        * We WILL tune it from actual gameplay data.
-        */
-        double observation =
-                damageToOffenseScore(
-                        damage
-                );
-
-        profile.recordOffenseObservation(
-                damage,
-                observation
-        );
-
-
-        /*
-        * Low confidence = new observations can move
-        * the estimate relatively quickly.
-        *
-        * High confidence = established behavior moves
-        * more slowly.
-        */
-        double confidence =
-                profile.getOffenseConfidence();
-
-
-        double alpha =
-                0.25D
-                        - (confidence * 0.15D);
-
-        double current =
-                profile.getOffenseScore();
-
-
-        /*
-        * Exponential moving average.
-        */
-        double updated =
-                current
-                        + alpha
-                        * (observation - current);
-
-
-        profile.setOffenseScore(
-                updated
-        );
-
-
-        /*
-        * Gradually become more confident as additional
-        * observations arrive.
-        */
-        profile.setOffenseConfidence(
-                Math.min(
-                        1.0D,
-                        confidence + 0.02D
-                )
-        );
+        return;
     }
 
-    private static double damageToOffenseScore(
-            double damage
-    ) {
-        /*
-        * Logarithmic scaling prevents absurd modded
-        * damage values from completely destroying the
-        * scale.
-        *
-        * This is only our INITIAL curve.
-        */
-        double score =
-                25.0D
-                        * (
-                        Math.log1p(damage)
-                                / Math.log(11.0D)
-                );
+    CapabilityProfile profile =
+            get(
+                    player
+            );
 
-        return Math.max(
-                0.0D,
-                Math.min(
-                        100.0D,
-                        score
-                )
-        );
+    if (profile == null) {
+        return;
     }
+
+    profile.recordOffenseObservation(
+            rawDamage,
+            observation
+    );
+
+    double confidence =
+            profile.getOffenseConfidence();
+
+    profile.setOffenseScore(
+            updateScore(
+                    profile.getOffenseScore(),
+                    observation,
+                    confidence
+            )
+    );
+
+    profile.setOffenseConfidence(
+            increaseConfidence(
+                    confidence,
+                    0.02D
+            )
+    );
+}
+
+
 
 
     /*
@@ -364,6 +304,158 @@ public final class CapabilityManager {
                 newPlayer
         );
     }
+
+    public static void recordDefenseObservation(
+        ServerPlayer player,
+        double observation
+) {
+    CapabilityProfile profile =
+            get(
+                    player
+            );
+
+    if (profile == null) {
+        return;
+    }
+
+    profile.recordDefenseObservation(
+            observation
+    );
+
+    double confidence =
+            profile.getDefenseConfidence();
+
+    profile.setDefenseScore(
+            updateScore(
+                    profile.getDefenseScore(),
+                    observation,
+                    confidence
+            )
+    );
+
+    profile.setDefenseConfidence(
+            increaseConfidence(
+                    confidence,
+                    0.02D
+            )
+    );
+}
+
+
+public static void recordSurvivalObservation(
+        ServerPlayer player,
+        double observation
+) {
+    CapabilityProfile profile =
+            get(
+                    player
+            );
+
+    if (profile == null) {
+        return;
+    }
+
+    profile.recordSurvivalObservation(
+            observation
+    );
+
+    double confidence =
+            profile.getSurvivalConfidence();
+
+    profile.setSurvivalScore(
+            updateScore(
+                    profile.getSurvivalScore(),
+                    observation,
+                    confidence
+            )
+    );
+
+    profile.setSurvivalConfidence(
+            increaseConfidence(
+                    confidence,
+                    0.02D
+            )
+    );
+}
+
+
+public static void recordMobilityObservation(
+        ServerPlayer player,
+        double observation
+) {
+    CapabilityProfile profile =
+            get(
+                    player
+            );
+
+    if (profile == null) {
+        return;
+    }
+
+    profile.recordMobilityObservation(
+            observation
+    );
+
+    double confidence =
+            profile.getMobilityConfidence();
+
+    profile.setMobilityScore(
+            updateScore(
+                    profile.getMobilityScore(),
+                    observation,
+                    confidence
+            )
+    );
+
+    profile.setMobilityConfidence(
+            increaseConfidence(
+                    confidence,
+                    0.005D
+            )
+    );
+}
+
+
+private static double updateScore(
+        double current,
+        double observation,
+        double confidence
+) {
+    if (!Double.isFinite(observation)) {
+        return current;
+    }
+
+    observation =
+            Math.max(
+                    0.0D,
+                    Math.min(
+                            100.0D,
+                            observation
+                    )
+            );
+
+    double alpha =
+            0.25D
+                    - confidence * 0.15D;
+
+    return current
+            + alpha
+            * (
+            observation
+                    - current
+    );
+}
+
+
+private static double increaseConfidence(
+        double confidence,
+        double amount
+) {
+    return Math.min(
+            1.0D,
+            confidence + amount
+    );
+}
 
 
     /*

@@ -25,7 +25,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import com.jushymaso222.theflood.elite.drops.boon.BoonData;
 import com.jushymaso222.theflood.elite.drops.boon.BoonType;
 
-import com.jushymaso222.theflood.progression.capability.CapabilityManager;
+import com.jushymaso222.theflood.progression.capability.sensor.OffenseCapabilitySensor;
 
 import com.jushymaso222.theflood.elite.EliteManager;
 
@@ -356,7 +356,7 @@ long fixedDrain =
         * DamageSource associated with them.
         */
         if (player != null) {
-        CapabilityManager.recordOffensiveDamage(
+        OffenseCapabilitySensor.observeDamage(
                 player,
                 event.getAmount()
         );

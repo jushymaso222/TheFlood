@@ -2,7 +2,6 @@ package com.jushymaso222.theflood.client;
 
 import com.jushymaso222.theflood.hud.FloodSettingsIconButton;
 import com.jushymaso222.theflood.hud.FloodHudSettingsScreen;
-import com.jushymaso222.theflood.team.client.FloodTeamScreen;
 import com.jushymaso222.theflood.team.client.TeamTabButton;
 
 import com.jushymaso222.theflood.TheFlood;
@@ -29,12 +28,6 @@ import net.minecraft.resources.ResourceLocation;
 )
 public final class ClientScreenEvents {
 
-    private static final ResourceLocation TEAM_ICON =
-        new ResourceLocation(
-                TheFlood.MOD_ID,
-                "textures/gui/team/team_button.png"
-    );
-
     private static final ResourceLocation WIKI_ICON =
         new ResourceLocation(
                 TheFlood.MOD_ID,
@@ -44,251 +37,126 @@ public final class ClientScreenEvents {
     private ClientScreenEvents() {}
 
     @SubscribeEvent
-    public static void onScreenInit(ScreenEvent.Init.Post event) {
-        if (event.getScreen() instanceof InventoryScreen inventoryScreen) {
-            addTeamButton(event, inventoryScreen);
-            addWikiButton(event, inventoryScreen);
+        public static void onScreenInit(
+                ScreenEvent.Init.Post event
+        ) {
+        if (
+                event.getScreen()
+                        instanceof InventoryScreen inventoryScreen
+        ) {
+                addWikiButton(
+                        event,
+                        inventoryScreen
+                );
         }
 
-        if (event.getScreen() instanceof CreativeModeInventoryScreen creativeScreen) {
-            addCreativeTeamButton(event, creativeScreen);
-            addCreativeWikiButton(event, creativeScreen);
+        if (
+                event.getScreen()
+                        instanceof CreativeModeInventoryScreen creativeScreen
+        ) {
+                addCreativeWikiButton(
+                        event,
+                        creativeScreen
+                );
         }
 
-        if (event.getScreen() instanceof PauseScreen pauseScreen) {
-                addFloodSettingsButton(event, pauseScreen);
+        if (
+                event.getScreen()
+                        instanceof PauseScreen pauseScreen
+        ) {
+                addFloodSettingsButton(
+                        event,
+                        pauseScreen
+                );
         }
-    }
-
-    private static void addTeamButton(
-        ScreenEvent.Init.Post event,
-        InventoryScreen screen
-) {
-    int buttonSize =
-            16;
-
-    int tabWidth =
-        22;
-
-        int guiLeft =
-                (screen.width - 176) / 2;
-
-        int guiTop =
-                (screen.height - 166) / 2;
-
-        int x =
-                guiLeft
-                        - tabWidth
-                        + 2;
-
-        int y =
-                guiTop+2;
-
-     TeamTabButton teamButton =
-        new TeamTabButton(
-                x,
-                y,
-                22,
-                22,
-                Component.literal("Teams"),
-                TEAM_ICON,
-                button ->
-                        Minecraft.getInstance()
-                                .setScreen(
-                                        new FloodTeamScreen(
-                                                screen
-                                        )
-                                )
-        );
-
-    event.addListener(
-            teamButton
-    );
-}
-
-    private static void addCreativeTeamButton(
-        ScreenEvent.Init.Post event,
-        CreativeModeInventoryScreen screen
-) {
-    int buttonSize =
-            16;
-
-    /*
-     * Creative inventory is wider than survival.
-     */
-    int guiWidth =
-            195;
-
-    int guiHeight =
-            135;
-
-    int tabWidth =
-        22;
-
-        int guiLeft =
-                (screen.width - 176) / 2;
-
-        int guiTop =
-                (screen.height - guiHeight) / 2;
-
-        int x =
-                guiLeft
-                        - tabWidth
-                        - 8;
-
-        int y =
-                guiTop+1;
-
-     TeamTabButton teamButton =
-        new TeamTabButton(
-                x,
-                y,
-                22,
-                22,
-                Component.literal("Teams"),
-                TEAM_ICON,
-                button ->
-                        Minecraft.getInstance()
-                                .setScreen(
-                                        new FloodTeamScreen(
-                                                screen
-                                        )
-                                )
-        );
-
-    event.addListener(
-            teamButton
-    );
-}
+        }
 
         @SubscribeEvent
-public static void onScreenRender(
-        ScreenEvent.Render.Post event
-) {
-    if (
-            !(event.getScreen() instanceof InventoryScreen)
-            && !(event.getScreen()
-                    instanceof CreativeModeInventoryScreen)
-    ) {
-        return;
-    }
+        public static void onScreenRender(
+                ScreenEvent.Render.Post event
+        ) {
+        if (
+                !(event.getScreen()
+                        instanceof InventoryScreen)
+                        && !(event.getScreen()
+                        instanceof CreativeModeInventoryScreen)
+        ) {
+                return;
+        }
 
-    int tabWidth =
-            22;
+        int tabWidth =
+                22;
 
-    int tabHeight =
-            22;
+        int tabHeight =
+                22;
 
-    int teamX;
-    int teamY;
+        int guideX;
+        int guideY;
 
-    if (
-            event.getScreen()
-                    instanceof InventoryScreen screen
-    ) {
-        int guiLeft =
-                (screen.width - 176) / 2;
+        if (
+                event.getScreen()
+                        instanceof InventoryScreen screen
+        ) {
+                int guiLeft =
+                        (screen.width - 176) / 2;
 
-        int guiTop =
-                (screen.height - 166) / 2;
+                int guiTop =
+                        (screen.height - 166) / 2;
 
-        /*
-         * Match the FINAL survival tab coordinates.
-         */
-        teamX =
-                guiLeft
-                        - tabWidth
-                        + 2;
+                guideX =
+                        guiLeft
+                                - tabWidth
+                                + 2;
 
-        teamY =
-                guiTop
-                        + 2;
+                guideY =
+                        guiTop + 2;
 
-    } else {
-        CreativeModeInventoryScreen screen =
-                (CreativeModeInventoryScreen)
-                        event.getScreen();
+        } else {
+                CreativeModeInventoryScreen screen =
+                        (CreativeModeInventoryScreen)
+                                event.getScreen();
 
-        int guiHeight =
-                135;
+                int guiHeight =
+                        135;
 
-        int guiLeft =
-                (screen.width - 176) / 2;
+                int guiLeft =
+                        (screen.width - 176) / 2;
 
-        int guiTop =
-                (screen.height - guiHeight) / 2;
+                int guiTop =
+                        (screen.height - guiHeight) / 2;
 
-        /*
-         * Match the FINAL creative tab coordinates.
-         */
-        teamX =
-                guiLeft
-                        - tabWidth
-                        - 8;
+                guideX =
+                        guiLeft
+                                - tabWidth
+                                - 8;
 
-        teamY =
-                guiTop
-                        + 1;
-    }
+                guideY =
+                        guiTop + 1;
+        }
 
-    /*
-     * Wiki is directly underneath Teams.
-     */
-    int wikiX =
-            teamX;
+        double mouseX =
+                event.getMouseX();
 
-    int wikiY =
-            teamY
-                    + tabHeight;
+        double mouseY =
+                event.getMouseY();
 
-    double mouseX =
-            event.getMouseX();
-
-    double mouseY =
-            event.getMouseY();
-
-    /*
-     * Teams tooltip.
-     */
-    if (
-            mouseX >= teamX
-            && mouseX < teamX + tabWidth
-            && mouseY >= teamY
-            && mouseY < teamY + tabHeight
-    ) {
-        event.getGuiGraphics()
-                .renderTooltip(
-                        Minecraft.getInstance().font,
-                        Component.literal(
-                                "Teams"
-                        ),
-                        (int) mouseX,
-                        (int) mouseY
-                );
-
-        return;
-    }
-
-    /*
-     * Wiki tooltip.
-     */
-    if (
-            mouseX >= wikiX
-            && mouseX < wikiX + tabWidth
-            && mouseY >= wikiY
-            && mouseY < wikiY + tabHeight
-    ) {
-        event.getGuiGraphics()
-                .renderTooltip(
-                        Minecraft.getInstance().font,
-                        Component.literal(
-                                "Flood Guide"
-                        ),
-                        (int) mouseX,
-                        (int) mouseY
-                );
-    }
-}
+        if (
+                mouseX >= guideX
+                        && mouseX < guideX + tabWidth
+                        && mouseY >= guideY
+                        && mouseY < guideY + tabHeight
+        ) {
+                event.getGuiGraphics()
+                        .renderTooltip(
+                                Minecraft.getInstance().font,
+                                Component.literal(
+                                        "Flood Guide"
+                                ),
+                                (int) mouseX,
+                                (int) mouseY
+                        );
+        }
+        }
 
         private static void addWikiButton(
         ScreenEvent.Init.Post event,
@@ -315,8 +183,7 @@ public static void onScreenRender(
 
     int y =
             guiTop
-                    + 2
-                    + tabHeight;
+                    + 2;
 
     TeamTabButton wikiButton =
             new TeamTabButton(
@@ -377,8 +244,7 @@ public static void onScreenRender(
      */
     int y =
             guiTop
-                    + 1
-                    + tabHeight;
+                    + 1;
 
     TeamTabButton wikiButton =
             new TeamTabButton(

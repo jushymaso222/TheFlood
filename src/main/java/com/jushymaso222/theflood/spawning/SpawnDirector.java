@@ -30,6 +30,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
+import com.jushymaso222.theflood.progression.scaling.MobScaling;
 import net.minecraft.world.phys.AABB;
 
 import net.minecraft.world.entity.monster.Spider;
@@ -644,15 +645,34 @@ public class SpawnDirector {
         }
 
         if (mob instanceof Warden warden) {
-            warden.setPersistenceRequired();
 
-            warden.increaseAngerAt(
-                    targetPlayer,
-                    100,
-                    true
-            );
+                var maxHealthAttribute =
+                        warden.getAttribute(
+                                Attributes.MAX_HEALTH
+                        );
 
-            warden.setTarget(targetPlayer);
+                if (maxHealthAttribute != null) {
+
+                        maxHealthAttribute.setBaseValue(
+                                MobScaling.getBaseHealth(
+                                        EntityType.WARDEN
+                                )
+                        );
+
+                        warden.setHealth(
+                                warden.getMaxHealth()
+                        );
+                }
+
+                warden.setPersistenceRequired();
+                warden.increaseAngerAt(
+                        targetPlayer,
+                        100,
+                        true
+                );
+                warden.setTarget(
+                        targetPlayer
+                );
         }
 
         mob.getPersistentData().putBoolean(
