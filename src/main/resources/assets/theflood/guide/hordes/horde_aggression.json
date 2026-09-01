@@ -1,0 +1,6 @@
+{
+  "id": "horde_aggression",
+  "title": "Horde Aggression",
+  "order": 2,
+  "body": "Horde enemies are created as an active attack,\n                                not passive background population.\n\n                                They are assigned aggressive behavior toward\n                                their intended player when spawned.\n\n                                This makes a horde fundamentally different from\n                                ordinary ambient enemies you may simply pass in\n                                the world."
+}

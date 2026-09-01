@@ -74,6 +74,19 @@ public final class BoonItems {
                             )
             );
 
+    public static final RegistryObject<Item> BOON_MIMIC =
+        ITEMS.register(
+                "boon_mimic",
+                () ->
+                        new BoonItem(
+                                BoonType.MIMIC,
+                                new Item.Properties()
+                                    .stacksTo(
+                                            1
+                                    )
+                        )
+        );
+
 
     private BoonItems() {
     }

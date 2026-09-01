@@ -1,0 +1,6 @@
+{
+  "id": "hordes_and_population",
+  "title": "Hordes and Population",
+  "order": 3,
+  "body": "Horde enemies still count toward the hostile\n                                pressure surrounding a player.\n\n                                While you are already dealing with a horde,\n                                ambient spawning does not simply replace every\n                                enemy you kill with unrelated normal spawns.\n\n                                This helps prevent multiple spawning systems\n                                from stacking uncontrollably."
+}

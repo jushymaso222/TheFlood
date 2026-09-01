@@ -1,0 +1,6 @@
+{
+  "id": "population_pressure",
+  "title": "Population Pressure",
+  "order": 1,
+  "body": "Normal hostile spawning uses a target\n                                population around each player.\n\n                                As Effective Heat increases, the target\n                                population grows.\n\n                                Early Heat progression increases relatively\n                                gently, while high Heat causes hostile\n                                population pressure to accelerate much more\n                                aggressively."
+}

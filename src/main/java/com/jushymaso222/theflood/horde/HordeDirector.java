@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.core.BlockPos;
 import com.jushymaso222.theflood.progression.HeatManager;
 import com.jushymaso222.theflood.time.BloodMoonState;
+import com.jushymaso222.theflood.progression.capability.CapabilityManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +83,23 @@ public class HordeDirector {
                             .miniHordeMaxSize
                             .get()
             );
+
+            double survivalResponse =
+                        CapabilityManager.getSurvivalResponse(
+                                player
+                        );
+
+                size =
+                        Math.max(
+                                1,
+                                (int) Math.ceil(
+                                        size
+                                                * (
+                                                1.0D
+                                                        + survivalResponse
+                                        )
+                                )
+                        );
 
             spawnHorde(
                     level,
@@ -210,10 +228,41 @@ public class HordeDirector {
                 }
 
                 int activeCap =
-                        getBloodMoonActiveCap(heat);
+                        getBloodMoonActiveCap(
+                                heat
+                        );
 
                 int totalBudget =
-                        getBloodMoonTotalBudget(heat);
+                        getBloodMoonTotalBudget(
+                                heat
+                        );
+
+                double survivalResponse =
+                        CapabilityManager.getSurvivalResponse(
+                                player
+                        );
+
+                double survivalMultiplier =
+                        1.0D
+                                + survivalResponse;
+
+                activeCap =
+                        Math.max(
+                                1,
+                                (int) Math.ceil(
+                                        activeCap
+                                                * survivalMultiplier
+                                )
+                        );
+
+                totalBudget =
+                        Math.max(
+                                activeCap,
+                                (int) Math.ceil(
+                                        totalBudget
+                                                * survivalMultiplier
+                                )
+                        );
 
                 double refillThreshold =
                         TheFloodConfig.HORDES
@@ -275,6 +324,15 @@ public class HordeDirector {
                                 TheFloodConfig.HORDES
                                         .bloodMoonWaveMaxSize
                                         .get()
+                        );
+
+                requestedSize =
+                        Math.max(
+                                1,
+                                (int) Math.ceil(
+                                        requestedSize
+                                                * survivalMultiplier
+                                )
                         );
 
                 int actualSize =

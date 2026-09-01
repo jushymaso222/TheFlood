@@ -24,6 +24,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderNameTagEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.eventbus.api.Event;
+import net.minecraft.network.chat.Component;
 
 import org.joml.Matrix4f;
 
@@ -153,68 +155,65 @@ else if (entity instanceof ArmorStand armorStand) {
         Font font =
                 minecraft.font;
 
-        String name =
-                event.getContent()
-                        .getString();
+        /*
+        * Keep the formatted component so scoreboard prefixes
+        * retain their team color while the username remains white.
+        */
+        Component name =
+                event.getContent();
 
         int textWidth =
                 font.width(
                         name
                 );
 
-        /*
-         * Nameplates are rendered using this tiny
-         * world-space scale in vanilla.
-         */
         float nameplateScale =
                 0.025F;
 
-        /*
-         * Flame dimensions in "font pixels".
-         *
-         * 8x8 keeps it visually close to the text
-         * without overpowering the nametag.
-         */
         float iconSize =
                 8.0F;
 
+        float iconGap =
+                3.0F;
+
         /*
-         * Position just after the right edge of
-         * the player's rendered name.
-         *
-         * Nametag text is centered around X=0.
-         */
+        * Treat the text and flame as one combined object
+        * so the entire nameplate stays centered over the player.
+        */
+        float totalWidth =
+                textWidth
+                        + iconGap
+                        + iconSize;
+
+        float textX =
+                -totalWidth / 2.0F;
+
+        float textY =
+                0.0F;
+
         float iconX =
-                (textWidth / 2.0F)
-                        + 3.0F;
+                textX
+                        + textWidth
+                        + iconGap;
 
         float iconY =
-                0.0F;
+                0.5F;
 
         poseStack.pushPose();
 
         /*
-         * Recreate the same camera-facing transform
-         * used by vanilla nametags.
-         */
-        double nameHeight;
-
-        if (entity instanceof ArmorStand) {
-            nameHeight =
-                    entity.getBbHeight()
-                            + 0.5D;
-        } else {
-            nameHeight =
-                    entity.getBbHeight()
-                            + 0.5D;
-        }
-
+        * Move to the normal overhead nametag position.
+        */
         poseStack.translate(
                 0.0D,
-                nameHeight,
+                entity.getBbHeight()
+                        + 0.5D,
                 0.0D
         );
 
+        /*
+        * Always face the camera.
+        */
         poseStack.mulPose(
                 minecraft.getEntityRenderDispatcher()
                         .cameraOrientation()
@@ -226,6 +225,48 @@ else if (entity instanceof ArmorStand armorStand) {
                 nameplateScale
         );
 
+        Matrix4f matrix =
+                poseStack.last()
+                        .pose();
+
+        /*
+        * Vanilla-style translucent background.
+        *
+        * Because the flame is part of our nameplate,
+        * extend the background far enough to include it.
+        */
+
+        /*
+        * Draw the formatted team prefix + username.
+        */
+        int backgroundOpacity =
+                (int) (
+                        minecraft.options
+                                .getBackgroundOpacity(
+                                        0.25F
+                                )
+                                * 255.0D
+                );
+
+        int backgroundColor =
+                backgroundOpacity << 24;
+
+        font.drawInBatch(
+                name,
+                textX,
+                textY,
+                0xFFFFFFFF,
+                false,
+                matrix,
+                bufferSource,
+                Font.DisplayMode.NORMAL,
+                backgroundColor,
+                event.getPackedLight()
+        );
+
+        /*
+        * Heat flame.
+        */
         renderFlame(
                 poseStack,
                 bufferSource,
@@ -237,6 +278,13 @@ else if (entity instanceof ArmorStand armorStand) {
         );
 
         poseStack.popPose();
+
+        /*
+        * Stop vanilla from drawing a second nametag.
+        */
+        event.setResult(
+                Event.Result.DENY
+        );
     }
 
     private static void renderFlame(

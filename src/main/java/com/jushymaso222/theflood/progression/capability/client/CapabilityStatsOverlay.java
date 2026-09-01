@@ -28,12 +28,6 @@ public final class CapabilityStatsOverlay {
      * =====================================================
      */
 
-    private static final int BACKGROUND =
-            0xB0000000;
-
-    private static final int BORDER =
-            0xAA666666;
-
     private static final int TITLE =
             0xFFFFAA00;
 
@@ -57,28 +51,28 @@ public final class CapabilityStatsOverlay {
 
 
     /*
-     * =====================================================
-     * LAYOUT
-     * =====================================================
-     */
+        * =====================================================
+        * LAYOUT
+        * =====================================================
+        */
 
-    private static final int X =
-            8;
+        private static final int X =
+                4;
 
-    private static final int Y =
-            8;
+        private static final int Y =
+                4;
 
-    private static final int COLUMN_WIDTH =
-            245;
+        private static final int COLUMN_GAP =
+                12;
 
-    private static final int COLUMN_GAP =
-            8;
+        private static final int LINE_HEIGHT =
+                10;
 
-    private static final int PADDING =
-            6;
+        private static final int LINE_PADDING_X =
+                2;
 
-    private static final int LINE_HEIGHT =
-            10;
+        private static final int LINE_BACKGROUND =
+                0x90000000;
 
 
     private CapabilityStatsOverlay() {
@@ -86,87 +80,85 @@ public final class CapabilityStatsOverlay {
 
 
     @SubscribeEvent
-    public static void onRenderGui(
-            RenderGuiOverlayEvent.Post event
+public static void onRenderGui(
+        RenderGuiOverlayEvent.Post event
+) {
+    Minecraft minecraft =
+            Minecraft.getInstance();
+
+    if (
+            minecraft.player == null
+                    || minecraft.level == null
     ) {
-        Minecraft minecraft =
-                Minecraft.getInstance();
-
-        if (
-                minecraft.player == null
-                || minecraft.level == null
-        ) {
-            return;
-        }
-
-
-        ClientCapabilityStatsData.CapabilityStats stats =
-                ClientCapabilityStatsData.get();
-
-        if (stats == null) {
-            return;
-        }
-
-
-        GuiGraphics graphics =
-                event.getGuiGraphics();
-
-        Font font =
-                minecraft.font;
-
-
-        List<Line> leftLines =
-                buildLeftColumn(
-                        stats
-                );
-
-        List<Line> rightLines =
-                buildRightColumn(
-                        stats
-                );
-
-
-        int leftHeight =
-                PADDING * 2
-                        + leftLines.size()
-                        * LINE_HEIGHT;
-
-        int rightHeight =
-                PADDING * 2
-                        + rightLines.size()
-                        * LINE_HEIGHT;
-
-
-        int leftX =
-                X;
-
-        int rightX =
-                X
-                        + COLUMN_WIDTH
-                        + COLUMN_GAP;
-
-
-        drawPanel(
-                graphics,
-                font,
-                leftLines,
-                leftX,
-                Y,
-                COLUMN_WIDTH,
-                leftHeight
-        );
-
-
-        drawPanel(
-                graphics,
-                font,
-                rightLines,
-                rightX,
-                Y,
-                COLUMN_WIDTH,
-                rightHeight
-        );
+        return;
     }
+
+    if (!ClientCapabilityStatsData.isInspectorOpen()) {
+        return;
+        }
+
+    ClientCapabilityStatsData.CapabilityStats stats =
+            ClientCapabilityStatsData.get();
+
+    if (stats == null) {
+        return;
+    }
+
+    GuiGraphics graphics =
+            event.getGuiGraphics();
+
+    Font font =
+            minecraft.font;
+
+    List<Line> leftLines =
+            buildLeftColumn(
+                    stats
+            );
+
+    List<Line> rightLines =
+            buildRightColumn(
+                    stats
+            );
+
+
+    /*
+     * Find the actual width of the left column.
+     *
+     * This allows the right column to sit immediately
+     * beside it instead of reserving a fixed 245 pixels.
+     */
+
+    int leftWidth =
+            getColumnWidth(
+                    font,
+                    leftLines
+            );
+
+    int leftX =
+            X;
+
+    int rightX =
+            leftX
+                    + leftWidth
+                    + COLUMN_GAP;
+
+
+    drawColumn(
+            graphics,
+            font,
+            leftLines,
+            leftX,
+            Y
+    );
+
+    drawColumn(
+            graphics,
+            font,
+            rightLines,
+            rightX,
+            Y
+    );
+}
 
 
     /*
@@ -175,88 +167,82 @@ public final class CapabilityStatsOverlay {
      * =====================================================
      */
 
-    private static void drawPanel(
-            GuiGraphics graphics,
-            Font font,
-            List<Line> lines,
-            int x,
-            int y,
-            int width,
-            int height
-    ) {
-        if (lines.isEmpty()) {
-            return;
-        }
+    private static void drawColumn(
+        GuiGraphics graphics,
+        Font font,
+        List<Line> lines,
+        int x,
+        int y
+) {
+    int drawY =
+            y;
 
+    for (Line line : lines) {
 
-        /*
-         * Background
-         */
-
-        graphics.fill(
-                x,
-                y,
-                x + width,
-                y + height,
-                BACKGROUND
-        );
-
-
-        /*
-         * Border
-         */
-
-        graphics.fill(
-                x,
-                y,
-                x + width,
-                y + 1,
-                BORDER
-        );
-
-        graphics.fill(
-                x,
-                y + height - 1,
-                x + width,
-                y + height,
-                BORDER
-        );
-
-        graphics.fill(
-                x,
-                y,
-                x + 1,
-                y + height,
-                BORDER
-        );
-
-        graphics.fill(
-                x + width - 1,
-                y,
-                x + width,
-                y + height,
-                BORDER
-        );
-
-
-        int drawY =
-                y + PADDING;
-
-        for (Line line : lines) {
-
-            graphics.drawString(
-                    font,
-                    line.text(),
-                    x + PADDING,
-                    drawY,
-                    line.color(),
-                    false
-            );
-
+        if (line.text().isEmpty()) {
             drawY +=
                     LINE_HEIGHT;
+
+            continue;
         }
+
+        int textWidth =
+                font.width(
+                        line.text()
+                );
+
+
+        /*
+         * F3-style translucent background.
+         *
+         * Each line only gets enough background to
+         * cover its own text.
+         */
+
+        graphics.fill(
+                x - LINE_PADDING_X,
+                drawY - 1,
+                x + textWidth + LINE_PADDING_X,
+                drawY + font.lineHeight,
+                LINE_BACKGROUND
+        );
+
+
+        graphics.drawString(
+                font,
+                line.text(),
+                x,
+                drawY,
+                line.color(),
+                false
+        );
+
+        drawY +=
+                LINE_HEIGHT;
     }
+}
+
+
+private static int getColumnWidth(
+        Font font,
+        List<Line> lines
+) {
+    int width =
+            0;
+
+    for (Line line : lines) {
+
+        width =
+                Math.max(
+                        width,
+                        font.width(
+                                line.text()
+                        )
+                );
+    }
+
+    return width;
+}
 
 
     /*
@@ -342,6 +328,13 @@ public final class CapabilityStatsOverlay {
                 confidenceColor(
                         stats.offenseConfidence()
                 )
+        );
+
+        value(
+                lines,
+                "Flood Response",
+                response(stats.offenseResponse()),
+                responseColor(stats.offenseResponse())
         );
 
         value(
@@ -795,6 +788,36 @@ public final class CapabilityStatsOverlay {
      * LINE HELPERS
      * =====================================================
      */
+
+    private static String response(
+        double value
+) {
+    if (
+            !Double.isFinite(value)
+                    || value <= 0.0D
+    ) {
+        return "None";
+    }
+
+    return String.format(
+            "+%.1f%%",
+            value * 100.0D
+    );
+}
+
+
+private static int responseColor(
+        double value
+) {
+    if (
+            !Double.isFinite(value)
+                    || value <= 0.0D
+    ) {
+        return LABEL;
+    }
+
+    return LEARNING;
+}
 
     private static void section(
             List<Line> lines,

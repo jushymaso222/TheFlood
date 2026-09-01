@@ -1,0 +1,6 @@
+{
+  "id": "custom_spawning",
+  "title": "Custom Spawning",
+  "order": 0,
+  "body": "The Flood uses its own hostile spawning system.\n\n                                On servers where vanilla hostile spawning is\n                                disabled by The Flood, normal Minecraft hostile\n                                spawn behavior should not be expected.\n\n                                The system tracks each player's Effective Heat\n                                and maintains hostile pressure around that\n                                player."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "lighting_and_underground",
+  "title": "Lighting and Underground",
+  "order": 1,
+  "body": "Flood spawning still considers environmental\n                                conditions.\n\n                                The server can limit the maximum block-light\n                                level allowed for hostile spawning.\n\n                                Flood mobs are ONLY affected by block-light, not \n                                daylight, so mobs can spawn throughout the day.\n\n                                The default setting is 0 which means all\n                                block-light, no matter how dim, stops mobs from\n                                spawning. \n\n                                Underground players also receive modified\n                                spawning pressure and refill timing, allowing\n                                caves and surface play to be balanced\n                                separately."
+}

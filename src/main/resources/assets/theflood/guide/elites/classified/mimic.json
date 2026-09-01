@@ -1,0 +1,7 @@
+{
+  "id": "mimic",
+  "title": "Mimic",
+  "order": 0,
+  "requires_milestone": "theflood:discovery/mimic",
+  "body": "Mimics are rare Elite enemies that disguise themselves as ordinary Flood mobs. While dormant, a Mimic will show no signs of aggression and will not pursue nearby players, making it nearly indistinguishable from a normal enemy at first glance.\n\nAttacking a Mimic reveals its true nature. Once awakened, it will lock onto the player who disturbed it and begin copying other Elite behaviors. A Mimic can shift between these behaviors throughout the encounter, forcing you to adapt as its abilities change.\n\nMimics possess significantly greater durability than ordinary Elite enemies. If their target escapes or remains out of reach long enough, they will eventually return to hiding and wait for another unfortunate player to disturb them.\n\nIf a hostile creature seems strangely uninterested in you, consider whether getting its attention is really worth it."
+}

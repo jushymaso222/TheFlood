@@ -1,0 +1,6 @@
+{
+  "id": "hud_overview",
+  "title": "HUD Overview",
+  "order": 2,
+  "body": "The HUD shows several important pieces of\n                                information.\n\n                                Day Display:\n                                Shows the current Flood day and time.\n\n                                Heat Display:\n                                Shows your current Effective Heat.\n\n                                Team HUD:\n                                When in a team, displays teammates, health,\n                                distance, direction, and player colors.\n\n                                Most Flood HUD elements can be repositioned\n                                or hidden through Flood Settings."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "boons",
+  "title": "Boons",
+  "order": 0,
+  "body": "Elite enemies may rarely drop powerful objects known\n                                as Boons.\n\n                                A Boon can be consumed to grant its effect for a\n                                limited duration.\n\n                                Only one Boon may be active at a time. Attempting to\n                                consume another while a Boon is already active will\n                                fail without consuming the item.\n\n                                Active Boons and their remaining duration are displayed\n                                alongside other status effects in the inventory.\n\n                                Boons are rare. More dangerous Elite encounters provide\n                                more opportunities to discover one."
+}

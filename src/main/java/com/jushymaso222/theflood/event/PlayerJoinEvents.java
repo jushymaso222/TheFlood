@@ -16,6 +16,10 @@ import com.jushymaso222.theflood.config.ServerSettingsSnapshot;
 import com.jushymaso222.theflood.network.FloodNetwork;
 import com.jushymaso222.theflood.guide.network.SyncServerSettingsPacket;
 
+import com.jushymaso222.theflood.milestone.network.SyncMilestoneSnapshotPacket;
+import com.jushymaso222.theflood.progression.milestone.MilestoneManager;
+import com.jushymaso222.theflood.progression.milestone.MilestoneSnapshot;
+
 import net.minecraftforge.network.PacketDistributor;
 
 @Mod.EventBusSubscriber(
@@ -46,21 +50,7 @@ public final class PlayerJoinEvents {
                 player
         );
 
-        /*
-        * Send this server's Flood configuration to the
-        * client for the in-game Server Settings guide.
-        *
-        * This only needs to happen when connecting rather
-        * than every time Heat is synchronized.
-        */
-        FloodNetwork.CHANNEL.send(
-                PacketDistributor.PLAYER.with(
-                        () -> player
-                ),
-                new SyncServerSettingsPacket(
-                        ServerSettingsSnapshot.create()
-                )
-        );
+        syncMilestones(player);
 
         /*
         * Only show this message once.
@@ -82,6 +72,26 @@ public final class PlayerJoinEvents {
                     );
         }
     }
+
+    private static void syncMilestones(
+                ServerPlayer player
+        ) {
+        MilestoneSnapshot snapshot =
+                MilestoneManager.getSnapshot(
+                        player
+                );
+
+        FloodNetwork.CHANNEL.send(
+                PacketDistributor.PLAYER.with(
+                        () -> player
+                ),
+                new SyncMilestoneSnapshotPacket(
+                        snapshot.progressionValue(),
+                        snapshot.achieved(),
+                        snapshot.completionHistory()
+                )
+        );
+        }
 
     private static void sendProgressHint(ServerPlayer player) {
         Component prefix = Component.literal("[The Flood] ")
@@ -106,6 +116,8 @@ public final class PlayerJoinEvents {
         TeamManager.syncPlayerTeamReference(player);
 
         HeatManager.syncHeatToPlayer(player);
+
+        syncMilestones(player);
     }
 
     @SubscribeEvent

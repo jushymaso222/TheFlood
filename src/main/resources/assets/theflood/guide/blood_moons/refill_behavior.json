@@ -1,0 +1,6 @@
+{
+  "id": "refill_behavior",
+  "title": "Refill Behavior",
+  "order": 2,
+  "body": "Blood Moon waves do not blindly spawn forever\n                                at maximum population.\n\n                                The system tracks the active Blood Moon\n                                population.\n\n                                When that population falls below a configured\n                                fraction of the active cap, another wave may\n                                refill the encounter."
+}

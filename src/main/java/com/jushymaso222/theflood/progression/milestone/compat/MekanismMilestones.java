@@ -52,7 +52,11 @@ public final class MekanismMilestones {
                         "mekanism:basic_enriching_factory",
                         "mekanism:advanced_enriching_factory",
                         "mekanism:elite_enriching_factory",
-                        "mekanism:ultimate_enriching_factory"
+                        "mekanism:ultimate_enriching_factory",
+                        "mekanism:basic_infusing_factory",
+                        "mekanism:advanced_infusing_factory",
+                        "mekanism:elite_infusing_factory",
+                        "mekanism:ultimate_infusing_factory"
                 )
         );
 

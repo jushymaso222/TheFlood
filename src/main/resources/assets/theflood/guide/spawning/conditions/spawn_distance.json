@@ -1,0 +1,6 @@
+{
+  "id": "spawn_distance",
+  "title": "Spawn Distance",
+  "order": 0,
+  "body": "Flood-controlled enemies spawn within a\n                                configured distance band around players.\n\n                                They do not intentionally spawn directly on top\n                                of you.\n\n                                The server controls the minimum and maximum\n                                allowed spawning distance."
+}

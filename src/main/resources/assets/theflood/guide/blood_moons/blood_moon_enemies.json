@@ -1,0 +1,6 @@
+{
+  "id": "blood_moon_enemies",
+  "title": "Blood Moon Enemies",
+  "order": 3,
+  "body": "Blood Moon mobs are built for sustained pursuit.\n\n                                They can receive increased follow range and are\n                                immediately directed toward players.\n\n                                Blood Moon pressure continues through the night\n                                until the event ends."
+}

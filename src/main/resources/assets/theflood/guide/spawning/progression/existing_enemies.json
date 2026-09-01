@@ -1,0 +1,6 @@
+{
+  "id": "existing_enemies",
+  "title": "Existing Enemies",
+  "order": 1,
+  "body": "Changing Heat does not transform enemies that\n                                already exist.\n\n                                A higher Heat changes the enemies that may be\n                                selected for future spawns and changes combat\n                                scaling relative to that player.\n\n                                Older enemies remain the types they were when\n                                they spawned."
+}

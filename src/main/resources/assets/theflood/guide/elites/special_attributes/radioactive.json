@@ -1,0 +1,6 @@
+{
+  "id": "radioactive",
+  "title": "Radioactive",
+  "order": 2,
+  "body": "Radioactive Elites emit a hazardous area around\n                                themselves.\n\n                                Remaining inside this area causes radiation exposure\n                                to accumulate.\n\n                                Exposure is initially harmless, but remaining within\n                                the affected area for too long causes continuous\n                                damage.\n\n                                Leave the radioactive area to begin recovering."
+}

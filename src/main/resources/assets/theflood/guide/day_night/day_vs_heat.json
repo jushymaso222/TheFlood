@@ -1,0 +1,6 @@
+{
+  "id": "day_vs_heat",
+  "title": "Day vs Heat",
+  "order": 2,
+  "body": "World Day and Heat serve different purposes.\n\n                                World Day controls time-based world events such\n                                as Blood Moon scheduling.\n\n                                Heat controls individual progression such as\n                                enemy unlocks, population pressure, and combat\n                                difficulty.\n\n                                A high world day does not automatically mean a\n                                low-Heat player has unlocked every enemy."
+}

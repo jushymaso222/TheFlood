@@ -24,7 +24,13 @@ public enum BoonType {
             "tranquility",
             "Boon of Tranquility",
             20 * 60 * 10
-    );
+    ),
+
+    MIMIC(
+                "mimic",
+                "Boon of the Mimic",
+                20 * 60 * 10
+        );
 
 
     private final String id;

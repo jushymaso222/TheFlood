@@ -1,0 +1,6 @@
+{
+  "id": "volatile",
+  "title": "Volatile",
+  "order": 3,
+  "body": "Damage dealt to a Volatile Elite causes instability to\n                                build.\n\n                                Once enough instability accumulates, the Elite\n                                releases a damaging shockwave around itself.\n\n                                Continuing to attack aggressively at close range can\n                                therefore become extremely dangerous."
+}

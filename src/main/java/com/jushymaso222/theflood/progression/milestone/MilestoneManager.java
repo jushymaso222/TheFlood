@@ -46,72 +46,115 @@ public final class MilestoneManager {
              * Player just satisfied it.
              */
             if (
-                    milestone.matches(
-                            player
-                    )
-            ) {
-                MilestoneData.markAchieved(
-                        player,
+        milestone.matches(
+                        player
+                )
+        ) {
+        complete(
+                player,
+                milestone.id()
+        );
+        }
+        }
+    }
+
+    public static boolean complete(
+        ServerPlayer player,
+        ResourceLocation milestoneId
+) {
+    if (player == null || milestoneId == null) {
+        return false;
+    }
+
+    MilestoneDefinition milestone =
+            MilestoneRegistry.get(
+                    milestoneId
+            );
+
+    if (milestone == null) {
+        return false;
+    }
+
+    /*
+     * Already permanently achieved.
+     */
+    if (
+            MilestoneData.hasAchieved(
+                    player,
+                    milestone.id()
+            )
+    ) {
+        return false;
+    }
+
+
+    /*
+     * Permanently complete it.
+     */
+    MilestoneData.markAchieved(
+            player,
+            milestone.id()
+    );
+
+
+    FloodTeam team =
+            TeamManager.getTeamForPlayer(
+                    player
+            );
+
+
+    /*
+     * Personal reward.
+     */
+    MilestoneRewards.awardPersonal(
+            player,
+            milestone
+    );
+
+
+    /*
+     * Team reward.
+     */
+    if (team != null) {
+
+        boolean firstTeamCompletion =
+                team.completeMilestone(
                         milestone.id()
                 );
 
-                FloodTeam team =
-                        TeamManager.getTeamForPlayer(
-                                player
-                        );
+        if (firstTeamCompletion) {
 
-                /*
-                * Every player receives the personal milestone
-                * reward into their Solo progression.
-                */
-                MilestoneRewards.awardPersonal(
-                        player,
-                        milestone
-                );
+            FloodTeamSavedData
+                    .get(player.server)
+                    .setDirty();
 
-                /*
-                * If currently teamed, the TEAM also receives
-                * this milestone reward once.
-                */
-                if (team != null) {
-
-                    boolean firstTeamCompletion =
-                            team.completeMilestone(
-                                    milestone.id()
-                            );
-
-                    if (firstTeamCompletion) {
-
-                        FloodTeamSavedData
-                                .get(player.server)
-                                .setDirty();
-
-                        MilestoneRewards.awardTeam(
-                                player,
-                                milestone
-                        );
-                    }
-                }
-
-
-                /*
-                * Client notification.
-                */
-                FloodNetwork.CHANNEL.send(
-                        PacketDistributor.PLAYER.with(
-                                () -> player
-                        ),
-                        new MilestoneUnlockedPacket(
-                                milestone.id(),
-                                milestone.title(),
-                                milestone.description(),
-                                milestone.progressionValue(),
-                                milestone.floodXpReward()
-                        )
-                );
-            }
+            MilestoneRewards.awardTeam(
+                    player,
+                    milestone
+            );
         }
     }
+
+
+    /*
+     * Client notification + immediate client
+     * milestone state update.
+     */
+    FloodNetwork.CHANNEL.send(
+            PacketDistributor.PLAYER.with(
+                    () -> player
+            ),
+            new MilestoneUnlockedPacket(
+                    milestone.id(),
+                    milestone.title(),
+                    milestone.description(),
+                    milestone.progressionValue(),
+                    milestone.floodXpReward()
+            )
+    );
+
+    return true;
+}
 
     public static MilestoneSnapshot getSnapshot(
             ServerPlayer player

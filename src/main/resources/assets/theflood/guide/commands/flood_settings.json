@@ -1,0 +1,6 @@
+{
+  "id": "flood_settings",
+  "title": "Flood Settings",
+  "order": 3,
+  "body": "Flood Settings can be opened from the pause\n                                menu beside the Mods button.\n\n                                Client-side HUD preferences can be adjusted\n                                there without changing server progression.\n\n                                Server gameplay configuration remains\n                                controlled by the server."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "team_identity",
+  "title": "Team Identity",
+  "order": 3,
+  "body": "Team members display their team name alongside\n                                their player identity.\n\n                                The team's chosen color is used for the team\n                                tag.\n\n                                Players also receive a separate personal color\n                                on the Team HUD. This color exists only to make\n                                teammates easier to distinguish visually."
+}

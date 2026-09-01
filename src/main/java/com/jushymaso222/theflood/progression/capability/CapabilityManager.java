@@ -1,12 +1,227 @@
 package com.jushymaso222.theflood.progression.capability;
 
-import net.minecraft.server.level.ServerPlayer;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import net.minecraft.server.level.ServerPlayer;
+
 public final class CapabilityManager {
+
+        /*
+     * ============================================
+     * FLOOD RESPONSE
+     * ============================================
+     *
+     * Capability scores describe what the player
+     * has demonstrated they can actually handle.
+     *
+     * These methods convert capability ABOVE the
+     * expected vanilla range into additional Flood
+     * pressure.
+     *
+     * Capability can only increase difficulty.
+     * It can never reduce the normal Heat curve.
+     */
+
+
+    /*
+     * Temporary vanilla reference points.
+     *
+     * These are intentionally kept here rather than
+     * buried inside the sensors. Sensors measure.
+     * This layer decides what those measurements mean
+     * for difficulty.
+     *
+     * We'll calibrate these from vanilla testing.
+     */
+    private static final double VANILLA_OFFENSE_REFERENCE =
+            30.0D;
+
+    private static final double VANILLA_DEFENSE_REFERENCE =
+            75.0D;
+
+    private static final double VANILLA_SURVIVAL_REFERENCE =
+            50.0D;
+
+    private static final double VANILLA_MOBILITY_REFERENCE =
+            55.0D;
+
+
+    /*
+     * We don't let uncertain observations affect
+     * difficulty.
+     */
+    private static final double MIN_RESPONSE_CONFIDENCE =
+            0.20D;
+
+
+    public static double getOffenseResponse(
+            ServerPlayer player
+    ) {
+        CapabilityProfile profile =
+                get(player);
+
+        if (profile == null) {
+            return 0.0D;
+        }
+
+        return calculateResponse(
+                profile.getEffectiveOffense(),
+                profile.getOffenseConfidence(),
+                VANILLA_OFFENSE_REFERENCE
+        );
+    }
+
+
+    public static double getDefenseResponse(
+            ServerPlayer player
+    ) {
+        CapabilityProfile profile =
+                get(player);
+
+        if (profile == null) {
+            return 0.0D;
+        }
+
+        return calculateResponse(
+                profile.getEffectiveDefense(),
+                profile.getDefenseConfidence(),
+                VANILLA_DEFENSE_REFERENCE
+        );
+    }
+
+
+    public static double getSurvivalResponse(
+            ServerPlayer player
+    ) {
+        CapabilityProfile profile =
+                get(player);
+
+        if (profile == null) {
+            return 0.0D;
+        }
+
+        return calculateResponse(
+                profile.getEffectiveSurvival(),
+                profile.getSurvivalConfidence(),
+                VANILLA_SURVIVAL_REFERENCE
+        );
+    }
+
+
+    public static double getMobilityResponse(
+            ServerPlayer player
+    ) {
+        CapabilityProfile profile =
+                get(player);
+
+        if (profile == null) {
+            return 0.0D;
+        }
+
+        return calculateResponse(
+                profile.getEffectiveMobility(),
+                profile.getMobilityConfidence(),
+                VANILLA_MOBILITY_REFERENCE
+        );
+    }
+
+
+    private static double calculateResponse(
+            double capability,
+            double confidence,
+            double vanillaReference
+    ) {
+        if (
+                !Double.isFinite(capability)
+                        || !Double.isFinite(confidence)
+                        || confidence < MIN_RESPONSE_CONFIDENCE
+        ) {
+            return 0.0D;
+        }
+
+
+        /*
+         * Anything at or below the vanilla reference
+         * receives absolutely no difficulty adjustment.
+         */
+        if (capability <= vanillaReference) {
+            return 0.0D;
+        }
+
+
+        /*
+         * Normalize the portion of the capability scale
+         * above the vanilla reference.
+         *
+         * Example with reference = 40:
+         *
+         * capability 40 -> excess 0.00
+         * capability 55 -> excess 0.25
+         * capability 70 -> excess 0.50
+         * capability 85 -> excess 0.75
+         * capability100 -> excess 1.00
+         */
+        double availableRange =
+                100.0D - vanillaReference;
+
+        if (availableRange <= 0.0D) {
+            return 0.0D;
+        }
+
+        double excess =
+                (capability - vanillaReference)
+                        / availableRange;
+
+        excess =
+                Math.max(
+                        0.0D,
+                        Math.min(
+                                1.0D,
+                                excess
+                        )
+                );
+
+
+        /*
+         * Partial compensation.
+         *
+         * The Flood reacts to excessive player power,
+         * but deliberately does NOT completely cancel
+         * that power.
+         *
+         * This curve produces approximately:
+         *
+         * excess 0.25 ->  8%
+         * excess 0.50 -> 17%
+         * excess 0.75 -> 27%
+         * excess 1.00 -> 40%
+         */
+        double response =
+                0.40D
+                        * Math.pow(
+                                excess,
+                                1.25D
+                        );
+
+
+        /*
+         * Final safety clamp.
+         *
+         * Response is always:
+         *
+         * 0.00 = no additional difficulty
+         * 0.40 = maximum +40% adjustment
+         */
+        return Math.max(
+                0.0D,
+                Math.min(
+                        0.40D,
+                        response
+                )
+        );
+    }
 
     /*
      * ============================================
@@ -307,8 +522,31 @@ public static void recordOffenseObservation(
 
     public static void recordDefenseObservation(
         ServerPlayer player,
-        double observation
+        double observation,
+        double weight
 ) {
+    if (
+            player == null
+                    || !Double.isFinite(observation)
+                    || !Double.isFinite(weight)
+    ) {
+        return;
+    }
+
+    weight =
+            Math.max(
+                    0.0D,
+                    Math.min(
+                            1.0D,
+                            weight
+                    )
+            );
+
+    if (weight <= 0.0D) {
+        return;
+    }
+
+
     CapabilityProfile profile =
             get(
                     player
@@ -318,25 +556,63 @@ public static void recordOffenseObservation(
         return;
     }
 
+
+    /*
+     * Store the actual observed defensive capability,
+     * NOT the weighted value.
+     */
     profile.recordDefenseObservation(
             observation
     );
 
+
     double confidence =
             profile.getDefenseConfidence();
 
-    profile.setDefenseScore(
-            updateScore(
-                    profile.getDefenseScore(),
-                    observation,
-                    confidence
+
+    /*
+     * Calculate the normal learning rate, then scale
+     * how strongly this particular hit can influence
+     * the learned Defense score.
+     */
+    double alpha =
+            (
+                    0.25D
+                            - confidence * 0.15D
             )
+                    * weight;
+
+
+    observation =
+            Math.max(
+                    0.0D,
+                    Math.min(
+                            100.0D,
+                            observation
+                    )
+            );
+
+
+    profile.setDefenseScore(
+            profile.getDefenseScore()
+                    + alpha
+                    * (
+                            observation
+                                    - profile.getDefenseScore()
+                    )
     );
 
+
+    /*
+     * Strong attacks also teach us faster.
+     *
+     * Weak attacks still contribute information,
+     * just much less of it.
+     */
     profile.setDefenseConfidence(
             increaseConfidence(
                     confidence,
-                    0.02D
+                    0.02D * weight
             )
     );
 }

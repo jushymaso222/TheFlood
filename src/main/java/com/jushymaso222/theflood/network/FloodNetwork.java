@@ -14,6 +14,8 @@ import com.jushymaso222.theflood.milestone.network.MilestoneUnlockedPacket;
 import com.jushymaso222.theflood.progression.capability.network.SyncCapabilityStatsPacket;
 import com.jushymaso222.theflood.milestone.network.RequestMilestoneSnapshotPacket;
 import com.jushymaso222.theflood.milestone.network.SyncMilestoneSnapshotPacket;
+import com.jushymaso222.theflood.progression.capability.network.RequestCapabilitySnapshotPacket;
+import com.jushymaso222.theflood.guide.network.RequestServerSettingsPacket;
 
 public final class FloodNetwork {
 
@@ -36,6 +38,22 @@ public final class FloodNetwork {
     }
 
     public static void register() {
+
+        CHANNEL.registerMessage(
+                id++,
+                RequestServerSettingsPacket.class,
+                RequestServerSettingsPacket::encode,
+                RequestServerSettingsPacket::decode,
+                RequestServerSettingsPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                RequestCapabilitySnapshotPacket.class,
+                RequestCapabilitySnapshotPacket::encode,
+                RequestCapabilitySnapshotPacket::decode,
+                RequestCapabilitySnapshotPacket::handle
+        );
 
         CHANNEL.registerMessage(
                 id++,

@@ -21,11 +21,14 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import com.jushymaso222.theflood.progression.capability.CapabilityManager;
+import net.minecraft.world.entity.monster.Spider;
 
 import com.jushymaso222.theflood.elite.drops.boon.BoonData;
 import com.jushymaso222.theflood.elite.drops.boon.BoonType;
 
 import com.jushymaso222.theflood.progression.capability.sensor.OffenseCapabilitySensor;
+import com.jushymaso222.theflood.progression.capability.sensor.DefenseCapabilitySensor;
 
 import com.jushymaso222.theflood.elite.EliteManager;
 
@@ -87,6 +90,24 @@ public final class PlayerCombatScalingEvents {
                 return;
         }
 
+        /*
+        * Vanilla spider melee reach is generous because
+        * spiders have a very wide bounding box.
+        *
+        * Prevent them from connecting melee attacks
+        * through solid walls.
+        */
+        if (
+                mob instanceof Spider
+                && !mob.hasLineOfSight(player)
+        ) {
+        event.setCanceled(
+                true
+        );
+
+        return;
+        }
+
         int heat =
                 HeatManager.getEffectiveHeat(
                         player
@@ -113,10 +134,20 @@ public final class PlayerCombatScalingEvents {
                         player
                 );
 
+        double defenseResponse =
+                CapabilityManager.getDefenseResponse(
+                        player
+                );
+
+        double capabilityMultiplier =
+                1.0D
+                        + defenseResponse;
+
         double effectiveDamage =
                 event.getAmount()
                         * heatMultiplier
-                        * swarmMultiplier;
+                        * swarmMultiplier
+                        * capabilityMultiplier;
 
         /*
         * Heat <= 40:
@@ -368,11 +399,41 @@ long fixedDrain =
                         heat
                 );
 
-        double multiplier =
+        double heatMultiplier =
                 MobScaling.getPlayerDamageMultiplier(
                         mob.getType(),
                         scalingHeat
                 );
+
+        double offenseResponse =
+                player != null
+                        ? CapabilityManager.getOffenseResponse(
+                                player
+                        )
+                        : 0.0D;
+
+        /*
+        * Offense Response represents additional effective
+        * durability beyond the normal Heat curve.
+        *
+        * Example:
+        * +20% response means the mob should require 20%
+        * more effective damage to kill.
+        *
+        * Because Flood durability is implemented by reducing
+        * incoming player damage, divide the normal multiplier
+        * by (1 + response).
+        */
+        double capabilityMultiplier =
+                1.0D
+                        / (
+                        1.0D
+                                + offenseResponse
+                );
+
+        double multiplier =
+                heatMultiplier
+                        * capabilityMultiplier;
 
         double boonMultiplier =
                 1.0D;
@@ -460,9 +521,26 @@ long fixedDrain =
                         player
                 );
 
+        double defenseResponse =
+                CapabilityManager.getDefenseResponse(
+                        player
+                );
+
+        /*
+        * Defense Response adds offensive pressure only when
+        * the player's learned defensive capability exceeds
+        * the calibrated vanilla ceiling.
+        *
+        * +20% response = Flood incoming damage ×1.20.
+        */
+        double capabilityMultiplier =
+                1.0D
+                        + defenseResponse;
+
         double finalMultiplier =
                 heatMultiplier
-                        * swarmMultiplier;
+                        * swarmMultiplier
+                        * capabilityMultiplier;
 
         float originalDamage =
                 event.getAmount();
@@ -474,6 +552,16 @@ long fixedDrain =
                 )
                         ? 0.60D
                         : 1.0D;
+
+        double floodMultiplier =
+                finalMultiplier
+                        * boonMultiplier;
+
+        DefenseCapabilitySensor.beginObservation(
+                player,
+                originalDamage,
+                floodMultiplier
+        );
 
         float finalDamage =
                 (float) (

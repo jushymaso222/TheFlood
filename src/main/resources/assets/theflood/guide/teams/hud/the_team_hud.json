@@ -1,0 +1,6 @@
+{
+  "id": "the_team_hud",
+  "title": "The Team HUD",
+  "order": 0,
+  "body": "The Team HUD displays up to four teammates at\n                                once.\n\n                                Each card shows:\n                                - Player name\n                                - Health\n                                - Distance\n                                - Direction arrow\n                                - Personal HUD color\n\n                                Teammates in other dimensions cannot provide a\n                                useful direction or distance and are handled\n                                accordingly."
+}

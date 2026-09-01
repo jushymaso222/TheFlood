@@ -1,0 +1,6 @@
+{
+  "id": "proximity_heat",
+  "title": "Proximity Heat",
+  "order": 2,
+  "body": "Nearby players increase local danger.\n\n                                When other players are close to you, a\n                                Proximity Heat bonus is added to your Base\n                                Heat.\n\n                                This means grouping together gives players\n                                more cooperation and safety, but also attracts\n                                greater pressure from The Flood.\n\n                                Your current proximity bonus is shown beneath\n                                the Heat icon when one is active."
+}

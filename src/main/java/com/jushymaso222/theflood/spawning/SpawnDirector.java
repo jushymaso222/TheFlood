@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.Heightmap;
 import com.jushymaso222.theflood.progression.scaling.MobScaling;
 import net.minecraft.world.phys.AABB;
+import com.jushymaso222.theflood.progression.capability.CapabilityManager;
 
 import net.minecraft.world.entity.monster.Spider;
 import net.minecraft.world.entity.player.Player;
@@ -735,18 +736,50 @@ public class SpawnDirector {
         );
         }
 
-    private static void makeHordeMobAggressive(Mob mob, ServerPlayer player, boolean isBloodMoonMob) {
-        double followRange = isBloodMoonMob
-                ? TheFloodConfig.HORDES.bloodMoonFollowRange.get()
-                : TheFloodConfig.HORDES.miniHordeFollowRange.get();
+    private static void makeHordeMobAggressive(
+        Mob mob,
+        ServerPlayer player,
+        boolean isBloodMoonMob
+) {
+    double baseFollowRange =
+            isBloodMoonMob
+                    ? TheFloodConfig.HORDES
+                            .bloodMoonFollowRange
+                            .get()
+                    : TheFloodConfig.HORDES
+                            .miniHordeFollowRange
+                            .get();
 
-        if (mob.getAttribute(Attributes.FOLLOW_RANGE) != null) {
-            mob.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(followRange);
-        }
+    double mobilityResponse =
+            CapabilityManager.getMobilityResponse(
+                    player
+            );
 
-        mob.setTarget(player);
-        mob.setPersistenceRequired();
+    double followRange =
+            baseFollowRange
+                    * (
+                    1.0D
+                            + mobilityResponse
+            );
+
+    if (
+            mob.getAttribute(
+                    Attributes.FOLLOW_RANGE
+            ) != null
+    ) {
+        mob.getAttribute(
+                Attributes.FOLLOW_RANGE
+        ).setBaseValue(
+                followRange
+        );
     }
+
+    mob.setTarget(
+            player
+    );
+
+    mob.setPersistenceRequired();
+}
 
     private static int countHostileMobsNearPlayer(ServerLevel level, ServerPlayer player) {
         int radius = TheFloodConfig.SPAWNING.maxSpawnDistanceFromPlayer.get();

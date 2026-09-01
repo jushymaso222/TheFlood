@@ -4,6 +4,8 @@ package com.jushymaso222.theflood.progression.capability.client;
 public final class ClientCapabilityStatsData {
 
     private static CapabilityStats current;
+    private static boolean inspectorOpen =
+        false;
 
 
     private ClientCapabilityStatsData() {
@@ -22,10 +24,25 @@ public final class ClientCapabilityStatsData {
         return current;
     }
 
+    public static boolean isInspectorOpen() {
+        return inspectorOpen;
+    }
+
+
+    public static void setInspectorOpen(
+            boolean open
+    ) {
+        inspectorOpen =
+                open;
+    }
+
 
     public static void clear() {
         current =
                 null;
+
+        inspectorOpen =
+                false;
     }
 
 
@@ -34,12 +51,13 @@ public final class ClientCapabilityStatsData {
             String playerName,
 
             /*
-             * OFFENSE
-             */
+            * OFFENSE
+            */
             double offenseScore,
             double effectiveOffense,
             double peakOffense,
             double offenseConfidence,
+            double offenseResponse,
 
             long offenseSamples,
 
@@ -50,44 +68,47 @@ public final class ClientCapabilityStatsData {
 
 
             /*
-             * DEFENSE
-             */
+            * DEFENSE
+            */
             double defenseScore,
             double effectiveDefense,
             double peakDefense,
             double defenseConfidence,
+            double defenseResponse,
 
             long defenseSamples,
             double lastDefenseObservation,
 
 
             /*
-             * SURVIVAL
-             */
+            * SURVIVAL
+            */
             double survivalScore,
             double effectiveSurvival,
             double peakSurvival,
             double survivalConfidence,
+            double survivalResponse,
 
             long survivalSamples,
             double lastSurvivalObservation,
 
 
             /*
-             * MOBILITY
-             */
+            * MOBILITY
+            */
             double mobilityScore,
             double effectiveMobility,
             double peakMobility,
             double mobilityConfidence,
+            double mobilityResponse,
 
             long mobilitySamples,
             double lastMobilityObservation,
 
 
             /*
-             * KNOWN PROGRESSION
-             */
+            * KNOWN PROGRESSION
+            */
             int milestoneProgression
     ) {
     }

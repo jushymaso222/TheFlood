@@ -1,0 +1,6 @@
+{
+  "id": "what_is_heat",
+  "title": "What is Heat?",
+  "order": 0,
+  "body": "Heat represents your progression and how much\n                                danger The Flood assigns to you.\n\n                                Heat ranges from 1 to 100.\n\n                                Your own progression is called Solo Heat.\n                                Other systems can temporarily or permanently\n                                increase the Heat used by spawning and combat.\n\n                                The final value used by most systems is called\n                                Effective Heat."
+}

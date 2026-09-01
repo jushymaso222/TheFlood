@@ -1,0 +1,6 @@
+{
+  "id": "corrosive",
+  "title": "Corrosive",
+  "order": 5,
+  "body": "Successful attacks from a Corrosive Elite temporarily\n                                reduce the effectiveness of the victim's armor.\n\n                                Repeated attacks refresh the effect.\n\n                                Heavily armored players should be especially careful,\n                                as Corrosive Elites can temporarily undermine one of\n                                their greatest defenses."
+}

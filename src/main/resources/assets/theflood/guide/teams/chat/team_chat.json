@@ -1,0 +1,6 @@
+{
+  "id": "team_chat",
+  "title": "Team Chat",
+  "order": 0,
+  "body": "Team members can switch between Global Chat and\n                                Team Chat.\n\n                                Global Chat:\n                                Messages are visible normally.\n\n                                Team Chat:\n                                Messages are sent only to online members of\n                                your current team.\n\n                                The inventory chat icon can switch between the\n                                two modes."
+}

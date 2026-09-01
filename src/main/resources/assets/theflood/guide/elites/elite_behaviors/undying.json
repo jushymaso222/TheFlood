@@ -1,0 +1,6 @@
+{
+  "id": "undying",
+  "title": "Undying",
+  "order": 3,
+  "body": "Undying Elites refuse to remain dead.\n\n                                When fatally wounded, their body collapses and begins\n                                attempting to reform.\n\n                                During this state, continue attacking the Elite to\n                                prevent its revival.\n\n                                Deal enough damage before the revival completes to\n                                destroy the Elite permanently.\n\n                                If the revival succeeds, the Elite returns with a\n                                portion of its health restored.\n\n                                Each successful revival makes the next attempt easier\n                                to interrupt."
+}

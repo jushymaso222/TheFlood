@@ -1,0 +1,6 @@
+{
+  "id": "team_heat",
+  "title": "Team Heat",
+  "order": 1,
+  "body": "A team's Heat begins with the highest Solo\n                                Heat belonging to a team member.\n\n                                A team-size bonus is then added as more players\n                                join.\n\n                                All members of the team use the resulting Team\n                                Heat as their Base Heat.\n\n                                Because of this, joining a veteran team can\n                                dramatically increase your difficulty."
+}

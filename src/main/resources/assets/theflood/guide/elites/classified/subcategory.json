@@ -1,0 +1,7 @@
+{
+  "id": "classified",
+  "title": "CLASSIFIED",
+  "description": "Information discovered through encounters with unknown Flood entities.",
+  "order": 99,
+  "requires_milestone": "theflood:discovery/mimic"
+}

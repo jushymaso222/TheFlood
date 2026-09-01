@@ -4,6 +4,7 @@ import com.jushymaso222.theflood.TheFlood;
 import com.jushymaso222.theflood.progression.capability.sensor.DefenseCapabilitySensor;
 import com.jushymaso222.theflood.progression.capability.sensor.MobilityCapabilitySensor;
 import com.jushymaso222.theflood.progression.capability.sensor.SurvivalCapabilitySensor;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 
 import net.minecraft.server.level.ServerPlayer;
 
@@ -41,11 +42,11 @@ public final class CapabilitySensorEvents {
      */
 
     @SubscribeEvent
-    public static void onPlayerDamage(
-            LivingDamageEvent event
-    ) {
+        public static void onPlayerDamage(
+                LivingDamageEvent event
+        ) {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
+                return;
         }
 
         float finalDamage =
@@ -53,35 +54,63 @@ public final class CapabilitySensorEvents {
 
         if (
                 finalDamage < 0.0F
-                || !Float.isFinite(finalDamage)
+                        || !Float.isFinite(finalDamage)
         ) {
-            return;
+                return;
         }
 
 
         /*
-         * =================================================
-         * DEFENSE
-         * =================================================
-         */
+        * =================================================
+        * DEFENSE
+        * =================================================
+        */
 
-        DefenseCapabilitySensor.observeDamage(
+        DefenseCapabilitySensor.observeFinalDamage(
                 player,
                 finalDamage
         );
 
 
         /*
-         * =================================================
-         * SURVIVAL
-         * =================================================
-         */
+        * =================================================
+        * SURVIVAL
+        * =================================================
+        */
 
         SurvivalCapabilitySensor.observeDamage(
                 player,
                 finalDamage
         );
-    }
+        }
+
+    /*
+        * =====================================================
+        * INCOMING DAMAGE
+        * =====================================================
+        *
+        * Capture the attack before armor and other defensive
+        * systems reduce the amount.
+        */
+
+        @SubscribeEvent
+        public static void onPlayerAttacked(
+                LivingAttackEvent event
+        ) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+                return;
+        }
+
+        float rawDamage =
+                event.getAmount();
+
+        if (
+                rawDamage <= 0.0F
+                        || !Float.isFinite(rawDamage)
+        ) {
+                return;
+        }
+        }
 
 
     /*
@@ -159,6 +188,10 @@ public final class CapabilitySensorEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
+
+        DefenseCapabilitySensor.remove(
+                player
+        );
 
         MobilityCapabilitySensor.remove(
                 player

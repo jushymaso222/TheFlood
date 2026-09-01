@@ -1,0 +1,6 @@
+{
+  "id": "team_hud_pages",
+  "title": "Team HUD Pages",
+  "order": 1,
+  "body": "Large teams can contain more players than the\n                                HUD displays at one time.\n\n                                Use the page controls beneath the Team HUD\n                                while your inventory is open to switch between\n                                groups of teammates.\n\n                                During normal gameplay, a page indicator shows\n                                which manual page is currently selected."
+}

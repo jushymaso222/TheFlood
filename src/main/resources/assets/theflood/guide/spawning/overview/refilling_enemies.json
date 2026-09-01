@@ -1,0 +1,6 @@
+{
+  "id": "refilling_enemies",
+  "title": "Refilling Enemies",
+  "order": 2,
+  "body": "The system does not simply attempt random\n                                vanilla spawns every tick.\n\n                                Instead, it compares the current Flood\n                                population near you against your target\n                                population.\n\n                                When population falls below the target, new\n                                enemies are periodically added to refill the\n                                missing pressure.\n\n                                Larger population deficits can cause several\n                                enemies to spawn in one refill."
+}

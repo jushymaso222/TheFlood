@@ -1,0 +1,6 @@
+{
+  "id": "conditions",
+  "title": "Spawn Conditions",
+  "description": "Distance, lighting, and other spawning rules.",
+  "order": 1
+}

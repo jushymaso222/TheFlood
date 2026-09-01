@@ -1,0 +1,6 @@
+{
+  "id": "spawning",
+  "title": "Spawning",
+  "description": "How The Flood controls hostile spawning.",
+  "order": 4
+}

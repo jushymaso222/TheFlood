@@ -1,0 +1,6 @@
+{
+  "id": "special_attributes",
+  "title": "Special Attributes",
+  "order": 0,
+  "body": "Special Attributes are rare modifiers that introduce\n                                additional combat mechanics.\n\n                                Their names are displayed differently from Standard\n                                Attributes to warn players of the additional threat.\n\n                                Special Attributes can also appear as + and ++\n                                variants.\n\n                                An Elite possessing a Special Attribute should not be\n                                approached as though it were simply a stronger normal\n                                enemy."
+}

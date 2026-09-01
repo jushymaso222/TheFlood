@@ -1,0 +1,6 @@
+{
+  "id": "mob_unlocks",
+  "title": "Mob Unlocks",
+  "order": 0,
+  "body": "Enemy types unlock according to Effective Heat,\n                                not world day.\n\n                                A player below an enemy's required Heat cannot\n                                normally cause that enemy to enter their spawn\n                                pool.\n\n                                This means two players in the same world can\n                                have different hostile progression depending on\n                                their Heat."
+}

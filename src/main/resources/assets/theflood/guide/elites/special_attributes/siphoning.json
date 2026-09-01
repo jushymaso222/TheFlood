@@ -1,0 +1,6 @@
+{
+  "id": "siphoning",
+  "title": "Siphoning",
+  "order": 7,
+  "body": "These elites can 'borrow' health from nearby\n                                flood mobs.\n\n                                Make sure to kill any surrounding mobs to prevent\n                                the elite from regenerating in health during combat.\n\n                                Do not let them feed."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "player_commands",
+  "title": "Player Commands",
+  "order": 0,
+  "body": "Most normal interaction with The Flood is done\n                                through its GUI.\n\n                                Some team and chat actions may also be\n                                available through commands.\n\n                                Development, dummy-player, testing, and debug\n                                commands are intentionally not documented in\n                                this guide."
+}

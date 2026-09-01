@@ -1,57 +1,25 @@
 package com.jushymaso222.theflood.guide;
 
-public enum FloodGuideCategory {
+import java.util.List;
 
-    GETTING_STARTED(
-            "Getting Started"
-    ),
-
-    HEAT(
-            "Heat"
-    ),
-
-    ELITES(
-            "Elites"
-    ),
-
-    TEAMS(
-            "Teams"
-    ),
-
-    SPAWNING(
-            "Spawning"
-    ),
-
-    HORDES(
-            "Hordes"
-    ),
-
-    BLOOD_MOONS(
-            "Blood Moons"
-    ),
-
-    DAY_NIGHT(
-            "Day & Night"
-    ),
-
-    COMMANDS(
-            "Commands"
-    ),
-
-    SERVER_SETTINGS(
-            "Server Settings"
-    );
-
-    private final String displayName;
-
-    FloodGuideCategory(
-            String displayName
-    ) {
-        this.displayName =
-                displayName;
+public record FloodGuideCategory(
+        String id,
+        String displayName,
+        String description,
+        int order,
+        String requiredMilestone,
+        List<FloodGuidePage> pages,
+        List<FloodGuideSubcategory> subcategories
+) {
+    public int pageCount() {
+        return pages == null ? 0 : pages.size();
     }
 
-    public String getDisplayName() {
-        return displayName;
+    public int subcategoryCount() {
+        return subcategories == null ? 0 : subcategories.size();
+    }
+
+    public boolean isEmpty() {
+        return pageCount() == 0 && subcategoryCount() == 0;
     }
 }

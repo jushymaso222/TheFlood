@@ -1,0 +1,6 @@
+{
+  "id": "current_defaults",
+  "title": "Current Defaults",
+  "order": 1,
+  "body": "Default server configuration:\n\n                                Day Length:\n                                30 real-world minutes\n\n                                Night Length:\n                                10 real-world minutes\n\n                                Blood Moon Frequency:\n                                Every 7 world days\n\n                                Server owners may change these values.\n                                The current server modified settings can\n                                be viewed in the 'Server Settings' tab."
+}

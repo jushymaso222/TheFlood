@@ -30,7 +30,18 @@ public class MobEvents {
 
         MobSpawnType spawnType = event.getSpawnType();
 
-        if (spawnType == MobSpawnType.COMMAND || spawnType == MobSpawnType.SPAWN_EGG) {
+        /*
+        * The Flood only replaces naturally generated
+        * hostile population.
+        *
+        * Explicit/gameplay-created spawns such as spawners,
+        * commands, spawn eggs, modded systems, etc. are
+        * allowed through untouched.
+        */
+        if (
+                spawnType != MobSpawnType.NATURAL
+                && spawnType != MobSpawnType.CHUNK_GENERATION
+        ) {
             return;
         }
 

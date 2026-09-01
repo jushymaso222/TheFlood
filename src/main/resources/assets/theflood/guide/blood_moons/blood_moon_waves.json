@@ -1,0 +1,6 @@
+{
+  "id": "blood_moon_waves",
+  "title": "Blood Moon Waves",
+  "order": 1,
+  "body": "Blood Moon enemies arrive in repeated waves.\n\n                                The server controls:\n                                - Time between waves\n                                - Minimum wave size\n                                - Maximum wave size\n                                - Active enemy cap\n                                - Total enemies allowed during the event\n\n                                Later Blood Moons can increase both total enemy\n                                pressure and the number of active enemies."
+}

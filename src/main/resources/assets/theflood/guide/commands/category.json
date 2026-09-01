@@ -1,0 +1,6 @@
+{
+  "id": "commands",
+  "title": "Commands",
+  "description": "Player-facing commands and Flood settings.",
+  "order": 8
+}

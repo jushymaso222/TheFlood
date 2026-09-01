@@ -1,0 +1,6 @@
+{
+  "id": "team_chat_commands",
+  "title": "Team Chat Commands",
+  "order": 1,
+  "body": "/team chat global\n\n                                Switches your chat mode to Global Chat.\n\n\n                                /team chat team\n\n                                Switches your chat mode to private Team Chat.\n\n                                You must belong to a team before Team Chat can\n                                be enabled."
+}

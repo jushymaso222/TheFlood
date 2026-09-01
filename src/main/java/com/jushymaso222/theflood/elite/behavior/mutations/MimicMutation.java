@@ -19,6 +19,9 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import com.jushymaso222.theflood.elite.presentation.EliteSounds;
 import com.jushymaso222.theflood.elite.presentation.EliteVisuals;
 
+import com.jushymaso222.theflood.progression.milestone.MilestoneManager;
+import com.jushymaso222.theflood.progression.milestone.MilestoneRegistry;
+
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundEvents;
 
@@ -471,6 +474,11 @@ public final class MimicMutation
             Mob elite,
             ServerPlayer attacker
     ) {
+        MilestoneManager.complete(
+                attacker,
+                MilestoneRegistry.MIMIC_DISCOVERED
+        );
+
         elite.getPersistentData()
                 .putBoolean(
                         ACTIVE_KEY,

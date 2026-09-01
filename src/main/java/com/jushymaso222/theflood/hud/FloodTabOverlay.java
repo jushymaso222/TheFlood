@@ -25,6 +25,8 @@ import com.jushymaso222.theflood.milestone.network.RequestMilestoneSnapshotPacke
 import com.jushymaso222.theflood.progression.milestone.client.FloodMilestoneTabPanel;
 import com.jushymaso222.theflood.team.client.ClientTeamChatData;
 import com.jushymaso222.theflood.team.client.FloodCreateTeamScreen;
+import com.jushymaso222.theflood.progression.capability.network.RequestCapabilitySnapshotPacket;
+import com.jushymaso222.theflood.progression.milestone.client.FloodMilestoneScreen;
 
 import net.minecraftforge.event.TickEvent;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -316,12 +318,25 @@ private static void previousPlayerPage(
         FloodNetwork.CHANNEL.sendToServer(
                 new RequestMilestoneSnapshotPacket()
         );
+
+        FloodNetwork.CHANNEL.sendToServer(
+                new RequestCapabilitySnapshotPacket()
+        );
     }
         if (
-        !tabDown
-                && tabWasDown
+                !tabDown
+                        && tabWasDown
         ) {
         FloodTabInvitePanel.resetConfirmation();
+
+        if (
+                minecraft.screen
+                        instanceof FloodMilestoneScreen
+        ) {
+                minecraft.setScreen(
+                        null
+                );
+        }
         }
 
     tabWasDown = tabDown;
@@ -355,13 +370,29 @@ private static void previousPlayerPage(
                 !interactionMode;
 
         if (interactionMode) {
-            minecraft.mouseHandler.releaseMouse();
+                minecraft.mouseHandler.releaseMouse();
         } else if (minecraft.screen == null) {
-            minecraft.mouseHandler.grabMouse();
+                minecraft.mouseHandler.grabMouse();
         }
-    }
+        }
 
-    altWasDown = altDown;
+        altWasDown = altDown;
+
+
+        /*
+        * Keep the cursor released for as long as
+        * the interactive Tab overlay owns the mouse.
+        *
+        * Closing a normal Screen can cause Minecraft
+        * to automatically grab the mouse again.
+        */
+        if (
+                interactionMode
+                        && minecraft.screen == null
+                        && minecraft.mouseHandler.isMouseGrabbed()
+        ) {
+        minecraft.mouseHandler.releaseMouse();
+        }
 }
 
 
@@ -389,12 +420,17 @@ public static final class ForgeEvents {
         Minecraft minecraft =
                 Minecraft.getInstance();
 
+        long window =
+                minecraft.getWindow()
+                        .getWindow();
+
         boolean tabDown =
                 minecraft.player != null
                         && minecraft.level != null
-                        && minecraft.options
-                                .keyPlayerList
-                                .isDown();
+                        && InputConstants.isKeyDown(
+                                window,
+                                GLFW.GLFW_KEY_TAB
+                        );
 
         updateTabInteraction(
                 minecraft,
@@ -406,11 +442,15 @@ public static final class ForgeEvents {
     public static void onMouseButton(
             net.minecraftforge.client.event.InputEvent.MouseButton.Pre event
     ) {
+        Minecraft minecraft =
+                Minecraft.getInstance();
+
         if (
                 !FloodTabOverlay.isTabOpen()
-                || !FloodTabOverlay.isInteractionMode()
+                        || !FloodTabOverlay.isInteractionMode()
+                        || minecraft.screen != null
         ) {
-            return;
+        return;
         }
 
         /*
@@ -438,9 +478,6 @@ public static final class ForgeEvents {
         ) {
             return;
         }
-
-        Minecraft minecraft =
-                Minecraft.getInstance();
 
         double mouseX =
                 getTabMouseX(
@@ -1697,7 +1734,7 @@ private static void renderTeamList(
                 x;
 
         int healthY =
-                rowY + 8;
+                rowY + 3;
 
         graphics.fill(
                 healthX,
@@ -2188,12 +2225,22 @@ private static int getTabHealthColor(
         Minecraft minecraft =
                 Minecraft.getInstance();
 
-        return minecraft.player != null
-                && minecraft.level != null
-                && minecraft.options
-                        .keyPlayerList
-                        .isDown();
-    }
+        if (
+                minecraft.player == null
+                        || minecraft.level == null
+        ) {
+                return false;
+        }
+
+        long window =
+                minecraft.getWindow()
+                        .getWindow();
+
+        return InputConstants.isKeyDown(
+                window,
+                GLFW.GLFW_KEY_TAB
+        );
+        }
 
 
     /*
@@ -2605,11 +2652,32 @@ private static int getTabHealthColor(
         * =================================================
         * CAPABILITY / THREAT ASSESSMENT
         * =================================================
-        *
-        * Reserved for Capability Manager integration.
-        *
-        * FloodTabCapabilityPanel.render(...);
         */
+
+        int inviteSectionHeight =
+                105;
+
+        int capabilityGap =
+                6;
+
+        int capabilityY =
+                y
+                        + inviteSectionHeight
+                        + capabilityGap;
+
+        int capabilityHeight =
+                panelHeight
+                        - inviteSectionHeight
+                        - capabilityGap;
+
+        FloodTabCapabilityPanel.render(
+                graphics,
+                minecraft,
+                x + panelWidth + 8,
+                capabilityY,
+                capabilityHeight
+        );
+
 
 
     /*

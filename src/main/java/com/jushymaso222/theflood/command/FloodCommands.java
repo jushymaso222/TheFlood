@@ -1173,6 +1173,20 @@ public final class FloodCommands {
                                                 context.getSource()
                                         )
                         )
+
+                        .then(
+                                Commands.literal("reset")
+                                        .requires(
+                                                source ->
+                                                        source.hasPermission(2)
+                                        )
+                                        .executes(
+                                                context ->
+                                                        resetCapability(
+                                                                context.getSource()
+                                                        )
+                                        )
+                        )
         );
 
         event.getDispatcher()
@@ -1180,6 +1194,31 @@ public final class FloodCommands {
                         flood
                 );
     }
+
+    private static int resetCapability(
+                CommandSourceStack source
+        ) throws CommandSyntaxException {
+
+        ServerPlayer player =
+                source.getPlayerOrException();
+
+
+        CapabilityManager.reset(
+                player
+        );
+
+
+        source.sendSuccess(
+                () ->
+                        Component.literal(
+                                "Capability data cleared."
+                        ),
+                false
+        );
+
+
+        return 1;
+        }
 
     private static int toggleCapability(
                 CommandSourceStack source

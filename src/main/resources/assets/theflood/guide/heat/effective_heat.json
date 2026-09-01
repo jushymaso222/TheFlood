@@ -1,0 +1,6 @@
+{
+  "id": "effective_heat",
+  "title": "Effective Heat",
+  "order": 1,
+  "body": "Effective Heat is the difficulty value The\n                                Flood actually uses for you.\n\n                                It is built from your Base Heat plus any\n                                Proximity Heat bonus.\n\n                                Base Heat is normally your Solo Heat.\n\n                                If you are in a team, your Team Heat becomes\n                                your Base Heat instead."
+}

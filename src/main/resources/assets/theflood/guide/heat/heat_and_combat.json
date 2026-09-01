@@ -1,0 +1,6 @@
+{
+  "id": "heat_and_combat",
+  "title": "Heat and Combat",
+  "order": 3,
+  "body": "Heat affects more than spawning.\n\n                                Flood-controlled enemies scale relative to the\n                                player fighting them. Higher-Heat players face\n                                stronger versions of the same enemies.\n\n                                Damage from players and damage received from\n                                Flood enemies are adjusted using the player's\n                                Effective Heat.\n\n                                This allows players with different progression\n                                levels to fight the same physical mob while\n                                still experiencing appropriate difficulty."
+}

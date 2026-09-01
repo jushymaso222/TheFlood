@@ -30,6 +30,12 @@ public final class MilestoneRegistry {
             MILESTONES =
             new ArrayList<>();
 
+    public static final ResourceLocation MIMIC_DISCOVERED =
+        new ResourceLocation(
+                TheFlood.MOD_ID,
+                "discovery/mimic"
+        );
+
     private MilestoneRegistry() {
     }
 
@@ -53,6 +59,7 @@ public final class MilestoneRegistry {
          * classes are created.
          */
 
+        registerFloodMilestones();
         registerVanillaMilestones();
 
 
@@ -71,6 +78,46 @@ public final class MilestoneRegistry {
          TaCZMilestones.register();
 
     }
+
+    /*
+        * ============================================
+        * THE FLOOD MILESTONES
+        * ============================================
+        */
+
+        private static void registerFloodMilestones() {
+
+        MilestoneCompatRegistry.register(
+                new MilestoneCompatDefinition(
+                        TheFlood.MOD_ID,
+                        null,
+                        Component.literal("The Flood"),
+                        0
+                )
+        );
+
+        registerFloodDiscoveryMilestones();
+        }
+
+
+        private static void registerFloodDiscoveryMilestones() {
+
+        register(
+                new MilestoneDefinition(
+                        MIMIC_DISCOVERED,
+                        Component.literal(
+                                "Something Isn't Right"
+                        ),
+                        Component.literal(
+                                "What have you uncovered?"
+                        ),
+                        TheFlood.MOD_ID,
+                        0,
+                        0.0D,
+                        player -> false
+                )
+        );
+        }
 
 
     /*
@@ -309,6 +356,24 @@ public final class MilestoneRegistry {
                 )
         );
     }
+
+        public static MilestoneDefinition get(
+        ResourceLocation id
+) {
+    if (id == null) {
+        return null;
+    }
+
+    for (MilestoneDefinition milestone : MILESTONES) {
+        if (milestone.id().equals(id)) {
+            return milestone;
+        }
+    }
+
+    return null;
+}
+
+
 
     public static void register(
             MilestoneDefinition milestone

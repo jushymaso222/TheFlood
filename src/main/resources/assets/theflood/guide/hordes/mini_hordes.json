@@ -1,0 +1,6 @@
+{
+  "id": "mini_hordes",
+  "title": "Mini-Hordes",
+  "order": 1,
+  "body": "Mini-hordes can occur outside Blood Moons.\n\n                                Their occurrence and size are controlled by the\n                                server and can scale as progression advances.\n\n                                Horde mobs spawn in a clump near a selected\n                                anchor rather than being scattered evenly\n                                around the player."
+}

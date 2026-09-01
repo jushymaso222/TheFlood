@@ -91,6 +91,10 @@ public final class SyncCapabilityStatsPacket {
     private final long mobilitySamples;
     private final double lastMobilityObservation;
 
+    private final double offenseResponse;
+    private final double defenseResponse;
+    private final double survivalResponse;
+    private final double mobilityResponse;
 
     /*
      * =====================================================
@@ -102,47 +106,50 @@ public final class SyncCapabilityStatsPacket {
 
 
     public SyncCapabilityStatsPacket(
-            boolean open,
+                boolean open,
+                String playerName,
 
-            String playerName,
+                double offenseScore,
+                double effectiveOffense,
+                double peakOffense,
+                double offenseConfidence,
+                double offenseResponse,
 
-            double offenseScore,
-            double effectiveOffense,
-            double peakOffense,
-            double offenseConfidence,
+                long offenseSamples,
 
-            long offenseSamples,
+                double lastOffensiveDamage,
+                double lastOffenseObservation,
+                double averageOffensiveDamage,
+                double peakObservedOffensiveDamage,
 
-            double lastOffensiveDamage,
-            double lastOffenseObservation,
-            double averageOffensiveDamage,
-            double peakObservedOffensiveDamage,
+                double defenseScore,
+                double effectiveDefense,
+                double peakDefense,
+                double defenseConfidence,
+                double defenseResponse,
 
-            double defenseScore,
-            double effectiveDefense,
-            double peakDefense,
-            double defenseConfidence,
+                long defenseSamples,
+                double lastDefenseObservation,
 
-            long defenseSamples,
-            double lastDefenseObservation,
+                double survivalScore,
+                double effectiveSurvival,
+                double peakSurvival,
+                double survivalConfidence,
+                double survivalResponse,
 
-            double survivalScore,
-            double effectiveSurvival,
-            double peakSurvival,
-            double survivalConfidence,
+                long survivalSamples,
+                double lastSurvivalObservation,
 
-            long survivalSamples,
-            double lastSurvivalObservation,
+                double mobilityScore,
+                double effectiveMobility,
+                double peakMobility,
+                double mobilityConfidence,
+                double mobilityResponse,
 
-            double mobilityScore,
-            double effectiveMobility,
-            double peakMobility,
-            double mobilityConfidence,
+                long mobilitySamples,
+                double lastMobilityObservation,
 
-            long mobilitySamples,
-            double lastMobilityObservation,
-
-            int milestoneProgression
+                int milestoneProgression
     ) {
         this.open =
                 open;
@@ -166,6 +173,8 @@ public final class SyncCapabilityStatsPacket {
 
         this.offenseConfidence =
                 offenseConfidence;
+
+        this.offenseResponse = offenseResponse;
 
         this.offenseSamples =
                 offenseSamples;
@@ -199,6 +208,8 @@ public final class SyncCapabilityStatsPacket {
         this.defenseConfidence =
                 defenseConfidence;
 
+        this.defenseResponse = defenseResponse;
+
         this.defenseSamples =
                 defenseSamples;
 
@@ -222,6 +233,8 @@ public final class SyncCapabilityStatsPacket {
         this.survivalConfidence =
                 survivalConfidence;
 
+        this.survivalResponse = survivalResponse;
+
         this.survivalSamples =
                 survivalSamples;
 
@@ -244,6 +257,8 @@ public final class SyncCapabilityStatsPacket {
 
         this.mobilityConfidence =
                 mobilityConfidence;
+        
+        this.mobilityResponse = mobilityResponse;
 
         this.mobilitySamples =
                 mobilitySamples;
@@ -264,17 +279,28 @@ public final class SyncCapabilityStatsPacket {
      */
 
     public static void sendSnapshot(
-            ServerPlayer player
-    ) {
+                ServerPlayer player
+        ) {
+        sendSnapshot(
+                player,
+                true
+        );
+        }
+
+        public static void sendSnapshot(
+                ServerPlayer player,
+                boolean openInspector
+        ) {
         FloodNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(
                         () -> player
                 ),
                 createSnapshot(
-                        player
+                        player,
+                        openInspector
                 )
         );
-    }
+        }
 
 
     public static void sendClosed(
@@ -293,8 +319,9 @@ public final class SyncCapabilityStatsPacket {
 
 
     private static SyncCapabilityStatsPacket createSnapshot(
-            ServerPlayer player
-    ) {
+                ServerPlayer player,
+                boolean openInspector
+        ) {
         CapabilityProfile profile =
                 CapabilityManager.get(
                         player
@@ -302,7 +329,7 @@ public final class SyncCapabilityStatsPacket {
 
         if (profile == null) {
             return createEmpty(
-                    true,
+                    openInspector,
                     player.getGameProfile()
                             .getName(),
                     MilestoneManager.getProgressionValue(
@@ -312,7 +339,7 @@ public final class SyncCapabilityStatsPacket {
         }
 
         return new SyncCapabilityStatsPacket(
-                true,
+                openInspector,
 
                 player.getGameProfile()
                         .getName(),
@@ -326,6 +353,7 @@ public final class SyncCapabilityStatsPacket {
                 profile.getEffectiveOffense(),
                 profile.getPeakOffense(),
                 profile.getOffenseConfidence(),
+                CapabilityManager.getOffenseResponse(player),
 
                 profile.getOffenseSamples(),
 
@@ -343,6 +371,7 @@ public final class SyncCapabilityStatsPacket {
                 profile.getEffectiveDefense(),
                 profile.getPeakDefense(),
                 profile.getDefenseConfidence(),
+                CapabilityManager.getDefenseResponse(player),
 
                 profile.getDefenseSamples(),
                 profile.getLastDefenseObservation(),
@@ -356,6 +385,7 @@ public final class SyncCapabilityStatsPacket {
                 profile.getEffectiveSurvival(),
                 profile.getPeakSurvival(),
                 profile.getSurvivalConfidence(),
+                CapabilityManager.getSurvivalResponse(player),
 
                 profile.getSurvivalSamples(),
                 profile.getLastSurvivalObservation(),
@@ -369,6 +399,7 @@ public final class SyncCapabilityStatsPacket {
                 profile.getEffectiveMobility(),
                 profile.getPeakMobility(),
                 profile.getMobilityConfidence(),
+                CapabilityManager.getMobilityResponse(player),
 
                 profile.getMobilitySamples(),
                 profile.getLastMobilityObservation(),
@@ -411,22 +442,16 @@ public final class SyncCapabilityStatsPacket {
                 0.0D,
                 0.0D,
                 0.0D,
-
-                0L,
-
-                0.0D,
-                0.0D,
-                0.0D,
-                0.0D,
-
-                0.0D,
-                0.0D,
-                0.0D,
                 0.0D,
 
                 0L,
+
+                0.0D,
+                0.0D,
+                0.0D,
                 0.0D,
 
+                0.0D,
                 0.0D,
                 0.0D,
                 0.0D,
@@ -435,6 +460,16 @@ public final class SyncCapabilityStatsPacket {
                 0L,
                 0.0D,
 
+                0.0D,
+                0.0D,
+                0.0D,
+                0.0D,
+                0.0D,
+
+                0L,
+                0.0D,
+
+                0.0D,
                 0.0D,
                 0.0D,
                 0.0D,
@@ -487,6 +522,8 @@ public final class SyncCapabilityStatsPacket {
                 message.offenseConfidence
         );
 
+        buffer.writeDouble(message.offenseResponse);
+
         buffer.writeLong(
                 message.offenseSamples
         );
@@ -528,6 +565,8 @@ public final class SyncCapabilityStatsPacket {
                 message.defenseConfidence
         );
 
+        buffer.writeDouble(message.defenseResponse);
+
         buffer.writeLong(
                 message.defenseSamples
         );
@@ -557,6 +596,8 @@ public final class SyncCapabilityStatsPacket {
                 message.survivalConfidence
         );
 
+        buffer.writeDouble(message.survivalResponse);
+
         buffer.writeLong(
                 message.survivalSamples
         );
@@ -585,6 +626,8 @@ public final class SyncCapabilityStatsPacket {
         buffer.writeDouble(
                 message.mobilityConfidence
         );
+
+        buffer.writeDouble(message.mobilityResponse);
 
         buffer.writeLong(
                 message.mobilitySamples
@@ -629,6 +672,8 @@ public final class SyncCapabilityStatsPacket {
                 buffer.readDouble(),
                 buffer.readDouble(),
 
+                buffer.readDouble(),
+
                 buffer.readLong(),
 
                 buffer.readDouble(),
@@ -646,6 +691,8 @@ public final class SyncCapabilityStatsPacket {
                 buffer.readDouble(),
                 buffer.readDouble(),
 
+                buffer.readDouble(),
+
                 buffer.readLong(),
                 buffer.readDouble(),
 
@@ -659,6 +706,8 @@ public final class SyncCapabilityStatsPacket {
                 buffer.readDouble(),
                 buffer.readDouble(),
 
+                buffer.readDouble(),
+
                 buffer.readLong(),
                 buffer.readDouble(),
 
@@ -670,6 +719,8 @@ public final class SyncCapabilityStatsPacket {
                 buffer.readDouble(),
                 buffer.readDouble(),
                 buffer.readDouble(),
+                buffer.readDouble(),
+
                 buffer.readDouble(),
 
                 buffer.readLong(),
@@ -700,12 +751,7 @@ public final class SyncCapabilityStatsPacket {
 
         context.enqueueWork(
                 () -> {
-
-                    if (!packet.open) {
-                        ClientCapabilityStatsData.clear();
-
-                        return;
-                    }
+                
 
                     ClientCapabilityStatsData.set(
                             new ClientCapabilityStatsData.CapabilityStats(
@@ -721,6 +767,8 @@ public final class SyncCapabilityStatsPacket {
                                     packet.effectiveOffense,
                                     packet.peakOffense,
                                     packet.offenseConfidence,
+
+                                    packet.offenseResponse,
 
                                     packet.offenseSamples,
 
@@ -738,6 +786,7 @@ public final class SyncCapabilityStatsPacket {
                                     packet.effectiveDefense,
                                     packet.peakDefense,
                                     packet.defenseConfidence,
+                                    packet.defenseResponse,
 
                                     packet.defenseSamples,
                                     packet.lastDefenseObservation,
@@ -751,6 +800,7 @@ public final class SyncCapabilityStatsPacket {
                                     packet.effectiveSurvival,
                                     packet.peakSurvival,
                                     packet.survivalConfidence,
+                                    packet.survivalResponse,
 
                                     packet.survivalSamples,
                                     packet.lastSurvivalObservation,
@@ -764,6 +814,7 @@ public final class SyncCapabilityStatsPacket {
                                     packet.effectiveMobility,
                                     packet.peakMobility,
                                     packet.mobilityConfidence,
+                                    packet.mobilityResponse,
 
                                     packet.mobilitySamples,
                                     packet.lastMobilityObservation,
@@ -776,6 +827,9 @@ public final class SyncCapabilityStatsPacket {
                                     packet.milestoneProgression
                             )
                     );
+                    ClientCapabilityStatsData.setInspectorOpen(
+                                packet.open
+                        );
                 }
         );
 

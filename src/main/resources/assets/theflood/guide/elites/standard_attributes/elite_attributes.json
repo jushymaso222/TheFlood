@@ -1,0 +1,6 @@
+{
+  "id": "elite_attributes",
+  "title": "Elite Attributes",
+  "order": 0,
+  "body": "Attributes modify an Elite beyond its normal Behavior.\n\n                                An Elite may possess multiple different Attributes.\n\n                                Attributes can also appear at increased ranks:\n\n                                ATTRIBUTE\n                                ATTRIBUTE+\n                                ATTRIBUTE++\n\n                                Higher ranks strengthen the existing effect.\n\n                                Standard Attributes primarily modify an enemy's normal\n                                combat capabilities.\n\n                                Special Attributes introduce entirely new mechanics\n                                and are considerably rarer."
+}

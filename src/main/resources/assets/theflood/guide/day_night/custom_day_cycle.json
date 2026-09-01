@@ -1,0 +1,6 @@
+{
+  "id": "custom_day_cycle",
+  "title": "Custom Day Cycle",
+  "order": 0,
+  "body": "The Flood replaces the normal Minecraft\n                                day/night pacing with configurable real-time\n                                lengths.\n\n                                Daytime and nighttime can therefore last much\n                                longer or shorter than vanilla Minecraft.\n\n                                The HUD displays the current Flood day and time\n                                so you can plan around the custom cycle."
+}

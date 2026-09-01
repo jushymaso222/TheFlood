@@ -116,6 +116,7 @@ public final class FloodMilestoneScreen extends Screen {
     }
 
 
+
     /*
      * ============================================
      * RENDER
@@ -252,7 +253,9 @@ public final class FloodMilestoneScreen extends Screen {
                 x,
                 y + panelHeight - FOOTER_HEIGHT,
                 panelWidth,
-                accentColor
+                accentColor,
+                mouseX,
+                mouseY
         );
 
 
@@ -1408,12 +1411,14 @@ public final class FloodMilestoneScreen extends Screen {
      */
 
     private void renderFooter(
-            GuiGraphics graphics,
-            int x,
-            int y,
-            int panelWidth,
-            int accentColor
-    ) {
+                GuiGraphics graphics,
+                int x,
+                int y,
+                int panelWidth,
+                int accentColor,
+                int mouseX,
+                int mouseY
+        ) {
 
         graphics.fill(
                 x + 1,
@@ -1457,22 +1462,66 @@ public final class FloodMilestoneScreen extends Screen {
         );
 
 
+        /*
+        * Center scroll hint.
+        */
         if (maxScroll > 0) {
 
-            graphics.drawString(
-                    font,
-                    "SCROLL TO VIEW",
-                    x
-                            + panelWidth
-                            - font.width(
-                                    "SCROLL TO VIEW"
-                            )
-                            - 10,
-                    y + 9,
-                    0xFF777777,
-                    false
-            );
+        String scrollText =
+                "SCROLL TO VIEW";
+
+        graphics.drawCenteredString(
+                font,
+                scrollText,
+                x + panelWidth / 2,
+                y + 9,
+                0xFF777777
+        );
         }
+
+        /*
+        * Back to Tab.
+        */
+        String backText =
+                "BACK TO TAB";
+
+        int backWidth =
+                font.width(
+                        backText
+                );
+
+        int backX =
+                x
+                        + panelWidth
+                        - backWidth
+                        - 10;
+
+        int backY =
+                y + 5;
+
+        boolean backHovered =
+                isInside(
+                        mouseX,
+                        mouseY,
+                        backX - 3,
+                        backY,
+                        backWidth + 6,
+                        16
+                );
+
+        int backColor =
+                backHovered
+                        ? accentColor
+                        : 0xFFFFFFFF;
+
+        graphics.drawString(
+                font,
+                backText,
+                backX,
+                y + 9,
+                backColor,
+                false
+        );
     }
 
 
@@ -1533,6 +1582,51 @@ public final class FloodMilestoneScreen extends Screen {
         */
 
         int naturalTotalWidth = 0;
+
+        /*
+        * ============================================
+        * BACK TO TAB
+        * ============================================
+        */
+
+        int footerY =
+                panelY
+                        + panelHeight
+                        - FOOTER_HEIGHT;
+
+        String backText =
+                "BACK TO TAB";
+
+        int backWidth =
+                font.width(
+                        backText
+                );
+
+        int backX =
+                panelX
+                        + panelWidth
+                        - backWidth
+                        - 10;
+
+        int backY =
+                footerY + 5;
+
+        if (
+                isInside(
+                        mouseX,
+                        mouseY,
+                        backX - 3,
+                        backY,
+                        backWidth + 6,
+                        16
+                )
+        ) {
+        minecraft.setScreen(
+                null
+        );
+
+        return true;
+        }
 
 
         for (

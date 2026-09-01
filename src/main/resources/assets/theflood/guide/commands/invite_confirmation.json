@@ -1,0 +1,6 @@
+{
+  "id": "invite_confirmation",
+  "title": "Invite Confirmation",
+  "order": 2,
+  "body": "Some team invitation confirmations use internal\n                                commands when you click confirmation messages.\n\n                                These commands are normally handled for you by\n                                the interface and are not intended to be typed\n                                manually.\n\n                                If joining a team would greatly increase your\n                                Heat, always read the warning before\n                                confirming."
+}

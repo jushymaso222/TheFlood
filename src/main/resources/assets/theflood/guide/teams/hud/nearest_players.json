@@ -1,0 +1,6 @@
+{
+  "id": "nearest_players",
+  "title": "Nearest Players",
+  "order": 2,
+  "body": "The Team HUD can automatically show the four\n                                nearest teammates in your current dimension.\n\n                                Activate this mode using the filter icon beneath\n                                the Team HUD while your inventory is open.\n\n                                If no teammates are in your dimension, the HUD\n                                falls back to the selected manual page."
+}
