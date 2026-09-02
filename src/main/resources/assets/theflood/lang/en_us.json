@@ -7,5 +7,8 @@
   "effect.theflood.boon_attack": "Boon of Attack",
   "effect.theflood.boon_defense": "Boon of Defense",
   "effect.theflood.boon_hoarders": "Boon of Hoarders",
-  "effect.theflood.boon_tranquility": "Boon of Tranquility"
+  "effect.theflood.boon_tranquility": "Boon of Tranquility",
+  "key.categories.theflood": "The Flood",
+  "key.theflood.effect_primary": "Effect Primary",
+  "key.theflood.effect_secondary": "Effect Secondary"
 }

@@ -4,7 +4,6 @@ import com.jushymaso222.theflood.TheFlood;
 import com.jushymaso222.theflood.elite.drops.boon.item.BoonItem;
 
 import net.minecraft.world.item.Item;
-
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -81,9 +80,7 @@ public final class BoonItems {
                         new BoonItem(
                                 BoonType.MIMIC,
                                 new Item.Properties()
-                                    .stacksTo(
-                                            1
-                                    )
+                                    .stacksTo(1)
                         )
         );
 

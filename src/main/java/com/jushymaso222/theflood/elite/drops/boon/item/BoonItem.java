@@ -12,6 +12,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import com.jushymaso222.theflood.network.FloodNetwork;
+import com.jushymaso222.theflood.elite.drops.boon.mimic.network.OpenMimicBoonScreenPacket;
+
+import net.minecraftforge.network.PacketDistributor;
+
 import net.minecraft.world.item.Item;
 
 public final class BoonItem
@@ -65,6 +70,27 @@ public final class BoonItem
             return InteractionResultHolder.pass(
                     stack
             );
+        }
+
+        if (boonType == BoonType.MIMIC) {
+
+                /*
+                * Mimic Boons are not activated immediately.
+                *
+                * Right-clicking opens the mutation chooser.
+                * The item is only consumed after the server
+                * accepts a mutation selection.
+                */
+                FloodNetwork.CHANNEL.send(
+                        PacketDistributor.PLAYER.with(
+                                () -> serverPlayer
+                        ),
+                        new OpenMimicBoonScreenPacket()
+                );
+
+                return InteractionResultHolder.success(
+                        stack
+                );
         }
 
         boolean activated =

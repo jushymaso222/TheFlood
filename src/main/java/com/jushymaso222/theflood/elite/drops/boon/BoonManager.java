@@ -1,11 +1,11 @@
 package com.jushymaso222.theflood.elite.drops.boon;
 
-import net.minecraft.server.level.ServerPlayer;
-
 import com.jushymaso222.theflood.elite.drops.boon.effect.BoonEffects;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import com.jushymaso222.theflood.elite.drops.boon.mimic.PlayerMimicMutationManager;
 
 public final class BoonManager {
 
@@ -41,16 +41,18 @@ public final class BoonManager {
                         type
                 );
 
-        player.addEffect(
-                new MobEffectInstance(
-                        statusEffect,
-                        type.durationTicks(),
-                        0,
-                        false,
-                        false,
-                        true
-                )
-        );
+        if (statusEffect != null) {
+                player.addEffect(
+                        new MobEffectInstance(
+                                statusEffect,
+                                type.durationTicks(),
+                                0,
+                                false,
+                                false,
+                                true
+                        )
+                );
+        }
 
         Boon boon =
                 BoonRegistry.get(
@@ -67,24 +69,27 @@ public final class BoonManager {
     }
 
     private static MobEffect getStatusEffect(
-            BoonType type
-    ) {
+                BoonType type
+        ) {
         return switch (
                 type
         ) {
-            case HOARDERS ->
-                    BoonEffects.BOON_HOARDERS.get();
+                case HOARDERS ->
+                        BoonEffects.BOON_HOARDERS.get();
 
-            case ATTACK ->
-                    BoonEffects.BOON_ATTACK.get();
+                case ATTACK ->
+                        BoonEffects.BOON_ATTACK.get();
 
-            case DEFENSE ->
-                    BoonEffects.BOON_DEFENSE.get();
+                case DEFENSE ->
+                        BoonEffects.BOON_DEFENSE.get();
 
-            case TRANQUILITY ->
-                    BoonEffects.BOON_TRANQUILITY.get();
+                case TRANQUILITY ->
+                        BoonEffects.BOON_TRANQUILITY.get();
+
+                case MIMIC ->
+                        null;
         };
-    }
+        }
 
     public static void tick(
             ServerPlayer player
@@ -124,6 +129,17 @@ public final class BoonManager {
             boon.tick(
                     player
             );
+        }
+
+        if (
+                BoonData.hasBoon(
+                        player,
+                        BoonType.MIMIC
+                )
+        ) {
+        PlayerMimicMutationManager.tick(
+                player
+        );
         }
     }
 
@@ -174,19 +190,21 @@ public final class BoonManager {
                     type
             );
 
-    player.addEffect(
-            new MobEffectInstance(
-                    statusEffect,
-                    (int) Math.min(
-                            Integer.MAX_VALUE,
-                            remainingTicks
-                    ),
-                    0,
-                    false,
-                    false,
-                    true
-            )
-    );
+    if (statusEffect != null) {
+        player.addEffect(
+                new MobEffectInstance(
+                        statusEffect,
+                        (int) Math.min(
+                                Integer.MAX_VALUE,
+                                remainingTicks
+                        ),
+                        0,
+                        false,
+                        false,
+                        true
+                )
+        );
+    }
 }
 
 
@@ -216,12 +234,25 @@ public final class BoonManager {
                         activeId
                 );
 
+        if (
+                activeType == BoonType.MIMIC
+        ) {
+        PlayerMimicMutationManager.deactivate(
+                player
+        );
+        }
+
         if (activeType != null) {
-            player.removeEffect(
-                    getStatusEffect(
-                            activeType
-                    )
-            );
+        MobEffect statusEffect =
+                getStatusEffect(
+                        activeType
+                );
+
+        if (statusEffect != null) {
+                player.removeEffect(
+                        statusEffect
+                );
+        }
         }
 
         BoonData.clear(

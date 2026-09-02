@@ -16,6 +16,9 @@ import com.jushymaso222.theflood.milestone.network.RequestMilestoneSnapshotPacke
 import com.jushymaso222.theflood.milestone.network.SyncMilestoneSnapshotPacket;
 import com.jushymaso222.theflood.progression.capability.network.RequestCapabilitySnapshotPacket;
 import com.jushymaso222.theflood.guide.network.RequestServerSettingsPacket;
+import com.jushymaso222.theflood.elite.drops.boon.mimic.network.OpenMimicBoonScreenPacket;
+import com.jushymaso222.theflood.elite.drops.boon.mimic.network.SelectMimicMutation;
+import com.jushymaso222.theflood.elite.drops.boon.mimic.network.SyncMimicMutationPacket;
 
 public final class FloodNetwork {
 
@@ -38,6 +41,30 @@ public final class FloodNetwork {
     }
 
     public static void register() {
+
+        CHANNEL.registerMessage(
+                id++,
+                SyncMimicMutationPacket.class,
+                SyncMimicMutationPacket::encode,
+                SyncMimicMutationPacket::decode,
+                SyncMimicMutationPacket::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                SelectMimicMutation.class,
+                SelectMimicMutation::encode,
+                SelectMimicMutation::decode,
+                SelectMimicMutation::handle
+        );
+
+        CHANNEL.registerMessage(
+                id++,
+                OpenMimicBoonScreenPacket.class,
+                OpenMimicBoonScreenPacket::encode,
+                OpenMimicBoonScreenPacket::decode,
+                OpenMimicBoonScreenPacket::handle
+        );
 
         CHANNEL.registerMessage(
                 id++,
